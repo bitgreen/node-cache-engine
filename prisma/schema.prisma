@@ -1,0 +1,228 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Project {
+  id              Int               @id
+  originator      String            @db.VarChar(64)
+  name            String            @db.VarChar
+  state           ProjectState      @default(SUBMITTED)
+  description     String?
+  location        Location[]
+  images          String[]
+  videos          String[]
+  documents       String[]
+  type            ProjectType       @default(AGRICULTURE_FORESTRY_AND_OTHER_LAND_USE)
+  registryDetails RegistryDetails[]
+  sdgDetails      SdgDetails[]
+  royalties       Royalties[]
+  batchGroups     BatchGroups[]
+  created         DateTime          @default(now()) @db.Timestamp(6)
+  updated         DateTime?         @default(now()) @db.Timestamp(6)
+  approved        Boolean?          @default(false)
+}
+
+model Location {
+  id        Int      @id @default(autoincrement())
+  latitude  Float
+  longitude Float
+  projectId Int?
+  project   Project? @relation(fields: [projectId], references: [id])
+}
+
+model BatchGroups {
+  id          Int      @id @default(autoincrement())
+  name        String?  @db.VarChar
+  uuid        String?
+  assetId     Int
+  totalSupply Int?
+  minted      Int?
+  retired     Int?
+  batches     Batch[]
+  projectId   Int?
+  project     Project? @relation(fields: [projectId], references: [id])
+}
+
+model Batch {
+  id           Int     @id @default(autoincrement())
+  name         String? @db.VarChar
+  uuid         String?
+  issuanceYear Int?
+  startDate    Int?
+  endDate      Int?
+  totalSupply  Int?
+  minted       Int?
+  retired      Int?
+
+  batchGroupId Int
+  batchGroups  BatchGroups @relation(fields: [batchGroupId], references: [id])
+}
+
+model RegistryDetails {
+  id         String  @id @default(uuid())
+  name       String
+  summary    String
+  regName    String
+  registryId Int     @unique
+  project    Project @relation(fields: [registryId], references: [id])
+}
+
+model Royalties {
+  id            Int    @id @default(autoincrement())
+  projectId     Int
+  accountId     String @db.VarChar(64)
+  percentOfFees Float? @db.Real
+
+  project Project @relation(fields: [projectId], references: [id])
+}
+
+model SdgDetails {
+  id          Int      @id @default(autoincrement())
+  projectId   Int
+  sdgType     SdgType?
+  description String?
+  references  String?
+  project     Project  @relation(fields: [projectId], references: [id])
+}
+
+model Profil {
+  address   String  @id
+  firstName String?
+  lastName  String?
+  avatar    String?
+
+  email           String?            @unique
+  emailStatus     VerificationStatus @default(NOT_VERIFIED)
+  emailVerifiedAt DateTime?
+
+  activityTransactionReceipts Boolean @default(false)
+  activityOffersFilled        Boolean @default(false)
+  marketingNews               Boolean @default(false)
+
+  stars Star[]
+  KYC   KYC?
+}
+
+model KYC {
+  profilAddress String             @id
+  status        VerificationStatus @default(NOT_VERIFIED)
+  FirstName     String
+  LastName      String
+  Address       String
+  Country       String
+  Profil        Profil?            @relation(fields: [profilAddress], references: [address])
+}
+
+model Star {
+  profilAddress String
+  projectId     Int
+  profil        Profil @relation(fields: [profilAddress], references: [address])
+
+  @@id([profilAddress, projectId])
+}
+
+enum VerificationStatus {
+  NOT_VERIFIED
+  PENDING
+  VERIFIED
+}
+
+enum SdgType {
+  NoPoverty
+  ZeroHunger
+  GoodHealthAndWellBeing
+  QualityEducation
+  GenderEquality
+  CleanWaterAndSanitation
+  AffordableAndCleanEnergy
+  DecentWorkAndEconomicGrowth
+  IndustryInnovationAndInfrastructure
+  ReducedInequalities
+  SustainableCitiesAndCommunities
+  ResponsibleConsumptionAndProduction
+  ClimateAction
+  LifeBelowWater
+  LifeOnLand
+  PeaceJusticeAndStrongInstitutions
+  ParternshipsForTheGoals
+}
+
+enum ProjectState {
+  DRAFT
+  SUBMITTED
+  ACCEPTED
+  DECLINED
+}
+
+enum RegistryName {
+  Verra
+  GoldStandard
+  AmericanCarbonRegistry
+  ClimateActionReserve
+}
+
+enum ProjectType {
+  AGRICULTURE_FORESTRY_AND_OTHER_LAND_USE
+  CHEMICAL_INDUSTRY
+  ENERGY_DEMAND
+  ENERGY_DISTRIBUTION
+  ENERGY_INDUSTRIES
+  FUGITIVE_EMISSIONS_FROM_FUELS
+  FUGITIVE_EMISSIONS_FROM_CARBONS
+  LIVESTOCK
+  MANUFACTURING_INDUSTRIES
+  METAL_PRODUCTION
+  MINING_MINERAL_PRODUCTION
+  TRANSPORT
+  WASTE_HANDLING
+}
+
+model Asset {
+  id           Int     @id
+  owner        String? @db.VarChar(48)
+  issuer       String? @db.VarChar(48)
+  admin        String? @db.VarChar(48)
+  freezer      String? @db.VarChar(48)
+  supply       Int?
+  deposit      Int?
+  minBalance   Int?
+  isSufficient Boolean @default(false)
+  accounts     Int?
+  sufficients  Int?
+  approvals    Int?
+  isFrozen     Boolean @default(false)
+  kyc_required Boolean @default(true)
+}
+
+model AssetTransaction {
+  id          Int      @id @default(autoincrement())
+  blockNumber Int
+  hash        String   @unique @db.VarChar(66)
+  sender      String   @db.VarChar(48)
+  recipient   String   @db.VarChar(48)
+  amount      Int
+  assetId     Int
+  createdAt   DateTime @db.Timestamp(6)
+}
+
+model Transaction {
+  id          Int      @id @default(autoincrement())
+  blockNumber Int
+  hash        String   @unique @db.VarChar(66)
+  sender      String   @db.VarChar(64)
+  recipient   String   @db.VarChar(64)
+  amount      Decimal  @db.Decimal(32, 0)
+  gasFees     Decimal  @default(0) @db.Decimal(32, 0)
+  createdAt   DateTime @db.Timestamp(6)
+}
+
+model Block {
+  number    Int      @id
+  hash      String   @unique @db.VarChar(66)
+  createdAt DateTime @db.Timestamp(6)
+}

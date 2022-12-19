@@ -1,0 +1,18 @@
+startdb.sh
+
+logs
+node_modules
+
+*.log
+npm-debug.log*
+
+.env
+.DS_Store
+
+# Ignore built ts files
+dist
+dist/**/*
+
+# ignore yarn.lock
+yarn.lock
+src/routes/test-routes.ts
