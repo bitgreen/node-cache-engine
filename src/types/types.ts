@@ -5,6 +5,8 @@ export enum BlockEvent {
   ProjectResubmitted = 'ProjectResubmitted',
   ProjectRejected = 'ProjectRejected',
   CarbonCreditRetired = 'CarbonCreditRetired',
+  Transfer = 'Transfer',
+  TransferKeepAlive = 'TransferKeepAlive',
 }
 
 export interface WalletSession {

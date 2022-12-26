@@ -9,9 +9,13 @@ export async function approveProject(
   block_date: Date
 ) {
   let projectId;
+  let assetIds;
   event.data.map(async (arg: any, d: number) => {
     if (d === 0) {
       projectId = arg.toNumber();
+    }
+    else if (d === 1) {
+      assetIds = arg.toJSON();
     }
   });
   // ex.args.map(async (arg: Codec, d: number) => {
@@ -23,6 +27,7 @@ export async function approveProject(
   // });
   console.log('projectId', projectId);
   console.log('Approved: ', projectState);
+  console.log('assetIds: ', assetIds);
 
   try {
     await prisma.project.update({

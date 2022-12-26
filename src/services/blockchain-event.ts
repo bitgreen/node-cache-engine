@@ -11,6 +11,7 @@ import { createProject } from './methods/createProject';
 import { approveProject } from './methods/approveProject';
 import { ccMinted } from './methods/mintedCarbonCredit';
 import { blockExtrinsic } from './methods/blockExtrinsic';
+import { transaction } from './methods/transaction';
 
 export async function processBlock(
   api: ApiPromise,
@@ -20,7 +21,7 @@ export async function processBlock(
   const { signedBlock, blockEvents } = await blockExtrinsic(api, blockNumber);
   if (!signedBlock || !blockEvents) return;
 
-  const block_date = new Date();
+  const blockDate = new Date();
   // parse block
   signedBlock.block.extrinsics.map(async (ex: Extrinsic, index: number) => {
     const isSigned = ex.isSigned;
@@ -48,18 +49,25 @@ export async function processBlock(
       )
       .map(async ({ event }: EventRecord) => {
         if (!extrinsicSuccess) return;
+        console.log("event.section", event.section)
+        console.log("method", event.method)
         if (event.section === 'vcu') {
           if (event.method === BlockEvent.ProjectCreated) {
-            createProject(ex, event, block_date);
+            createProject(ex, event, blockDate);
           }
           if (event.method === BlockEvent.ProjectApproved) {
-            approveProject(event, ProjectState.ACCEPTED, block_date);
+            approveProject(event, ProjectState.ACCEPTED, blockDate);
           }
           if (event.method === BlockEvent.ProjectRejected) {
-            approveProject(event, ProjectState.DECLINED, block_date);
+            approveProject(event, ProjectState.DECLINED, blockDate);
           }
           if (event.method === BlockEvent.CarbonCreditMinted) {
-            ccMinted(ex, block_date);
+            ccMinted(ex, blockDate);
+          }
+        }
+        if (event.section === "balances") {
+          if (event.method === BlockEvent.Transfer) {
+            transaction(event, blockNumber as number, blockDate, hash);
           }
         }
       });

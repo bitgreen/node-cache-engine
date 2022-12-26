@@ -1,0 +1,45 @@
+import { DIVIDER } from './../../utils/converter';
+import { Codec } from '@polkadot/types-codec/types';
+import { prisma } from '../prisma';
+import { Event } from '@polkadot/types/interfaces';
+
+export async function transaction(
+  event: Event,
+  blockNumber: number,
+  block_date: Date,
+  hash: string
+) {
+  let sender: string | undefined;
+  let recipient: string | undefined;
+  let amount: number | undefined;
+
+  event.data.map(async (arg: Codec, d: number) => {
+    if (d === 0) {
+      sender = arg.toString();
+    } else if (d === 1) {
+      recipient = arg.toString();
+    } else if (d === 2) {
+      amount = Number(arg.toString())/ DIVIDER;
+    }
+  });
+
+  console.log("sender", sender)
+  console.log("recipient", recipient)
+  console.log("amount", amount)
+
+  try {
+    await prisma.transaction.create({
+      data: {
+        blockNumber: blockNumber,
+        hash: hash as string,
+        recipient: recipient as string,
+        sender: sender as string,
+        amount: amount as number,
+        createdAt: block_date.toISOString(),
+      },
+    });
+  } catch (e) {
+    // @ts-ignore
+    console.log(`Error occurred (adding transaction): ${e.message}`);
+  }
+}

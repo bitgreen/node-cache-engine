@@ -9,3 +9,5 @@ export function convertHex(val: string) {
   console.log(isHex(val));
   return isHex(val) ? hexToString(val) : val === '0x' ? '' : val;
 }
+
+export const DIVIDER = 1000000

@@ -2,7 +2,7 @@ import { BatchGroups, Project } from '../../types/prismaTypes';
 import { Extrinsic, Event } from '@polkadot/types/interfaces';
 import type { Codec } from '@polkadot/types-codec/types';
 import { prisma } from '../prisma';
-import { convertHex } from '@/utils/converter';
+import { convertHex } from '../../utils/converter';
 
 export async function createProject(
   ex: Extrinsic,
