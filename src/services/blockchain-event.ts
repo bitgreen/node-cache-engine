@@ -12,6 +12,7 @@ import { approveProject } from './methods/approveProject';
 import { ccMinted } from './methods/mintedCarbonCredit';
 import { blockExtrinsic } from './methods/blockExtrinsic';
 import { transaction } from './methods/transaction';
+import { rejectProject } from './methods/rejectProject';
 
 export async function processBlock(
   api: ApiPromise,
@@ -56,10 +57,10 @@ export async function processBlock(
             createProject(ex, event, blockDate);
           }
           if (event.method === BlockEvent.ProjectApproved) {
-            approveProject(event, ProjectState.ACCEPTED, blockDate);
+            approveProject(event, blockDate);
           }
           if (event.method === BlockEvent.ProjectRejected) {
-            approveProject(event, ProjectState.DECLINED, blockDate);
+            rejectProject(event, blockDate);
           }
           if (event.method === BlockEvent.CarbonCreditMinted) {
             ccMinted(ex, blockDate);
