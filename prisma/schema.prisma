@@ -216,7 +216,8 @@ model Transaction {
   hash        String   @unique @db.VarChar(66)
   sender      String   @db.VarChar(64)
   recipient   String   @db.VarChar(64)
-  amount      Decimal  @db.Decimal(32, 0)
+  // amount      Decimal  @db.Decimal(65, 0)
+  amount      String   @db.VarChar(191)
   gasFees     Decimal  @default(0) @db.Decimal(32, 0)
   createdAt   DateTime @db.Timestamp(6)
 }

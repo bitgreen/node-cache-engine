@@ -11,7 +11,7 @@ export async function transaction(
 ) {
   let sender: string | undefined;
   let recipient: string | undefined;
-  let amount: number | undefined;
+  let amount: string | undefined;
 
   event.data.map(async (arg: Codec, d: number) => {
     if (d === 0) {
@@ -19,7 +19,7 @@ export async function transaction(
     } else if (d === 1) {
       recipient = arg.toString();
     } else if (d === 2) {
-      amount = Number(arg.toString())/ DIVIDER;
+      amount = arg.toString() /// DIVIDER;
     }
   });
 
@@ -34,7 +34,7 @@ export async function transaction(
         hash: hash as string,
         recipient: recipient as string,
         sender: sender as string,
-        amount: amount as number,
+        amount: amount as string,
         createdAt: block_date.toISOString(),
       },
     });
