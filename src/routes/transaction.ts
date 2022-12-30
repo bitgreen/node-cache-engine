@@ -1,7 +1,10 @@
+import { Account } from './../types/types';
+import { Codec } from '@polkadot/types-codec/types';
 import express, { Express, Request, Response } from 'express';
 import { prisma } from '../services/prisma';
 import { BlockHash } from '@polkadot/types/interfaces';
 import { initApi } from '../services/polkadot-api';
+import { GenericStorageEntryFunction } from '@polkadot/api/types';
 
 const router = express.Router();
 
@@ -54,6 +57,7 @@ router.get('/transactions', async (req: Request, res: Response) => {
         sender: true,
         recipient: true,
         amount: true,
+        gasFees: true,
         createdAt: true,
       },
       orderBy: {
@@ -82,6 +86,7 @@ router.get('/transaction', async (req: Request, res: Response) => {
       sender: true,
       recipient: true,
       amount: true,
+      gasFees:true,
       createdAt: true,
     },
   });
@@ -99,21 +104,21 @@ router.get('/assets', async (req: Request, res: Response) => {
   });
 });
 
-router.get('/assets/transaction', async (req: Request, res: Response) => {
-  const { hash = '' } = req.query;
+// router.get('/assets/transaction', async (req: Request, res: Response) => {
+//   const { hash = '' } = req.query;
 
-  const transaction = await prisma.assetTransaction.findUnique({
-    where: {
-      hash: hash as string,
-    },
-  });
+//   const transaction = await prisma.assetTransaction.findUnique({
+//     where: {
+//       hash: hash as string,
+//     },
+//   });
 
-  res.json({
-    transaction: transaction,
-  });
-});
+//   res.json({
+//     transaction: transaction,
+//   });
+// });
 
-router.get('/asset/balance', async (req: Request, res: Response) => {
+router.get('/balance', async (req: Request, res: Response) => {
   const { address, assetId } = req.query;
 
   if (address === undefined || assetId === undefined) {
@@ -123,8 +128,29 @@ router.get('/asset/balance', async (req: Request, res: Response) => {
 
   try {
     const api = await initApi();
-    const balance = await api.query.assets.account(assetId, address);
-    res.json({ balance });
+    const account  = await api.query.system.account(address)
+    const {data} = (account.toHuman() as unknown) as Account;
+    res.json(data.free);
+  } catch (e) {
+    console.error(e);
+    res.status(400).json({ error: 'Invalid address or asset_id' });
+    return;
+  }
+});
+
+router.get('/account', async (req: Request, res: Response) => {
+  const { address, assetId } = req.query;
+
+  if (address === undefined || assetId === undefined) {
+    res.status(400).json({ error: 'Missing address or asset_id' });
+    return;
+  }
+
+  try {
+    const api = await initApi();
+    const account  = await api.query.system.account(address)
+    const accountBalance = account.toHuman();
+    res.json({ accountBalance });
   } catch (e) {
     console.error(e);
     res.status(400).json({ error: 'Invalid address or asset_id' });

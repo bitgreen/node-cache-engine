@@ -14,3 +14,17 @@ export interface WalletSession {
   signature: string;
   address: string;
 }
+
+export interface Account {
+  nonce: number, 
+  consumers: number,
+  providers: number,
+  sufficients: number,
+  data: BalanceData
+}
+export interface BalanceData {
+  free: string, 
+  reserved: number,
+  miscFrozen: number,
+  feeFrozen: number,
+}

@@ -17,7 +17,6 @@ export async function createProject(
     }
   });
   let project = projectArg as Project;
-  console.log('project', project);
   event.data.map(async (arg: any, d: number) => {
     if (d === 0) {
       projectId = arg.toNumber();
