@@ -4,11 +4,11 @@ The Bitgreen Caching Engine makes on-chain actions and function results availabl
 
 Examples:
 
-http://157.90.126.46:3000/carbon-credits/projects/?originator=5G6M646srfn77x6uzwReRhCsVdBDRtYMd74nQuHkxvZX1SLC
+https://api-mainnet.bitgreen.org/project?search=yourSearchString
 
-http://157.90.126.46:3000/assets/transactions?date_start=2022-05-01&date_end=2022-05-31
+https://api-mainnet.bitgreen.org/transactions?account=yourAccount&date_start=2022-05-01&date_end=2022-05-31
 
-http://157.90.126.46:3000/asset?asset_id=1000
+https://api-mainnet.bitgreen.org/transaction?hash=yourHash
 
 If you require any assistance using these features, or this repo, please contact us at [contact], we are happy to assist.
 
