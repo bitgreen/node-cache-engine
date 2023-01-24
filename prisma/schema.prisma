@@ -213,7 +213,7 @@ model AssetTransaction {
 model Transaction {
   id          Int      @id @default(autoincrement())
   blockNumber Int
-  hash        String   @unique @db.VarChar(66)
+  hash        String   @unique @db.VarChar(68)
   sender      String   @db.VarChar(64)
   recipient   String   @db.VarChar(64)
   // amount      Decimal  @db.Decimal(65, 0)
