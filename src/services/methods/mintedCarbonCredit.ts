@@ -15,8 +15,11 @@ export async function ccMinted(ex: Extrinsic, block_date: Date) {
       amount = arg.toJSON() as number;
     }
   });
+  console.log("MINTED")
   if (groupId === -1 || !projectId) return;
   // connect asset id with vcu project
+  console.log("MINTED 1")
+  console.log("amount",amount)
   try {
     const batchGroupsArg = await prisma.project.findUnique({
       include: {
@@ -38,6 +41,7 @@ export async function ccMinted(ex: Extrinsic, block_date: Date) {
             },
             data: {
               minted: amount,
+              isMinted: true
             },
           },
         },

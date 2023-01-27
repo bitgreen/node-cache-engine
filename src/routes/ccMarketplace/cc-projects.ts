@@ -19,6 +19,7 @@ router.get('/project', async (req: Request, res: Response) => {
       skip: cursor === '' ? 0 : 1,
       include: {
         sdgDetails: true,
+        registryDetails:true,
         batchGroups: true,
       },
       orderBy: [sortFilter],
@@ -29,7 +30,7 @@ router.get('/project', async (req: Request, res: Response) => {
   ]);
 
   const projectsWithMinMaxCreditPrices: Project = addProjectPrices(projects);
-  console.log(projectsWithMinMaxCreditPrices);
+  // console.log(projectsWithMinMaxCreditPrices);
 
   return res.json({
     projects: projectsWithMinMaxCreditPrices,

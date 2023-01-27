@@ -52,7 +52,7 @@ export async function processBlock(
         if (!extrinsicSuccess) return;
         console.log("event.section", event.section)
         console.log("method", event.method)
-        if (event.section === 'vcu') {
+        if (event.section === 'carbonCredits') {
           if (event.method === BlockEvent.ProjectCreated) {
             createProject(ex, event, blockDate);
           }

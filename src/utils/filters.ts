@@ -16,6 +16,7 @@ export function createProjectFilter(req: Request) {
   const projectSdgsFilter = projectSdgs
     ? projectSdgs.split(',').map((str) => str as SdgType)
     : undefined;
+    console.log("projectSdgsFilter",projectSdgsFilter)
   const minCreditPrice = (req.query.minCreditPrice as string) ?? undefined;
   const maxCreditPrice = (req.query.maxCreditPrice as string) ?? undefined;
   const minCreditPriceFilter = createCreditPriceFilter(

@@ -42,6 +42,7 @@ model BatchGroups {
   assetId     Int
   totalSupply Int?
   minted      Int?
+  isMinted    Boolean? @default(false)
   retired     Int?
   batches     Batch[]
   projectId   Int?
@@ -104,8 +105,28 @@ model Profil {
   activityOffersFilled        Boolean @default(false)
   marketingNews               Boolean @default(false)
 
-  stars Star[]
-  KYC   KYC?
+  stars     Star[]
+  KYC       KYC?
+  cartItems CartItem[]
+}
+
+model CartItem {
+  id              Int           @id @default(autoincrement())
+  projectName     String
+  projectImageUrl String        @default("")
+  projectPrices   Decimal[]
+  projectId       Int
+  batchEntities   BatchEntity[]
+  profilId        String
+  profil          Profil        @relation(fields: [profilId], references: [address])
+}
+
+model BatchEntity {
+  id            Int      @id @default(autoincrement())
+  quantity      Int
+  batchPrice    Decimal
+  batchEntityId Int
+  CartItem      CartItem @relation(fields: [batchEntityId], references: [id], onDelete: Cascade)
 }
 
 model KYC {

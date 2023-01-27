@@ -10,6 +10,7 @@ import carbonCredit from './routes/carbon-credit.js';
 import transaction from './routes/transaction';
 import profile from './routes/ccMarketplace/profile/profile';
 import ccProjects from './routes/ccMarketplace/cc-projects';
+import cart from './routes/ccMarketplace/profile/cart';
 // import ipfs from './routes/ccMarketplace/ipfs';
 import authentification from './routes/authentification/authentification.js';
 
@@ -44,6 +45,7 @@ const mainLoop = async () => {
   //   app.use('', ipfs);
   app.use('', profile);
   app.use('', authentification);
+  app.use('', cart);
   // app.use("", require("./routes/test-routes"));
 
   /* serve api */

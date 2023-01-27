@@ -16,12 +16,12 @@ router.get('/profile', authMiddle, async (req: Request, res: Response) => {
 });
 
 router.put('/profile', async (req: Request, res: Response) => {
-  const auth_address = await authenticatedAddress(req);
-  const profil = { ...req.body, address: auth_address };
-
+  // const auth_address = await authenticatedAddress(req);
+  const profil = req.body;
+  console.log("prfil body", profil);
   const result = await prisma.profil.upsert({
     where: {
-      address: auth_address,
+      address: profil.address,
     },
     update: {
       firstName: profil.firstName
@@ -42,7 +42,7 @@ router.put('/profile', async (req: Request, res: Response) => {
         : false,
     },
     create: {
-      address: auth_address,
+      address:  profil.address,
       firstName: profil.firstName
         ? validator.escape(validator.trim(`${profil.firstName}`))
         : '',
@@ -66,7 +66,8 @@ router.put('/profile', async (req: Request, res: Response) => {
 });
 
 router.get('/profile/:address', async (req: Request, res: Response) => {
-  const address = req.query.address;
+  const address = req.params.address;
+  console.log("Profile");
   if (typeof address !== 'string') return res.status(400).end();
 
   const profil = await prisma.profil.findUnique({

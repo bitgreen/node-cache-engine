@@ -10,6 +10,7 @@ router.get('/auth', authMiddle, async (req: Request, res: Response) => {
 });
 
 router.post('/auth', async (req: Request, res: Response) => {
+  console.log('mutate');
   if (!isWalletSession(req.body)) {
     return res
       .status(401)
@@ -24,14 +25,25 @@ router.post('/auth', async (req: Request, res: Response) => {
       address: req.body.address,
     }),
     {
-      httpOnly: false,
-      maxAge: 60 * 60 * 8,
+      httpOnly: true, //false
+      maxAge: 60 * 1000 * 60,
+      //expire:  1 / 24,
       sameSite: 'strict',
       path: '/',
-      secure: process.env.NODE_ENV !== 'development',
+      secure: false, //process.env.NODE_ENV !== 'development',
     }
   );
   console.log('Auth sucess');
   return res.status(200).json({ authenticated: true });
 });
+
+router.delete('/auth', async (req: Request, res: Response) => {
+  setCookie(res, 'session', '', {
+    maxAge: 0,
+    path: '/',
+  });
+  console.log('DELETE COOKIE');
+  return res.status(200).json({ authenticated: false });
+});
+
 export default router;
