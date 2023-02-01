@@ -13,6 +13,8 @@ import { ccMinted } from './methods/mintedCarbonCredit';
 import { blockExtrinsic } from './methods/blockExtrinsic';
 import { transaction } from './methods/transaction';
 import { rejectProject } from './methods/rejectProject';
+import { createSellOrder } from './methods/createSellOrder';
+import { createBuyOrder } from './methods/createBuyOrder';
 
 export async function processBlock(
   api: ApiPromise,
@@ -71,6 +73,17 @@ export async function processBlock(
             transaction(event, blockNumber as number, blockDate, hash);
           }
         }
+        if (event.section === "dex") {
+          if (event.method === BlockEvent.SellOrderCreated) {
+            console.log("sell order created");
+            createSellOrder(event, blockDate);
+          }
+          if (event.method === BlockEvent.BuyOrderFilled) {
+            console.log("buy order created");
+            createBuyOrder(event, blockDate);
+          }
+        }
+
       });
   });
 

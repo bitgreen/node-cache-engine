@@ -11,6 +11,8 @@ import transaction from './routes/transaction';
 import profile from './routes/ccMarketplace/profile/profile';
 import ccProjects from './routes/ccMarketplace/cc-projects';
 import cart from './routes/ccMarketplace/profile/cart';
+import investments from './routes/ccMarketplace/profile/investments';
+import sellOrder from './routes/ccMarketplace/dex/sell-order';
 // import ipfs from './routes/ccMarketplace/ipfs';
 import authentification from './routes/authentification/authentification.js';
 
@@ -46,6 +48,8 @@ const mainLoop = async () => {
   app.use('', profile);
   app.use('', authentification);
   app.use('', cart);
+  app.use('', investments);
+  app.use('', sellOrder);
   // app.use("", require("./routes/test-routes"));
 
   /* serve api */
@@ -56,3 +60,5 @@ const mainLoop = async () => {
 
 // run main function
 mainLoop().catch(console.error);
+
+// write a fetch command in javascript 

@@ -19,7 +19,7 @@ router.get('/project', async (req: Request, res: Response) => {
       skip: cursor === '' ? 0 : 1,
       include: {
         sdgDetails: true,
-        registryDetails:true,
+        registryDetails: true,
         batchGroups: true,
       },
       orderBy: [sortFilter],
@@ -37,6 +37,37 @@ router.get('/project', async (req: Request, res: Response) => {
     nextId: projects.length === limit ? projects[limit - 1].id : undefined,
     count: resultCount,
   });
+});
+
+router.get('/project-originator', async (req: Request, res: Response) => {
+  const originator = (req.query.originator as string) || '';
+  console.log("originator",originator);
+
+  const projects = await prisma.project.findMany({
+    where: {
+      AND: [
+       {
+        originator: originator,
+       }, 
+       {
+        batchGroups: {
+          some: {
+            isMinted:true,
+          }
+        }
+       }
+      ]
+    },
+    include: {
+      sdgDetails: true,
+      registryDetails: true,
+      batchGroups: true,
+    },
+  });
+  console.log(projects);
+  
+
+  return res.json(projects);
 });
 
 router.get('/project/:projectId', async (req: Request, res: Response) => {

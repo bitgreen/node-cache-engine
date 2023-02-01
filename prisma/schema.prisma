@@ -8,23 +8,24 @@ datasource db {
 }
 
 model Project {
-  id              Int               @id
-  originator      String            @db.VarChar(64)
-  name            String            @db.VarChar
-  state           ProjectState      @default(SUBMITTED)
-  description     String?
-  location        Location[]
-  images          String[]
-  videos          String[]
-  documents       String[]
-  type            ProjectType       @default(AGRICULTURE_FORESTRY_AND_OTHER_LAND_USE)
-  registryDetails RegistryDetails[]
-  sdgDetails      SdgDetails[]
-  royalties       Royalties[]
-  batchGroups     BatchGroups[]
-  created         DateTime          @default(now()) @db.Timestamp(6)
-  updated         DateTime?         @default(now()) @db.Timestamp(6)
-  approved        Boolean?          @default(false)
+  id                  Int               @id
+  originator          String            @db.VarChar(64)
+  name                String            @db.VarChar
+  state               ProjectState      @default(SUBMITTED)
+  description         String?
+  location            Location[]
+  images              String[]
+  videos              String[]
+  documents           String[]
+  type                ProjectType       @default(AGRICULTURE_FORESTRY_AND_OTHER_LAND_USE)
+  registryDetails     RegistryDetails[]
+  sdgDetails          SdgDetails[]
+  royalties           Royalties[]
+  batchGroups         BatchGroups[]
+  created             DateTime          @default(now()) @db.Timestamp(6)
+  updated             DateTime?         @default(now()) @db.Timestamp(6)
+  approved            Boolean?          @default(false)
+  listedToMarketplace Boolean           @default(false)
 }
 
 model Location {
@@ -104,10 +105,39 @@ model Profil {
   activityTransactionReceipts Boolean @default(false)
   activityOffersFilled        Boolean @default(false)
   marketingNews               Boolean @default(false)
+  isOriginator                Boolean @default(false)
+
+  investments     Investment[]
+  createdProjects Int[]
 
   stars     Star[]
   KYC       KYC?
   cartItems CartItem[]
+}
+
+model Investment {
+  id             Int         @id @default(autoincrement())
+  projectId      Int
+  creditsOwned   Decimal
+  retiredCredits Decimal
+  creditPrice    Decimal
+  quantity       Decimal
+  sellorders     SellOrder[]
+
+  Profil        Profil? @relation(fields: [profilAddress], references: [address])
+  profilAddress String?
+}
+
+model SellOrder {
+  orderId      Int         @id
+  assetId      Int
+  units        Int
+  pricePerUnit Decimal
+  isCancel     Boolean?    @default(false)
+  isSold       Boolean?    @default(false)
+  owner        String
+  Investment   Investment? @relation(fields: [investmentId], references: [id])
+  investmentId Int?
 }
 
 model CartItem {

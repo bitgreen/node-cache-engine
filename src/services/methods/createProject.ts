@@ -22,7 +22,7 @@ export async function createProject(
       projectId = arg.toNumber();
     }
   });
-
+  console.log(projectArg);
   if (!project || !projectId) return;
   let images: string[] = project.images?.map((image: string) =>
     convertHex(image as string)

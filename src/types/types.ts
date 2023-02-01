@@ -7,6 +7,9 @@ export enum BlockEvent {
   CarbonCreditRetired = 'CarbonCreditRetired',
   Transfer = 'Transfer',
   TransferKeepAlive = 'TransferKeepAlive',
+  SellOrderCreated  = 'SellOrderCreated',
+  SellOrderCancelled   = 'SellOrderCancelled',
+  BuyOrderFilled   = 'BuyOrderFilled'
 }
 
 export interface WalletSession {
