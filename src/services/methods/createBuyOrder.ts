@@ -1,24 +1,23 @@
 import { Codec } from '@polkadot/types-codec/types';
 import { prisma } from '../prisma';
 import { Event } from '@polkadot/types/interfaces';
-import { ProjectState, SellOrder } from '@prisma/client';
+import { Investment, ProjectState, SellOrder } from '@prisma/client';
 
 export async function createBuyOrder(event: Event, block_date: Date) {
   //[orderId, assetId, units, pricePerUnit, owner]
-  let test = event.data.toJSON();
-  let [orderId, units, pricePerUnit, seller, buyer] = test as (
+  let dataBlock = event.data.toJSON();
+  let [orderId, units,projectId,groupId, pricePerUnit,feesPaid, seller, buyer] = dataBlock as (
     | Number
     | string
   )[];
-  let projectId = 11; // later integrated in event ---------------------------------------------------- IMPORTANT STATIC FOR NOW
-  console.log("event.data.toJSON()", test);
+  console.log("event.data.toJSON()", dataBlock);
   console.log(orderId, units, pricePerUnit, seller, buyer);
   const profil = await prisma.profil.findUnique({
     where: {
       address: seller as string,
     },
     include: {
-      investments: true,
+      investments: { include: { sellorders: true } },
     },
   });
   const investment = profil?.investments.find((i) => i.projectId === projectId);
@@ -27,8 +26,12 @@ export async function createBuyOrder(event: Event, block_date: Date) {
   let diff =
     (investment?.creditsOwned as unknown as number) - (units as number);
   let crdOwn = diff < 0 ? 0 : diff;
+  const sellOrder = investment?.sellorders.find((sl) => sl.orderId === orderId);
+  if (!sellOrder) return;
+  const newUnitsRemain = sellOrder.unitsRemain - (units as number);
   console.log('diff', diff);
   console.log('crdOwn', crdOwn);
+  console.log('newUnitsRemain', newUnitsRemain);
 
   try {
     await prisma.profil.update({
@@ -49,7 +52,8 @@ export async function createBuyOrder(event: Event, block_date: Date) {
                     orderId: orderId as number,
                   },
                   data: {
-                    isSold: true,
+                    isSold: sellOrder?.unitsRemain==units ? true : false,
+                    unitsRemain: newUnitsRemain,
                   },
                 },
               },
@@ -66,7 +70,7 @@ export async function createBuyOrder(event: Event, block_date: Date) {
         data: {
           investments: {
             create: {
-              projectId: projectId,
+              projectId: projectId as number,
               creditsOwned: units as number,
               retiredCredits: 0,
               creditPrice: pricePerUnit as number,

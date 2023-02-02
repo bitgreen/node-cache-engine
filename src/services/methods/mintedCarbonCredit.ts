@@ -6,6 +6,7 @@ export async function ccMinted(ex: Extrinsic, block_date: Date) {
   let projectId,
     groupId: number = -1,
     amount;
+    
   ex.args.map(async (arg: Codec, d: number) => {
     if (d === 0) {
       projectId = arg.toJSON();

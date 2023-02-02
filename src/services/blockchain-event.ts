@@ -56,7 +56,7 @@ export async function processBlock(
         console.log("method", event.method)
         if (event.section === 'carbonCredits') {
           if (event.method === BlockEvent.ProjectCreated) {
-            createProject(ex, event, blockDate);
+            createProject(api, event, blockDate);
           }
           if (event.method === BlockEvent.ProjectApproved) {
             approveProject(event, blockDate);

@@ -9,10 +9,13 @@ router.get('/sell-orders/:assetId', async (req: Request, res: Response) => {
     console.log("sell order")
     console.log(assetIdParam)
     const assetId = Number(assetIdParam)
-    if (isNaN(assetId)) return res.status(400).json({ message: 'Invalid asset id' })
+    if (isNaN(assetId)) return res.status(400).json(undefined)
     const sellOrders = await prisma.sellOrder.findMany(
         { where: { 
-            assetId: assetId
+            AND: [
+                {assetId: assetId},
+                {isSold:false}
+            ]
          }
      });
 

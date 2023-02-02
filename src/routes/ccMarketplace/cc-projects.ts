@@ -20,7 +20,7 @@ router.get('/project', async (req: Request, res: Response) => {
       include: {
         sdgDetails: true,
         registryDetails: true,
-        batchGroups: true,
+        batchGroups: {include:{batches:true}},
       },
       orderBy: [sortFilter],
     }),
@@ -39,36 +39,7 @@ router.get('/project', async (req: Request, res: Response) => {
   });
 });
 
-router.get('/project-originator', async (req: Request, res: Response) => {
-  const originator = (req.query.originator as string) || '';
-  console.log("originator",originator);
 
-  const projects = await prisma.project.findMany({
-    where: {
-      AND: [
-       {
-        originator: originator,
-       }, 
-       {
-        batchGroups: {
-          some: {
-            isMinted:true,
-          }
-        }
-       }
-      ]
-    },
-    include: {
-      sdgDetails: true,
-      registryDetails: true,
-      batchGroups: true,
-    },
-  });
-  console.log(projects);
-  
-
-  return res.json(projects);
-});
 
 router.get('/project/:projectId', async (req: Request, res: Response) => {
   const projectId = Number(req.params.projectId);
@@ -180,6 +151,27 @@ router.delete(
           projectId: projectId,
           profilAddress: address as string,
         },
+      },
+    });
+
+    res.status(200).json(true);
+  }
+);
+
+router.delete(
+  '/project/delete',
+  async (req: Request, res: Response) => {
+    const projectId = Number(req.query.projectId);
+
+    console.log('projectId', projectId);
+    if (isNaN(projectId)) {
+      res.status(400).end();
+      return;
+    }
+
+    await prisma.project.delete({
+      where: {
+        id: projectId,
       },
     });
 

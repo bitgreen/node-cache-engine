@@ -6,27 +6,26 @@ import { ProjectState, SellOrder } from '@prisma/client';
 export async function createSellOrder(event: Event, block_date: Date) {
   //[orderId, assetId, units, pricePerUnit, owner]
   let data = event.data.toJSON();
-  let [orderId, assetId, units, pricePerUnit, owner] = data as (
+  let [orderId, assetId,projectId,groupId, units, pricePerUnit, owner] = data as (
     | Number
     | string
   )[];
-  let projectId = 34; // later integrated in event
   console.log(event.data.toJSON());
-  console.log(orderId, assetId, units, pricePerUnit, owner);
+  console.log(orderId, assetId,projectId,groupId, units, pricePerUnit, owner);
 
   try {
-    const project = await prisma.project.findMany({
-      where: {
-        batchGroups: {
-          some: {
-            assetId: assetId as number,
-          },
-        },
-      },
-    });
-    console.log(project);
+  //   const project = await prisma.project.findMany({
+  //     where: {
+  //       batchGroups: {
+  //         some: {
+  //           assetId: assetId as number,
+  //         },
+  //       },
+  //     },
+  //   });
+  //   console.log(project);
 
-    if (!project) return;
+  //   if (!project) return;
     const profil = await prisma.profil.findUnique({
       where: {
         address: owner as string,
@@ -38,7 +37,7 @@ export async function createSellOrder(event: Event, block_date: Date) {
     console.log(profil);
     // instead od project we can use in the future projectId
     const investmentid = profil?.investments.find(
-      (i) => i.projectId === project[0].id
+      (i) => i.projectId === projectId
     )?.id;
     console.log('investmentid', investmentid);
     await prisma.profil.update({
@@ -57,6 +56,7 @@ export async function createSellOrder(event: Event, block_date: Date) {
                 create: {
                   assetId: assetId as number,
                   units: units as number,
+                  unitsRemain: units as number,
                   orderId: orderId as number,
                   pricePerUnit: pricePerUnit as number,
                   owner: owner as string,

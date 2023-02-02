@@ -34,4 +34,42 @@ router.get('/investments',authMiddle, async (req: Request, res: Response) => {
   return res.status(200).json(investmentProjects);
 });
 
+router.get('/project-originator', async (req: Request, res: Response) => {
+  const originator = (req.query.originator as string) || '';
+  console.log("originator",originator);
+
+  const projects = await prisma.project.findMany({
+    where: {
+      AND: [
+       {
+        originator: originator,
+       }, 
+      //  {
+      //   batchGroups: {
+      //     some: {
+      //       isMinted:true,
+      //     }
+      //   }
+      //  }
+      ]
+    },
+    include: {
+      sdgDetails: true,
+      registryDetails: true,
+      batchGroups: true,
+    },
+  });
+  console.log(projects);
+  
+  const investestments = await prisma.investment.findMany({
+    where:{projectId:{in: projects?.map((el) => el.id)}},
+  })
+  const investmentsProjects = projects?.map((item) => {
+    const inv = investestments.find((el) => el.projectId === item.id);
+    return { ...inv, project: item };
+  });
+
+  return res.json(investmentsProjects);
+});
+
 export default router;

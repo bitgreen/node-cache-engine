@@ -11,7 +11,7 @@ import transaction from './routes/transaction';
 import profile from './routes/ccMarketplace/profile/profile';
 import ccProjects from './routes/ccMarketplace/cc-projects';
 import cart from './routes/ccMarketplace/profile/cart';
-import investments from './routes/ccMarketplace/profile/investments';
+import investments from './routes/ccMarketplace/dex/investments';
 import sellOrder from './routes/ccMarketplace/dex/sell-order';
 // import ipfs from './routes/ccMarketplace/ipfs';
 import authentification from './routes/authentification/authentification.js';

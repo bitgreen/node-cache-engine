@@ -33,7 +33,7 @@ model Location {
   latitude  Float
   longitude Float
   projectId Int?
-  project   Project? @relation(fields: [projectId], references: [id])
+  project   Project? @relation(fields: [projectId], references: [id], onDelete: Cascade)
 }
 
 model BatchGroups {
@@ -47,7 +47,7 @@ model BatchGroups {
   retired     Int?
   batches     Batch[]
   projectId   Int?
-  project     Project? @relation(fields: [projectId], references: [id])
+  project     Project? @relation(fields: [projectId], references: [id], onDelete: Cascade)
 }
 
 model Batch {
@@ -62,7 +62,7 @@ model Batch {
   retired      Int?
 
   batchGroupId Int
-  batchGroups  BatchGroups @relation(fields: [batchGroupId], references: [id])
+  batchGroups  BatchGroups @relation(fields: [batchGroupId], references: [id], onDelete: Cascade)
 }
 
 model RegistryDetails {
@@ -71,7 +71,7 @@ model RegistryDetails {
   summary    String
   regName    String
   registryId Int     @unique
-  project    Project @relation(fields: [registryId], references: [id])
+  project    Project @relation(fields: [registryId], references: [id], onDelete: Cascade)
 }
 
 model Royalties {
@@ -80,7 +80,7 @@ model Royalties {
   accountId     String @db.VarChar(64)
   percentOfFees Float? @db.Real
 
-  project Project @relation(fields: [projectId], references: [id])
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
 }
 
 model SdgDetails {
@@ -89,7 +89,7 @@ model SdgDetails {
   sdgType     SdgType?
   description String?
   references  String?
-  project     Project  @relation(fields: [projectId], references: [id])
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
 }
 
 model Profil {
@@ -124,7 +124,7 @@ model Investment {
   quantity       Decimal
   sellorders     SellOrder[]
 
-  Profil        Profil? @relation(fields: [profilAddress], references: [address])
+  Profil        Profil? @relation(fields: [profilAddress], references: [address], onDelete: Cascade)
   profilAddress String?
 }
 
@@ -132,11 +132,12 @@ model SellOrder {
   orderId      Int         @id
   assetId      Int
   units        Int
+  unitsRemain  Int         @default(0)
   pricePerUnit Decimal
   isCancel     Boolean?    @default(false)
   isSold       Boolean?    @default(false)
   owner        String
-  Investment   Investment? @relation(fields: [investmentId], references: [id])
+  Investment   Investment? @relation(fields: [investmentId], references: [id], onDelete: Cascade)
   investmentId Int?
 }
 
@@ -148,7 +149,7 @@ model CartItem {
   projectId       Int
   batchEntities   BatchEntity[]
   profilId        String
-  profil          Profil        @relation(fields: [profilId], references: [address])
+  profil          Profil        @relation(fields: [profilId], references: [address], onDelete: Cascade)
 }
 
 model BatchEntity {
@@ -166,13 +167,13 @@ model KYC {
   LastName      String
   Address       String
   Country       String
-  Profil        Profil?            @relation(fields: [profilAddress], references: [address])
+  Profil        Profil?            @relation(fields: [profilAddress], references: [address], onDelete: Cascade)
 }
 
 model Star {
   profilAddress String
   projectId     Int
-  profil        Profil @relation(fields: [profilAddress], references: [address])
+  profil        Profil @relation(fields: [profilAddress], references: [address], onDelete: Cascade)
 
   @@id([profilAddress, projectId])
 }

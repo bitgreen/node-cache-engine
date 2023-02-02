@@ -3,26 +3,21 @@ import { Extrinsic, Event } from '@polkadot/types/interfaces';
 import type { Codec } from '@polkadot/types-codec/types';
 import { prisma } from '../prisma';
 import { convertHex } from '../../utils/converter';
+import { ApiPromise } from '@polkadot/api';
 
 export async function createProject(
-  ex: Extrinsic,
+  api: ApiPromise,
+  // ex: Extrinsic,
   event: Event,
   block_date: Date
 ) {
-  let projectArg: any;
-  let projectId: number | undefined;
-  ex.args.map(async (arg: Codec, d: number) => {
-    if (d === 0) {
-      projectArg = arg.toJSON();
-    }
-  });
-  let project = projectArg as Project;
-  event.data.map(async (arg: any, d: number) => {
-    if (d === 0) {
-      projectId = arg.toNumber();
-    }
-  });
-  console.log(projectArg);
+  let dataEvent = event.data.toJSON();
+  let [projectId] = dataEvent as number[];
+
+  let dataQuery = await api.query['carbonCredits']['projects'](projectId);
+  const projectArg = dataQuery.toJSON();
+  let project = projectArg as unknown as Project;
+
   if (!project || !projectId) return;
   let images: string[] = project.images?.map((image: string) =>
     convertHex(image as string)
@@ -53,15 +48,17 @@ export async function createProject(
       percentOfFees: reg.percentOfFees,
     };
   });
-  let batchGroups = project.batchGroups?.map((batchGroups: BatchGroups) => {
-    return {
-      ...batchGroups,
-      name: convertHex(batchGroups.name as string),
+  let batchGroups = [];
+  for (const [key, value] of Object.entries(project.batchGroups)) {
+    batchGroups.push({
+      ...value,
+      name: convertHex(value.name as string),
       batches: {
-        create: batchGroups.batches,
+        create: value.batches,
       },
-    };
-  });
+    });
+  }
+
   let location = project.location.map((f) => {
     return {
       latitude: f[0],

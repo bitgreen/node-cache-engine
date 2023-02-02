@@ -11,6 +11,7 @@
     "fetch": "ts-node dist/fetchBlock.js",
     "fetch-dev": "ts-node-dev --respawn --pretty --transpile-only src/fetch.ts",
     "app": "ts-node dist/app.js",
+    "testquery": "ts-node dist/testquery.js",
     "api-dev": "ts-node-dev --respawn --pretty --transpile-only src/api.ts"
   },
   "author": "",
