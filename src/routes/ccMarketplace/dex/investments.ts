@@ -23,7 +23,7 @@ router.get('/investments',authMiddle, async (req: Request, res: Response) => {
     },
     include: {
       registryDetails: true,
-      batchGroups: true,
+      batchGroups: {include:{batches:true}},
     },
   });
   const investmentProjects = profil?.investments.map((item) => {
@@ -56,7 +56,7 @@ router.get('/project-originator', async (req: Request, res: Response) => {
     include: {
       sdgDetails: true,
       registryDetails: true,
-      batchGroups: true,
+      batchGroups: {include:{batches:true}},
     },
   });
   console.log(projects);

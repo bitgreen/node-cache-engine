@@ -51,6 +51,7 @@ export async function ccMinted(ex: Extrinsic, block_date: Date) {
     });
     if (!projectArgs) return;
 
+    //TODO: Here i have to add the assetId for the investment as well, so that the user could invest in same projects
     await prisma.profil.update({
       where: {
         address: projectArgs?.originator,

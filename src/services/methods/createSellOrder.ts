@@ -35,7 +35,7 @@ export async function createSellOrder(event: Event, block_date: Date) {
       },
     });
     console.log(profil);
-    // instead od project we can use in the future projectId
+    // TODO: Here also search for assetId. Multiple investement could be same project even for same profil
     const investmentid = profil?.investments.find(
       (i) => i.projectId === projectId
     )?.id;
