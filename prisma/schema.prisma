@@ -40,7 +40,7 @@ model BatchGroups {
   id          Int      @id @default(autoincrement())
   name        String?  @db.VarChar
   uuid        String?
-  assetId     Int
+  assetId     Int      @unique
   totalSupply Int?
   minted      Int?
   isMinted    Boolean? @default(false)
@@ -53,7 +53,7 @@ model BatchGroups {
 model Batch {
   id           Int     @id @default(autoincrement())
   name         String? @db.VarChar
-  uuid         String?
+  uuid         String? @unique
   issuanceYear Int?
   startDate    Int?
   endDate      Int?
@@ -107,8 +107,9 @@ model Profil {
   marketingNews               Boolean @default(false)
   isOriginator                Boolean @default(false)
 
-  investments     Investment[]
-  createdProjects Int[]
+  investments        Investment[]
+  createdProjects    Int[]
+  creditTransactions CreditTransaction[]
 
   stars     Star[]
   KYC       KYC?
@@ -116,16 +117,28 @@ model Profil {
 }
 
 model Investment {
-  id             Int         @id @default(autoincrement())
+  id             String      @id @default(uuid())
   projectId      Int
-  creditsOwned   Decimal
-  retiredCredits Decimal
-  creditPrice    Decimal
-  quantity       Decimal
+  creditsOwned   Int
+  retiredCredits Int
+  creditPrice    Float // Brauch ich evt nicht mehr, da in buyorder drin
+  quantity       Int
   sellorders     SellOrder[]
+  buyOrders      BuyOrder[]
+  Profil         Profil?     @relation(fields: [profilAddress], references: [address], onDelete: Cascade)
+  profilAddress  String?
+}
 
-  Profil        Profil? @relation(fields: [profilAddress], references: [address], onDelete: Cascade)
-  profilAddress String?
+model BuyOrder {
+  id             Int         @id @default(autoincrement())
+  creditsOwned   Int
+  retiredCredits Int
+  creditPrice    Float
+  orderId        Int
+  groupId        Int //notwendig, da man sonst die einzelnen Käufe nicht den Gruppen zuordnen kann
+  created        DateTime    @default(now()) @db.Timestamp(6)
+  Investment     Investment? @relation(fields: [investmentId], references: [id], onDelete: Cascade)
+  investmentId   String?
 }
 
 model SellOrder {
@@ -133,19 +146,34 @@ model SellOrder {
   assetId      Int
   units        Int
   unitsRemain  Int         @default(0)
-  pricePerUnit Decimal
+  pricePerUnit Float
   isCancel     Boolean?    @default(false)
   isSold       Boolean?    @default(false)
   owner        String
+  created      DateTime    @default(now()) @db.Timestamp(6)
   Investment   Investment? @relation(fields: [investmentId], references: [id], onDelete: Cascade)
-  investmentId Int?
+  investmentId String?
+}
+
+model CreditTransaction {
+  id            String                @id @default(uuid())
+  type          CreditTransactionType
+  description   String
+  credits       Int
+  creditPrice   Float
+  from          String
+  to            String
+  created       DateTime              @default(now()) @db.Timestamp(6)
+  fee           Float
+  Profil        Profil?               @relation(fields: [profilAddress], references: [address], onDelete: Cascade)
+  profilAddress String?
 }
 
 model CartItem {
   id              Int           @id @default(autoincrement())
   projectName     String
   projectImageUrl String        @default("")
-  projectPrices   Decimal[]
+  projectPrices   Float[]
   projectId       Int
   batchEntities   BatchEntity[]
   profilId        String
@@ -155,7 +183,7 @@ model CartItem {
 model BatchEntity {
   id            Int      @id @default(autoincrement())
   quantity      Int
-  batchPrice    Decimal
+  batchPrice    Float
   batchEntityId Int
   CartItem      CartItem @relation(fields: [batchEntityId], references: [id], onDelete: Cascade)
 }
@@ -260,6 +288,12 @@ model AssetTransaction {
   amount      Int
   assetId     Int
   createdAt   DateTime @db.Timestamp(6)
+}
+
+enum CreditTransactionType {
+  PURCHASE
+  SALE
+  RETIRE
 }
 
 model Transaction {

@@ -72,4 +72,33 @@ router.get('/project-originator', async (req: Request, res: Response) => {
   return res.json(investmentsProjects);
 });
 
+
+router.get('/credit-transaction',authMiddle, async (req: Request, res: Response) => {
+  console.log('Credit Transation');
+  console.log("date0",req.query.date)
+  const date = req.query.date as string || "1970-01-01";
+  console.log('date',date);
+  try {
+    const profil = await prisma.profil.findUnique({
+      where: {
+        address: req.session?.address
+      },
+      include: {
+        creditTransactions: {
+          where:{
+            created:{gte: new Date(date)}
+          }
+        },
+      },
+    });
+    console.log(profil);
+    return res.status(200).json(profil?.creditTransactions);
+  } catch(e){
+    console.log("error",e)
+    return res.status(500).json(undefined)
+  }
+
+});
+
+
 export default router;

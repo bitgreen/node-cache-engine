@@ -15,6 +15,7 @@ import { transaction } from './methods/transaction';
 import { rejectProject } from './methods/rejectProject';
 import { createSellOrder } from './methods/createSellOrder';
 import { createBuyOrder } from './methods/createBuyOrder';
+import { retireTokens } from './methods/retireTokens';
 
 export async function processBlock(
   api: ApiPromise,
@@ -66,6 +67,10 @@ export async function processBlock(
           }
           if (event.method === BlockEvent.CarbonCreditMinted) {
             ccMinted(ex, blockDate);
+          }
+          if (event.method === BlockEvent.CarbonCreditRetired) {
+            console.log("retire tokens")
+            retireTokens(event, blockDate);
           }
         }
         if (event.section === "balances") {
