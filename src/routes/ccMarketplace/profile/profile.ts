@@ -17,47 +17,49 @@ router.get('/profile', authMiddle, async (req: Request, res: Response) => {
 
 router.put('/profile', async (req: Request, res: Response) => {
   // const auth_address = await authenticatedAddress(req);
-  const profil = req.body;
-  console.log("prfil body", profil);
+  const {profile, isLogin} = req.body;
+  console.log("prfil body", profile);
+  console.log("isLogin body", isLogin);
+  const updateParams = isLogin ? {} :  {
+    firstName: profile.firstName
+      ? validator.escape(validator.trim(`${profile.firstName}`))
+      : '',
+    lastName: profile.lastName
+      ? validator.escape(validator.trim(`${profile.lastName}`))
+      : '',
+    // avatar: profile.avatar, // TODO: temp disabled
+    activityTransactionReceipts: profile.activityTransactionReceipts
+      ? validator.toBoolean(`${profile.activityTransactionReceipts}`)
+      : false,
+    activityOffersFilled: profile.activityOffersFilled
+      ? validator.toBoolean(`${profile.activityOffersFilled}`)
+      : false,
+    marketingNews: profile.activityOffersFilled
+      ? validator.toBoolean(`${profile.marketingNews}`)
+      : false,
+  }
   const result = await prisma.profil.upsert({
     where: {
-      address: profil.address,
+      address: profile.address,
     },
-    update: {
-      firstName: profil.firstName
-        ? validator.escape(validator.trim(`${profil.firstName}`))
-        : '',
-      lastName: profil.lastName
-        ? validator.escape(validator.trim(`${profil.lastName}`))
-        : '',
-      // avatar: profil.avatar, // TODO: temp disabled
-      activityTransactionReceipts: profil.activityTransactionReceipts
-        ? validator.toBoolean(`${profil.activityTransactionReceipts}`)
-        : false,
-      activityOffersFilled: profil.activityOffersFilled
-        ? validator.toBoolean(`${profil.activityOffersFilled}`)
-        : false,
-      marketingNews: profil.activityOffersFilled
-        ? validator.toBoolean(`${profil.marketingNews}`)
-        : false,
-    },
+    update:updateParams,
     create: {
-      address:  profil.address,
-      firstName: profil.firstName
-        ? validator.escape(validator.trim(`${profil.firstName}`))
+      address:  profile.address,
+      firstName: profile.firstName
+        ? validator.escape(validator.trim(`${profile.firstName}`))
         : '',
-      lastName: profil.lastName
-        ? validator.escape(validator.trim(`${profil.lastName}`))
+      lastName: profile.lastName
+        ? validator.escape(validator.trim(`${profile.lastName}`))
         : '',
-      // avatar: profil.avatar, // TODO: temp disabled
-      activityTransactionReceipts: profil.activityTransactionReceipts
-        ? validator.toBoolean(`${profil.activityTransactionReceipts}`)
+      // avatar: profile.avatar, // TODO: temp disabled
+      activityTransactionReceipts: profile.activityTransactionReceipts
+        ? validator.toBoolean(`${profile.activityTransactionReceipts}`)
         : false,
-      activityOffersFilled: profil.activityOffersFilled
-        ? validator.toBoolean(`${profil.activityOffersFilled}`)
+      activityOffersFilled: profile.activityOffersFilled
+        ? validator.toBoolean(`${profile.activityOffersFilled}`)
         : false,
-      marketingNews: profil.activityOffersFilled
-        ? validator.toBoolean(`${profil.marketingNews}`)
+      marketingNews: profile.activityOffersFilled
+        ? validator.toBoolean(`${profile.marketingNews}`)
         : false,
     },
   });

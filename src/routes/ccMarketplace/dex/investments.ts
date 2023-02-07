@@ -13,7 +13,7 @@ router.get('/investments',authMiddle, async (req: Request, res: Response) => {
       address: req.session?.address,//req.session?.address,
     },
     include: {
-      investments: true,
+      investments: {include:{sellorders:true, buyOrders:true}},
     },
   });
   const projectIds = profil?.investments.map((item) => item.projectId);
@@ -76,7 +76,7 @@ router.get('/project-originator', async (req: Request, res: Response) => {
 router.get('/credit-transaction',authMiddle, async (req: Request, res: Response) => {
   console.log('Credit Transation');
   console.log("date0",req.query.date)
-  const date = req.query.date as string || "1970-01-01";
+  const date = req.query.date !== "undefined" ? req.query.date as string : "1970-01-01";
   console.log('date',date);
   try {
     const profil = await prisma.profil.findUnique({

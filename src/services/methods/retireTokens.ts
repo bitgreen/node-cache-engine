@@ -3,6 +3,7 @@ import { prisma } from '../prisma';
 import { Event } from '@polkadot/types/interfaces';
 import { ProjectState, SellOrder } from '@prisma/client';
 import internal from 'stream';
+import { convertHex } from '../../utils/converter';
 
 interface RetireData {
   name: string;
@@ -15,59 +16,96 @@ export async function retireTokens(event: Event, block_date: Date) {
   //[orderId, assetId, units, pricePerUnit, owner]
   let data = event.data.toJSON();
   console.log(event.data.toHuman());
-  // [
-  //   '26',
-  //   '5DjjUGJKbbKTx1mFsRNZj4wa9BiabU6T7k6ndxmfcFkMZGX7',
-  //   '100',
-  //   [
-  //     {
-  //       name: '',
-  //       uuid: '7cd2dd0a-8073-439c-880a-7a825e2275e6',
-  //       issuanceYear: '2,023',
-  //       count: '100'
-  //     }
-  //   ]
-  // ]
-  function updateBatch(
-    projectId: number,
-    assetId: number,
-    retireData: RetireData
-  ) {
-    return prisma.project.update({
-      where: { id: projectId },
-      data: {
-        batchGroups: {
-          update: {
-            where: { assetId: assetId },
-            data: {
-              batches: {
-                updateMany: {
-                  where: {
-                    OR: [{ uuid: retireData.uuid }],
-                  },
-                  data: {},
-                },
-              },
-            },
-          },
-        },
-      },
-    });
-  }
-  const assetId = 16; // ----------- later in the event, maybe now from the extrinsic. Am besten brauch ich hier die assetId oder die uuid der batchGruppe. sonst group id und dann von projecjts holen
+
+  const assetId = 18; // ----------- later in the event, maybe now from the extrinsic. Am besten brauch ich hier die assetId oder die uuid der batchGruppe. sonst group id und dann von projecjts holen
 
   let [projectId, account, amount, retireData] = data as (
     | Number
     | string
     | RetireData[]
   )[];
-  let retireData2 = retireData as RetireData[];
-  let updates = retireData2.map((retireData) => {
-    return updateBatch(projectId as number, assetId, retireData);
-  });
+  let retireDataUpdate = retireData as RetireData[];
+  console.log('retireDataUpdate', retireDataUpdate);
 
   console.log(projectId, account, amount, retireData);
-  await prisma.$transaction(updates);
-
+  // await prisma.$transaction(updates);
+  await prisma.project.update({
+    where: { id: projectId as number },
+    data: {
+      batchGroups: {
+        update: retireDataUpdate.map((retireData) => ({
+          where: { assetId: assetId },
+          data: {
+            retired: {
+              increment: retireData.count,
+            },
+            batches: {
+              update: {
+                where: { uuid: convertHex(retireData.uuid as string) },
+                data: {
+                  retired: {
+                    increment: retireData.count,
+                  },
+                },
+              },
+            },
+          },
+        })),
+      },
+    },
+  });
+  console.log('Investments');
   // here update investements
+  const profil = await prisma.profil.findUnique({
+    where: {
+      address: account as string,
+    },
+    include: {
+      investments: { include: { buyOrders: true } },
+    },
+  });
+  console.log(profil);
+
+  const investment = profil?.investments.find((i) => i.projectId === projectId);
+  if (!investment) return;
+
+  for (const buyOrder of investment.buyOrders) {
+    const boReaminTokens = buyOrder.creditsOwned - buyOrder.retiredCredits;
+    if (boReaminTokens === 0) continue;
+    let bo2 = buyOrder.creditsOwned - (amount as number);
+    if (bo2 >= 0) {
+      buyOrder.retiredCredits = amount as number;
+      break;
+    } else {
+      buyOrder.retiredCredits = buyOrder.creditsOwned;
+    }
+  }
+  console.log('buyOrders', investment.buyOrders);
+  let retiredCreditsSum = retireDataUpdate.reduce(
+    (acc, cv) => acc + cv.count,
+    0
+  );
+  await prisma.profil.update({
+    where: { address: account as string },
+    data: {
+      investments: {
+        update: {
+          where: { id: investment.id },
+          data: {
+            retiredCredits: {
+              increment: retiredCreditsSum,
+            },
+            buyOrders: {
+              update: investment.buyOrders.map((buyOrder) => ({
+                where: { id: buyOrder.id },
+                data: {
+                  retiredCredits: buyOrder.retiredCredits,
+                },
+              })),
+            },
+          },
+        },
+      },
+    },
+  });
 }

@@ -54,7 +54,7 @@ export async function createProject(
       ...value,
       name: convertHex(value.name as string),
       batches: {
-        create: value.batches,
+        create: value.batches.map((batch) => {return {...batch, uuid: convertHex(batch.uuid as string)}}),
       },
     });
   }
