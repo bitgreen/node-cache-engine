@@ -17,9 +17,8 @@ export async function retireTokens(event: Event, block_date: Date) {
   let data = event.data.toJSON();
   console.log(event.data.toHuman());
 
-  const assetId = 18; // ----------- later in the event, maybe now from the extrinsic. Am besten brauch ich hier die assetId oder die uuid der batchGruppe. sonst group id und dann von projecjts holen
 
-  let [projectId, account, amount, retireData] = data as (
+  let [projectId,groupId, assetId, account, amount, retireData] = data as (
     | Number
     | string
     | RetireData[]
@@ -34,7 +33,7 @@ export async function retireTokens(event: Event, block_date: Date) {
     data: {
       batchGroups: {
         update: retireDataUpdate.map((retireData) => ({
-          where: { assetId: assetId },
+          where: { assetId: assetId as number },
           data: {
             retired: {
               increment: retireData.count,

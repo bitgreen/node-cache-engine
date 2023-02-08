@@ -28,7 +28,7 @@ router.get('/full-carts', authMiddle, async (req: Request, res: Response) => {
       address: req.session?.address,
     },
     include: {
-      cartItems: true,
+      cartItems: { include: { batchEntities: true } },
     },
   });
   const projectIds = profil?.cartItems.map((item) => item.projectId);
@@ -100,54 +100,70 @@ router.post('/cart', authMiddle, async (req: Request, res: Response) => {
   return res.status(200).json({ success: true });
 });
 
-router.delete('/full-cart', authMiddle, async (req: Request, res: Response) => {
-  const { cartId } = req.query;
-  const id = Number(cartId);
-  if (isNaN(id)) return res.status(200).json({ success: false });
-  console.log('id', id);
+router.patch('/full-cart', authMiddle, async (req: Request, res: Response) => {
+  console.log("patch cart",req.body)
+  const {cartId, batchEntitiyId, quantity} = req.body;
+  console.log(cartId, batchEntitiyId, quantity)
+  if (isNaN(Number(cartId)) || isNaN(Number(batchEntitiyId)) || isNaN(Number(quantity))) return res.status(400).json(undefined)
   await prisma.profil.update({
-    where: {
-      address: req.session?.address, //"5CJpxdAFyLd1YhGBmC7FToe2SWrtR6UvGZcqpjKbxYUhRjWx"
-    },
+    where: { address: req.session?.address },
     data: {
-      cartItems: {
+      cartItems:{
+        update: {
+          where:{id: cartId as number},
+          data:{
+            batchEntities:{
+              update: {
+                where:{id: batchEntitiyId as number},
+                data:{quantity: quantity as number}
+              }
+            }
+          }
+        }
+      }
+    }
+  })
+  return res.status(200).json({success: true,quantity:quantity});
+
+})
+
+router.delete('/full-cart', authMiddle, async (req: Request, res: Response) => {
+  const { cartId, batchEntitiyId, deleteAll } = req.query;
+  const id = Number(cartId);
+  const beId = Number(batchEntitiyId);
+  const dAll = deleteAll === 'true' ? true : false;
+  console.log('deleteAll', dAll, deleteAll);
+  if (isNaN(id) || isNaN(beId)) return res.status(200).json({ success: false });
+  console.log('id', id);
+  console.log('beId', beId);
+  const updateParams = dAll
+    ? {
         delete: {
           id: id,
         },
-      },
-    },
-  });
-  return res.status(200).json({ success: true });
-});
-
-router.delete('/cart', authMiddle, async (req: Request, res: Response) => {
-  const { cartId, batchId } = req.query;
-  const id = Number(cartId);
-  const bId = Number(batchId);
-  if (isNaN(id) || isNaN(bId)) return res.status(200).json({ success: false });
+      }
+    : {
+      update: {
+        where: {
+          id: id,
+        },
+        data: {
+          batchEntities: {
+            delete: { id: beId },
+          },
+        },
+      }}
 
   await prisma.profil.update({
     where: {
       address: req.session?.address, //"5CJpxdAFyLd1YhGBmC7FToe2SWrtR6UvGZcqpjKbxYUhRjWx"
     },
     data: {
-      cartItems: {
-        update: {
-          where: {
-            id: id,
-          },
-          data: {
-            batchEntities: {
-              delete: {
-                id: bId,
-              },
-            },
-          },
-        },
-      },
+      cartItems: updateParams,
     },
   });
   return res.status(200).json({ success: true });
 });
+
 
 export default router;

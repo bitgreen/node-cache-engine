@@ -182,8 +182,11 @@ model CartItem {
 
 model BatchEntity {
   id            Int      @id @default(autoincrement())
+  orderId       Int
   quantity      Int
-  batchPrice    Float
+  assetId       Int
+  creditPrice   Float
+  issuanceYear  Int?
   batchEntityId Int
   CartItem      CartItem @relation(fields: [batchEntityId], references: [id], onDelete: Cascade)
 }
