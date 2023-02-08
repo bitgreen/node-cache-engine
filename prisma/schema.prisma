@@ -174,7 +174,7 @@ model CartItem {
   projectName     String
   projectImageUrl String        @default("")
   projectPrices   Float[]
-  projectId       Int
+  projectId       Int           @unique
   batchEntities   BatchEntity[]
   profilId        String
   profil          Profil        @relation(fields: [profilId], references: [address], onDelete: Cascade)
