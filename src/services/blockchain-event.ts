@@ -13,6 +13,7 @@ import { ccMinted } from './methods/mintedCarbonCredit';
 import { blockExtrinsic } from './methods/blockExtrinsic';
 import { transaction } from './methods/transaction';
 import { rejectProject } from './methods/rejectProject';
+import { updateBlockNumber } from './methods/updateBlockNumber';
 
 export async function processBlock(
   api: ApiPromise,
@@ -27,6 +28,7 @@ export async function processBlock(
   signedBlock.block.extrinsics.map(async (ex: Extrinsic, index: number) => {
     const isSigned = ex.isSigned;
     const hash = ex.hash.toString();
+    updateBlockNumber(blockNumber as number, hash)
     let extrinsicSuccess = false,
       newAssetId: number | undefined;
 
