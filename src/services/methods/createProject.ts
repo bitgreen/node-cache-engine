@@ -51,7 +51,7 @@ export async function createProject(
   let batchGroups = [];
   for (const [key, value] of Object.entries(project.batchGroups)) {
     batchGroups.push({
-      ...value,
+      ...value, assetId: Date.now() + 1,
       name: convertHex(value.name as string),
       batches: {
         create: value.batches.map((batch) => {return {...batch, uuid: convertHex(batch.uuid as string)}}),
