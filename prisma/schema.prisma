@@ -222,8 +222,15 @@ model Transaction {
   createdAt   DateTime @db.Timestamp(6)
 }
 
+// model Block {
+//   number    Int      @id
+//   hash      String   @unique @db.VarChar(66)
+//   createdAt DateTime @db.Timestamp(6)
+// }
 model Block {
-  number    Int      @id
-  hash      String   @unique @db.VarChar(66)
-  createdAt DateTime @db.Timestamp(6)
+  id          Int      @id @default(1)
+  hash        String   @unique @db.VarChar(66)
+  count       Int
+  blockNumber Int
+  createdAt   DateTime @default(now()) @db.Timestamp(6)
 }
