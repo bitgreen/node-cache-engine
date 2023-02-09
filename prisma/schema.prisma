@@ -174,7 +174,7 @@ model CartItem {
   projectName     String
   projectImageUrl String        @default("")
   projectPrices   Float[]
-  projectId       Int           @unique
+  projectId       Int
   batchEntities   BatchEntity[]
   profilId        String
   profil          Profil        @relation(fields: [profilId], references: [address], onDelete: Cascade)
@@ -312,7 +312,9 @@ model Transaction {
 }
 
 model Block {
-  number    Int      @id
-  hash      String   @unique @db.VarChar(66)
-  createdAt DateTime @db.Timestamp(6)
+  id          Int      @id @default(1)
+  hash        String   @unique @db.VarChar(66)
+  count       Int
+  blockNumber Int
+  createdAt   DateTime @default(now()) @db.Timestamp(6)
 }

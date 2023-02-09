@@ -67,13 +67,13 @@ router.post('/cart', authMiddle, async (req: Request, res: Response) => {
     },
   });
 
-  const exist = profil?.cartItems.some((el) => el.projectId === projectId);
-  const updateParams = exist
+  const currentCI = profil?.cartItems.find((el) => el.projectId === projectId);
+  const updateParams = currentCI
     ? {
         cartItems: {
           update: {
             where: {
-              projectId: projectId,
+              id: currentCI.id,
             },
             data: {
               batchEntities: {
@@ -173,5 +173,7 @@ router.delete('/full-cart', authMiddle, async (req: Request, res: Response) => {
   });
   return res.status(200).json({ success: true });
 });
+
+
 
 export default router;
