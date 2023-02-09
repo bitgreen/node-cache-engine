@@ -27,7 +27,12 @@ router.get('/get-block', async (req: Request, res: Response) => {
     block_events: block_events.toHuman(),
   });
 });
-
+router.get('/get-last-block', async (req: Request, res: Response) => {
+  const val = await prisma.block.findFirst({
+    where: {id: 1}
+  })
+  return res.json(val)
+})
 router.get('/transactions', async (req: Request, res: Response) => {
   const {
     account,
