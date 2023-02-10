@@ -53,7 +53,7 @@ export async function processBlock(
         ({ phase }: EventRecord) =>
           phase.isApplyExtrinsic && phase.asApplyExtrinsic.eq(index)
       )
-      .map(async ({ event }: EventRecord) => {
+      .map(async ({ event }: EventRecord,i) => {
         if (!extrinsicSuccess) return;
         console.log("event.section", event.section)
         console.log("method", event.method)
@@ -72,12 +72,12 @@ export async function processBlock(
           }
           if (event.method === BlockEvent.CarbonCreditRetired) {
             console.log("retire tokens")
-            retireTokens(event, blockDate);
+            await retireTokens(event, blockDate);
           }
         }
         if (event.section === "balances") {
           if (event.method === BlockEvent.Transfer) {
-            transaction(event, blockNumber as number, blockDate, hash);
+            transaction(event, blockNumber as number, blockDate, hash + i);
           }
         }
         if (event.section === "dex") {

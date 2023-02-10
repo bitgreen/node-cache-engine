@@ -59,6 +59,15 @@ export async function ccMinted(ex: Extrinsic, block_date: Date) {
         investments: {
           create: {
             projectId: projectArgs.id,
+            addressProjectId:`${projectArgs?.originator}_${projectId}`,
+            creditsOwnedPerGroup: {
+              create:{
+                groupId: groupId as number,
+                addressGroupId: `${projectArgs?.originator}_${groupId}_${projectId}`,
+
+                creditsOwned: amount as number,
+              }
+            },
             creditsOwned: amount as number,
             retiredCredits: 0,
             creditPrice: -1,

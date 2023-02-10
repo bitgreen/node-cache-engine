@@ -45,6 +45,7 @@ model BatchGroups {
   minted      Int?
   isMinted    Boolean? @default(false)
   retired     Int?
+  groupId     Int?
   batches     Batch[]
   projectId   Int?
   project     Project? @relation(fields: [projectId], references: [id], onDelete: Cascade)
@@ -60,6 +61,7 @@ model Batch {
   totalSupply  Int?
   minted       Int?
   retired      Int?
+  groupId      Int?
 
   batchGroupId Int
   batchGroups  BatchGroups @relation(fields: [batchGroupId], references: [id], onDelete: Cascade)
@@ -117,16 +119,28 @@ model Profil {
 }
 
 model Investment {
+  id                   String                 @id @default(uuid())
+  projectId            Int
+  addressProjectId     String?                @unique @default(uuid())
+  creditsOwned         Int
+  retiredCredits       Int
+  creditsOwnedPerGroup CreditsOwnedPerGroup[]
+  creditPrice          Float // Brauch ich evt nicht mehr, da in buyorder drin
+  quantity             Int
+  sellorders           SellOrder[]
+  buyOrders            BuyOrder[]             @relation("investment")
+  // buyOrdersForRetire BuyOrder[]  @relation("investmentForRetire")
+  Profil               Profil?                @relation(fields: [profilAddress], references: [address], onDelete: Cascade)
+  profilAddress        String?
+}
+
+model CreditsOwnedPerGroup {
   id             String      @id @default(uuid())
-  projectId      Int
+  addressGroupId String?     @unique
   creditsOwned   Int
-  retiredCredits Int
-  creditPrice    Float // Brauch ich evt nicht mehr, da in buyorder drin
-  quantity       Int
-  sellorders     SellOrder[]
-  buyOrders      BuyOrder[]
-  Profil         Profil?     @relation(fields: [profilAddress], references: [address], onDelete: Cascade)
-  profilAddress  String?
+  groupId        Int
+  Investment     Investment? @relation(fields: [investmentId], references: [id], onDelete: Cascade)
+  investmentId   String?
 }
 
 model BuyOrder {
@@ -137,8 +151,10 @@ model BuyOrder {
   orderId        Int
   groupId        Int //notwendig, da man sonst die einzelnen Käufe nicht den Gruppen zuordnen kann
   created        DateTime    @default(now()) @db.Timestamp(6)
-  Investment     Investment? @relation(fields: [investmentId], references: [id], onDelete: Cascade)
+  Investment     Investment? @relation(fields: [investmentId], references: [id], onDelete: Cascade, name: "investment")
   investmentId   String?
+  // InvestmentForRetire   Investment? @relation(fields: [investmentIdForRetire], references: [id], onDelete: Cascade, name: "investmentForRetire")
+  // investmentIdForRetire String?
 }
 
 model SellOrder {
@@ -302,7 +318,7 @@ enum CreditTransactionType {
 model Transaction {
   id          Int      @id @default(autoincrement())
   blockNumber Int
-  hash        String   @unique @db.VarChar(66)
+  hash        String   @unique @db.VarChar(68)
   sender      String   @db.VarChar(64)
   recipient   String   @db.VarChar(64)
   // amount      Decimal  @db.Decimal(65, 0)

@@ -13,7 +13,7 @@ router.get('/investments',authMiddle, async (req: Request, res: Response) => {
       address: req.session?.address,//req.session?.address,
     },
     include: {
-      investments: {include:{sellorders:true, buyOrders:true}},
+      investments: {include:{sellorders:true, buyOrders:true, creditsOwnedPerGroup:true}},
     },
   });
   const projectIds = profil?.investments.map((item) => item.projectId);

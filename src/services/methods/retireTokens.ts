@@ -53,33 +53,7 @@ export async function retireTokens(event: Event, block_date: Date) {
       },
     },
   });
-  console.log('Investments');
-  // here update investements
-  const profil = await prisma.profil.findUnique({
-    where: {
-      address: account as string,
-    },
-    include: {
-      investments: { include: { buyOrders: true } },
-    },
-  });
-  console.log(profil);
 
-  const investment = profil?.investments.find((i) => i.projectId === projectId);
-  if (!investment) return;
-
-  for (const buyOrder of investment.buyOrders) {
-    const boReaminTokens = buyOrder.creditsOwned - buyOrder.retiredCredits;
-    if (boReaminTokens === 0) continue;
-    let bo2 = buyOrder.creditsOwned - (amount as number);
-    if (bo2 >= 0) {
-      buyOrder.retiredCredits = amount as number;
-      break;
-    } else {
-      buyOrder.retiredCredits = buyOrder.creditsOwned;
-    }
-  }
-  console.log('buyOrders', investment.buyOrders);
   let retiredCreditsSum = retireDataUpdate.reduce(
     (acc, cv) => acc + cv.count,
     0
@@ -89,22 +63,26 @@ export async function retireTokens(event: Event, block_date: Date) {
     data: {
       investments: {
         update: {
-          where: { id: investment.id },
+          where: {addressProjectId:`${account}_${projectId}` },
           data: {
             retiredCredits: {
               increment: retiredCreditsSum,
             },
-            buyOrders: {
-              update: investment.buyOrders.map((buyOrder) => ({
-                where: { id: buyOrder.id },
-                data: {
-                  retiredCredits: buyOrder.retiredCredits,
+            creditsOwnedPerGroup: {
+              update: {
+                where:{addressGroupId: `${account}_${groupId}_${projectId}`,},
+                data:{
+                  creditsOwned: {
+                    decrement: retiredCreditsSum as number,
+                  },
                 },
-              })),
-            },
-          },
+              }
+            }
         },
       },
     },
-  });
+  }});
+
 }
+
+

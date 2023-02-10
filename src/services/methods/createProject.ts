@@ -4,6 +4,7 @@ import type { Codec } from '@polkadot/types-codec/types';
 import { prisma } from '../prisma';
 import { convertHex } from '../../utils/converter';
 import { ApiPromise } from '@polkadot/api';
+import { kMaxLength } from 'buffer';
 
 export async function createProject(
   api: ApiPromise,
@@ -51,7 +52,7 @@ export async function createProject(
   let batchGroups = [];
   for (const [key, value] of Object.entries(project.batchGroups)) {
     batchGroups.push({
-      ...value, assetId: Date.now() + 1,
+      ...value, assetId: Date.now() + 1,groupId:Number(key),
       name: convertHex(value.name as string),
       batches: {
         create: value.batches.map((batch) => {return {...batch, uuid: convertHex(batch.uuid as string)}}),

@@ -24,28 +24,9 @@ export async function createBuyOrder(event: Event, block_date: Date) {
   ] = dataBlock as (Number | string)[];
   console.log('event.data.toJSON()', dataBlock);
   console.log(orderId, units, pricePerUnit, seller, buyer);
-  const profil = await prisma.profil.findMany({
-    where: {
-      OR: [{ address: seller as string }, { address: buyer as string }],
-    },
-    include: {
-      investments: { include: { sellorders: true } },
-    },
-  });
-  const investment = profil
-    ?.find((p) => p.address === seller)
-    ?.investments.find((i) => i.projectId === projectId);
-  console.log('investment', investment);
-  if (!investment?.creditsOwned) return;
-  let diff =
-    (investment?.creditsOwned as unknown as number) - (units as number);
-  let crdOwn = diff < 0 ? 0 : diff;
-  const sellOrder = investment?.sellorders.find((sl) => sl.orderId === orderId);
-  if (!sellOrder) return;
-  const newUnitsRemain = sellOrder.unitsRemain - (units as number);
-  console.log('diff', diff);
-  console.log('crdOwn', crdOwn);
-  console.log('newUnitsRemain', newUnitsRemain);
+
+
+  // Seller
 
   try {
     await prisma.profil.update({
@@ -56,21 +37,36 @@ export async function createBuyOrder(event: Event, block_date: Date) {
         investments: {
           update: {
             where: {
-              id: investment?.id,
+              addressProjectId:`${seller}_${projectId}`,
             },
             data: {
-              creditsOwned: crdOwn,
+              creditsOwned: {
+                decrement: units as number
+              },
               sellorders: {
                 update: {
                   where: {
                     orderId: orderId as number,
                   },
                   data: {
-                    isSold: sellOrder?.unitsRemain == units ? true : false,
-                    unitsRemain: newUnitsRemain,
+                    // isSold: sellOrder?.unitsRemain == units ? true : false,
+                    unitsRemain: {
+                      decrement: units as number,
+                    },
                   },
                 },
               },
+              creditsOwnedPerGroup: {
+                update: {
+                  where:{addressGroupId: `${seller}_${groupId}_${projectId}`,},
+                  data:{
+                    creditsOwned: {
+                      decrement: units as number,
+                    },
+                  },
+                }
+              }
+              // buyOrders: buyOrderParams,
             },
           },
         },
@@ -83,23 +79,24 @@ export async function createBuyOrder(event: Event, block_date: Date) {
             creditPrice: pricePerUnit as number,
             from: seller as string,
             to: buyer as string,
-            fee: feesPaid as number
+            fee: feesPaid as number,
           },
         },
       },
     });
     // BUYER
-    const investmentBuyer = profil
-      ?.find((p) => p.address === buyer)
-      ?.investments.find((i) => i.projectId === projectId);
-    console.log('investmentBuyer', investmentBuyer);
-    console.log('id', investmentBuyer?.id);
+    // Todo: solve over increment
+    // const investmentBuyer = profil
+    //   ?.find((p) => p.address === buyer)
+    //   ?.investments.find((i) => i.projectId === projectId);
+    // console.log('investmentBuyer', investmentBuyer);
+    // console.log('id', investmentBuyer?.id);
 
-    const unitSum =
-      (units as number) +
-      (investmentBuyer?.creditsOwned
-        ? (investmentBuyer?.creditsOwned as unknown as number)
-        : 0);
+    // const unitSum =
+    //   (units as number) +
+    //   (investmentBuyer?.creditsOwned
+    //     ? (investmentBuyer?.creditsOwned as unknown as number)
+    //     : 0);
     await prisma.profil.update({
       where: {
         address: buyer as string,
@@ -107,9 +104,26 @@ export async function createBuyOrder(event: Event, block_date: Date) {
       data: {
         investments: {
           upsert: {
-            where: { id: investmentBuyer?.id ? investmentBuyer?.id : 'uzhgg' },
+            where: { addressProjectId:`${buyer}_${projectId}`},
             update: {
-              creditsOwned: unitSum,
+              creditsOwned: {
+                increment: units as number,
+              },
+              creditsOwnedPerGroup: {
+                upsert: {
+                  where: {addressGroupId: `${buyer}_${groupId}_${projectId}` },
+                  update: {
+                    creditsOwned: {
+                      increment: units as number,
+                    }
+                  },
+                  create:{
+                    groupId: groupId as number,
+                    addressGroupId: `${buyer}_${groupId}`,
+                    creditsOwned: units as number,
+                  },                  
+                }
+              },
               buyOrders: {
                 create: {
                   creditsOwned: units as number,
@@ -124,8 +138,16 @@ export async function createBuyOrder(event: Event, block_date: Date) {
               projectId: projectId as number,
               creditsOwned: units as number,
               retiredCredits: 0,
+              addressProjectId:`${buyer}_${projectId}`,
               creditPrice: pricePerUnit as number,
               quantity: 0,
+              creditsOwnedPerGroup: {
+                create:{
+                  groupId: groupId as number,
+                  addressGroupId: `${buyer}_${groupId}_${projectId}`,
+                  creditsOwned: units as number,
+                }
+              },
               buyOrders: {
                 create: {
                   creditsOwned: units as number,
@@ -148,7 +170,7 @@ export async function createBuyOrder(event: Event, block_date: Date) {
             creditPrice: pricePerUnit as number,
             from: seller as string,
             to: buyer as string,
-            fee: feesPaid as number
+            fee: feesPaid as number,
           },
         },
       },
