@@ -16,6 +16,14 @@ export async function createProject(
     let dataEvent = event.data.toJSON();
     let [projectId] = dataEvent as number[];
 
+    const exist = await prisma.project.findUnique({
+      where: {id: projectId}
+    })
+    if (exist) {
+      console.log("Exist");
+      return;
+    } 
+
     let dataQuery = await api.query['carbonCredits']['projects'](projectId);
     const projectArg = dataQuery.toJSON();
     let project = projectArg as unknown as Project;
@@ -102,8 +110,8 @@ export async function createProject(
         created: block_date.toISOString(),
       },
     });
-  } catch (e) {
+   } catch (e) {
     // @ts-ignore
     console.log(`Error occurred (creating project): ${e.message}`);
-  }
+   }
 }

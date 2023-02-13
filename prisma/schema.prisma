@@ -299,14 +299,28 @@ model Asset {
 }
 
 model AssetTransaction {
-  id          Int      @id @default(autoincrement())
-  blockNumber Int
-  hash        String   @unique @db.VarChar(66)
-  sender      String   @db.VarChar(48)
-  recipient   String   @db.VarChar(48)
-  amount      Int
-  assetId     Int
-  createdAt   DateTime @db.Timestamp(6)
+  id         Int      @id @default(autoincrement())
+  sender     String   @db.VarChar(48)
+  recipient  String   @db.VarChar(48)
+  assetId    Int
+  assetLogo  String?
+  nftImage   String?
+  balance    String?
+  balanceUsd String?
+  assetName  String?
+  createdAt  DateTime @default(now()) @db.Timestamp(6)
+}
+
+model TokenTransaction {
+  id         Int      @id @default(autoincrement())
+  sender     String   @db.VarChar(48)
+  recipient  String   @db.VarChar(48)
+  tokencode  String
+  tokenLogo  String?
+  balance    String?
+  balanceUsd String?
+  tokenName  String?
+  createdAt  DateTime @default(now()) @db.Timestamp(6)
 }
 
 enum CreditTransactionType {

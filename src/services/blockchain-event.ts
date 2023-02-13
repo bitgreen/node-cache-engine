@@ -17,6 +17,7 @@ import { createSellOrder } from './methods/createSellOrder';
 import { createBuyOrder } from './methods/createBuyOrder';
 import { retireTokens } from './methods/retireTokens';
 import { updateBlockNumber } from './methods/updateBlockNumber';
+import { createAssetTransaction, createTokenTransaction } from './methods/createAssetsAndTokens';
 
 export async function processBlock(
   api: ApiPromise,
@@ -53,10 +54,10 @@ export async function processBlock(
         ({ phase }: EventRecord) =>
           phase.isApplyExtrinsic && phase.asApplyExtrinsic.eq(index)
       )
-      .map(async ({ event }: EventRecord,i) => {
+      .map(async ({ event }: EventRecord, i) => {
         if (!extrinsicSuccess) return;
-        console.log("event.section", event.section)
-        console.log("method", event.method)
+        console.log('event.section', event.section);
+        console.log('method', event.method);
         if (event.section === 'carbonCredits') {
           if (event.method === BlockEvent.ProjectCreated) {
             createProject(api, event, blockDate);
@@ -68,29 +69,40 @@ export async function processBlock(
             rejectProject(event, blockDate);
           }
           if (event.method === BlockEvent.CarbonCreditMinted) {
-            ccMinted(ex, blockDate);
+            ccMinted(ex, blockDate,api);
           }
           if (event.method === BlockEvent.CarbonCreditRetired) {
-            console.log("retire tokens")
+            console.log('retire tokens');
             await retireTokens(event, blockDate);
           }
         }
-        if (event.section === "balances") {
+        if (event.section === 'balances') {
           if (event.method === BlockEvent.Transfer) {
             transaction(event, blockNumber as number, blockDate, hash + i);
           }
         }
-        if (event.section === "dex") {
+        if (event.section === 'dex') {
           if (event.method === BlockEvent.SellOrderCreated) {
-            console.log("sell order created");
+            console.log('sell order created');
             createSellOrder(event, blockDate);
           }
           if (event.method === BlockEvent.BuyOrderFilled) {
-            console.log("buy order created");
+            console.log('buy order created');
             createBuyOrder(event, blockDate);
           }
         }
-
+        if (event.section === 'assets') {
+          if (event.method === BlockEvent.TransderAssets) {
+            console.log('Asset called');
+            createAssetTransaction(event, api);
+          }
+        }
+        if (event.section === 'tokens') {
+          if (event.method === BlockEvent.TransferTokens) {
+            console.log('tokens called');
+            createTokenTransaction(event, api);
+          }
+        }
       });
   });
 

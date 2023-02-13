@@ -104,27 +104,30 @@ router.get('/transaction', async (req: Request, res: Response) => {
   });
 });
 
-router.get('/assets', async (req: Request, res: Response) => {
-  const assets = await prisma.asset.findMany();
 
-  res.json({
-    assets: assets,
+
+router.get('/assets/transaction', async (req: Request, res: Response) => {
+  const { account } = req.query;
+  
+  const assetTransaction = await prisma.assetTransaction.findMany({
+    where: {
+      recipient: account as string,
+    },
   });
+
+  res.json(assetTransaction);
 });
+router.get('/tokens/transaction', async (req: Request, res: Response) => {
+  const { account } = req.query;
 
-// router.get('/assets/transaction', async (req: Request, res: Response) => {
-//   const { hash = '' } = req.query;
+  const tokensTransaction = await prisma.tokenTransaction.findMany({
+    where: {
+      recipient: account as string,
+    },
+  });
 
-//   const transaction = await prisma.assetTransaction.findUnique({
-//     where: {
-//       hash: hash as string,
-//     },
-//   });
-
-//   res.json({
-//     transaction: transaction,
-//   });
-// });
+  res.json(tokensTransaction);
+});
 
 router.get('/balance', async (req: Request, res: Response) => {
   const { address, assetId } = req.query;

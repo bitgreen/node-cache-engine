@@ -86,59 +86,6 @@ export async function retireTokens(event: Event, block_date: Date) {
         },
       }),
     ]);
-    // await prisma.project.update({
-    //   where: { id: projectId as number },
-    //   data: {
-    //     batchGroups: {
-    //       update: retireDataUpdate.map((retireData) => ({
-    //         where: { assetId: assetId as number },
-    //         data: {
-    //           retired: {
-    //             increment: retireData.count,
-    //           },
-    //           batches: {
-    //             update: {
-    //               where: { uuid: convertHex(retireData.uuid as string) },
-    //               data: {
-    //                 retired: {
-    //                   increment: retireData.count,
-    //                 },
-    //               },
-    //             },
-    //           },
-    //         },
-    //       })),
-    //     },
-    //   },
-    // });
-
-    // await prisma.profil.update({
-    //   where: { address: account as string },
-    //   data: {
-    //     investments: {
-    //       update: {
-    //         where: { addressProjectId: `${account}_${projectId}` },
-    //         data: {
-    //           retiredCredits: {
-    //             increment: retiredCreditsSum,
-    //           },
-    //           creditsOwnedPerGroup: {
-    //             update: {
-    //               where: {
-    //                 addressGroupId: `${account}_${groupId}_${projectId}`,
-    //               },
-    //               data: {
-    //                 creditsOwned: {
-    //                   decrement: retiredCreditsSum as number,
-    //                 },
-    //               },
-    //             },
-    //           },
-    //         },
-    //       },
-    //     },
-    //   },
-    // });
   } catch (e) {
     // @ts-ignore
     console.log(`Error occurred (retireing project): ${e.message}`);

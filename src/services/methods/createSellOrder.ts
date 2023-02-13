@@ -19,7 +19,7 @@ export async function createSellOrder(event: Event, block_date: Date) {
       pricePerUnit,
       owner
     );
-    
+
     await prisma.profil.update({
       where: {
         address: owner as string,
@@ -32,6 +32,9 @@ export async function createSellOrder(event: Event, block_date: Date) {
             },
             data: {
               creditPrice: pricePerUnit as number,
+              creditsOwned: {
+                decrement: units as number,
+              },
               sellorders: {
                 create: {
                   assetId: assetId as number,
@@ -40,6 +43,18 @@ export async function createSellOrder(event: Event, block_date: Date) {
                   orderId: orderId as number,
                   pricePerUnit: pricePerUnit as number,
                   owner: owner as string,
+                },
+              },
+              creditsOwnedPerGroup: {
+                update: {
+                  where: {
+                    addressGroupId: `${owner}_${groupId}_${projectId}`,
+                  },
+                  data: {
+                    creditsOwned: {
+                      decrement: units as number,
+                    },
+                  },
                 },
               },
             },

@@ -39,9 +39,9 @@ export async function createBuyOrder(event: Event, block_date: Date) {
                 addressProjectId: `${seller}_${projectId}`,
               },
               data: {
-                creditsOwned: {
-                  decrement: units as number,
-                },
+                // creditsOwned: {
+                //   decrement: units as number,
+                // },
                 sellorders: {
                   update: {
                     where: {
@@ -55,18 +55,18 @@ export async function createBuyOrder(event: Event, block_date: Date) {
                     },
                   },
                 },
-                creditsOwnedPerGroup: {
-                  update: {
-                    where: {
-                      addressGroupId: `${seller}_${groupId}_${projectId}`,
-                    },
-                    data: {
-                      creditsOwned: {
-                        decrement: units as number,
-                      },
-                    },
-                  },
-                },
+                // creditsOwnedPerGroup: {
+                //   update: {
+                //     where: {
+                //       addressGroupId: `${seller}_${groupId}_${projectId}`,
+                //     },
+                //     data: {
+                //       creditsOwned: {
+                //         decrement: units as number,
+                //       },
+                //     },
+                //   },
+                // },
                 // buyOrders: buyOrderParams,
               },
             },

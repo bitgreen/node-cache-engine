@@ -9,7 +9,10 @@ export enum BlockEvent {
   TransferKeepAlive = 'TransferKeepAlive',
   SellOrderCreated  = 'SellOrderCreated',
   SellOrderCancelled   = 'SellOrderCancelled',
-  BuyOrderFilled   = 'BuyOrderFilled'
+  BuyOrderFilled   = 'BuyOrderFilled',
+  TransferTokens = "Transfer",
+  TransderAssets = "Transferred"
+
 }
 
 export interface WalletSession {
