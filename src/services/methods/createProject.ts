@@ -12,62 +12,66 @@ export async function createProject(
   event: Event,
   block_date: Date
 ) {
-  let dataEvent = event.data.toJSON();
-  let [projectId] = dataEvent as number[];
-
-  let dataQuery = await api.query['carbonCredits']['projects'](projectId);
-  const projectArg = dataQuery.toJSON();
-  let project = projectArg as unknown as Project;
-
-  if (!project || !projectId) return;
-  let images: string[] = project.images?.map((image: string) =>
-    convertHex(image as string)
-  );
-  let videos: string[] = project.videos?.map((video: string) =>
-    convertHex(video as string)
-  );
-  let documents: string[] = project.documents?.map((document: string) =>
-    convertHex(document as string)
-  );
-  let RegistryDetails = project.registryDetails?.map((reg) => {
-    return {
-      name: convertHex(reg.name as string),
-      summary: convertHex(reg.summary),
-      regName: convertHex(reg.regName),
-    };
-  });
-  let sdgDetails = project.sdgDetails?.map((reg) => {
-    return {
-      sdgType: convertHex(reg.sdgType as string),
-      description: convertHex(reg.description as string),
-      references: convertHex(reg.references as string),
-    };
-  });
-  let royalties = project.royalties?.map((reg) => {
-    return {
-      accountId: convertHex(reg.accountId),
-      percentOfFees: reg.percentOfFees,
-    };
-  });
-  let batchGroups = [];
-  for (const [key, value] of Object.entries(project.batchGroups)) {
-    batchGroups.push({
-      ...value, assetId: Date.now() + 1,groupId:Number(key),
-      name: convertHex(value.name as string),
-      batches: {
-        create: value.batches.map((batch) => {return {...batch, uuid: convertHex(batch.uuid as string)}}),
-      },
-    });
-  }
-
-  let location = project.location.map((f) => {
-    return {
-      latitude: f[0],
-      longitude: f[1],
-    };
-  });
-
   try {
+    let dataEvent = event.data.toJSON();
+    let [projectId] = dataEvent as number[];
+
+    let dataQuery = await api.query['carbonCredits']['projects'](projectId);
+    const projectArg = dataQuery.toJSON();
+    let project = projectArg as unknown as Project;
+
+    if (!project || !projectId) return;
+    let images: string[] = project.images?.map((image: string) =>
+      convertHex(image as string)
+    );
+    let videos: string[] = project.videos?.map((video: string) =>
+      convertHex(video as string)
+    );
+    let documents: string[] = project.documents?.map((document: string) =>
+      convertHex(document as string)
+    );
+    let RegistryDetails = project.registryDetails?.map((reg) => {
+      return {
+        name: convertHex(reg.name as string),
+        summary: convertHex(reg.summary),
+        regName: convertHex(reg.regName),
+      };
+    });
+    let sdgDetails = project.sdgDetails?.map((reg) => {
+      return {
+        sdgType: convertHex(reg.sdgType as string),
+        description: convertHex(reg.description as string),
+        references: convertHex(reg.references as string),
+      };
+    });
+    let royalties = project.royalties?.map((reg) => {
+      return {
+        accountId: convertHex(reg.accountId),
+        percentOfFees: reg.percentOfFees,
+      };
+    });
+    let batchGroups = [];
+    for (const [key, value] of Object.entries(project.batchGroups)) {
+      batchGroups.push({
+        ...value,
+        assetId: Date.now() + 1,
+        groupId: Number(key),
+        name: convertHex(value.name as string),
+        batches: {
+          create: value.batches.map((batch) => {
+            return { ...batch, uuid: convertHex(batch.uuid as string) };
+          }),
+        },
+      });
+    }
+
+    let location = project.location.map((f) => {
+      return {
+        latitude: f[0],
+        longitude: f[1],
+      };
+    });
+
     await prisma.project.create({
       data: {
         id: projectId,

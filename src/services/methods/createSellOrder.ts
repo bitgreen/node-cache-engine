@@ -5,41 +5,21 @@ import { ProjectState, SellOrder } from '@prisma/client';
 
 export async function createSellOrder(event: Event, block_date: Date) {
   //[orderId, assetId, units, pricePerUnit, owner]
-  let data = event.data.toJSON();
-  let [orderId, assetId,projectId,groupId, units, pricePerUnit, owner] = data as (
-    | Number
-    | string
-  )[];
-  console.log(event.data.toJSON());
-  console.log(orderId, assetId,projectId,groupId, units, pricePerUnit, owner);
-
   try {
-  //   const project = await prisma.project.findMany({
-  //     where: {
-  //       batchGroups: {
-  //         some: {
-  //           assetId: assetId as number,
-  //         },
-  //       },
-  //     },
-  //   });
-  //   console.log(project);
-
-  //   if (!project) return;
-    const profil = await prisma.profil.findUnique({
-      where: {
-        address: owner as string,
-      },
-      include: {
-        investments: true,
-      },
-    });
-    console.log(profil);
-
-    const investmentid = profil?.investments.find(
-      (i) => i.projectId === projectId
-    )?.id;
-    console.log('investmentid', investmentid);
+    let data = event.data.toJSON();
+    let [orderId, assetId, projectId, groupId, units, pricePerUnit, owner] =
+      data as (Number | string)[];
+    console.log(event.data.toJSON());
+    console.log(
+      orderId,
+      assetId,
+      projectId,
+      groupId,
+      units,
+      pricePerUnit,
+      owner
+    );
+    
     await prisma.profil.update({
       where: {
         address: owner as string,
@@ -48,7 +28,7 @@ export async function createSellOrder(event: Event, block_date: Date) {
         investments: {
           update: {
             where: {
-              id: investmentid,
+              addressProjectId: `${owner}_${projectId}`,
             },
             data: {
               creditPrice: pricePerUnit as number,
@@ -68,6 +48,7 @@ export async function createSellOrder(event: Event, block_date: Date) {
       },
     });
   } catch (error) {
-    console.log(error);
+        // @ts-ignore
+        console.log(`Error occurred (create sell order): ${e.message}`);
   }
 }

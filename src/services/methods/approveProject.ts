@@ -4,33 +4,33 @@ import { Event } from '@polkadot/types/interfaces';
 import { ProjectState } from '@prisma/client';
 
 export async function approveProject(event: Event, block_date: Date) {
-  let projectId;
-  let assetIds: number[] = [];
-  event.data.map(async (arg: any, d: number) => {
-    if (d === 0) {
-      projectId = arg.toNumber();
-    } else if (d === 1) {
-      assetIds = arg.toJSON();
-    }
-  });
-  console.log('projectId', projectId);
-  console.log('assetIds: ', assetIds);
-  const batchGroups = await prisma.project.findUnique({
-    where: {
-      id: projectId,
-    },
-    select: {
-      batchGroups: {
-        select: {
-          id: true,
+  try {
+    let projectId;
+    let assetIds: number[] = [];
+    event.data.map(async (arg: any, d: number) => {
+      if (d === 0) {
+        projectId = arg.toNumber();
+      } else if (d === 1) {
+        assetIds = arg.toJSON();
+      }
+    });
+    console.log('projectId', projectId);
+    console.log('assetIds: ', assetIds);
+    const batchGroups = await prisma.project.findUnique({
+      where: {
+        id: projectId,
+      },
+      select: {
+        batchGroups: {
+          select: {
+            id: true,
+          },
         },
       },
-    },
-  });
+    });
 
-  if (!batchGroups) return;
-  
-  try {
+    if (!batchGroups) return;
+
     await prisma.project.update({
       where: {
         id: projectId,

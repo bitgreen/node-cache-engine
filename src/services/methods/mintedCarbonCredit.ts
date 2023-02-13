@@ -6,22 +6,22 @@ export async function ccMinted(ex: Extrinsic, block_date: Date) {
   let projectId,
     groupId: number = -1,
     amount;
-    
-  ex.args.map(async (arg: Codec, d: number) => {
-    if (d === 0) {
-      projectId = arg.toJSON();
-    } else if (d === 1) {
-      groupId = arg.toJSON() as number;
-    } else if (d === 2) {
-      amount = arg.toJSON() as number;
-    }
-  });
-  console.log('MINTED');
-  if (groupId === -1 || !projectId || !amount) return;
-  // connect asset id with vcu project
-  console.log('MINTED 1');
-  console.log('amount', amount);
   try {
+    ex.args.map(async (arg: Codec, d: number) => {
+      if (d === 0) {
+        projectId = arg.toJSON();
+      } else if (d === 1) {
+        groupId = arg.toJSON() as number;
+      } else if (d === 2) {
+        amount = arg.toJSON() as number;
+      }
+    });
+    console.log('MINTED');
+    if (groupId === -1 || !projectId || !amount) return;
+    // connect asset id with vcu project
+    console.log('MINTED 1');
+    console.log('amount', amount);
+
     const projectArgs = await prisma.project.findUnique({
       include: {
         batchGroups: true,
@@ -59,21 +59,21 @@ export async function ccMinted(ex: Extrinsic, block_date: Date) {
         investments: {
           create: {
             projectId: projectArgs.id,
-            addressProjectId:`${projectArgs?.originator}_${projectId}`,
+            addressProjectId: `${projectArgs?.originator}_${projectId}`,
             creditsOwnedPerGroup: {
-              create:{
+              create: {
                 groupId: groupId as number,
                 addressGroupId: `${projectArgs?.originator}_${groupId}_${projectId}`,
 
                 creditsOwned: amount as number,
-              }
+              },
             },
             creditsOwned: amount as number,
             retiredCredits: 0,
             creditPrice: -1,
             quantity: 0,
             sellorders: undefined,
-            buyOrders:undefined
+            buyOrders: undefined,
           },
         },
       },
