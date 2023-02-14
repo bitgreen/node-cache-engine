@@ -18,6 +18,7 @@ import { createBuyOrder } from './methods/createBuyOrder';
 import { retireTokens } from './methods/retireTokens';
 import { updateBlockNumber } from './methods/updateBlockNumber';
 import { createAssetTransaction, createTokenTransaction } from './methods/createAssetsAndTokens';
+import { sellOrderCancelled } from './methods/sellOrderCancelled';
 
 export async function processBlock(
   api: ApiPromise,
@@ -85,6 +86,10 @@ export async function processBlock(
           if (event.method === BlockEvent.SellOrderCreated) {
             console.log('sell order created');
             createSellOrder(event, blockDate);
+          }
+          if (event.method === BlockEvent.SellOrderCancelled) {
+            console.log('sell order cancelled');
+            sellOrderCancelled(event);
           }
           if (event.method === BlockEvent.BuyOrderFilled) {
             console.log('buy order created');

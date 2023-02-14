@@ -6,14 +6,25 @@ import { authenticatedAddress } from '../../../services/authentification';
 
 const router = express.Router();
 
-router.get('/investments',authMiddle, async (req: Request, res: Response) => {
+router.get('/investments', authMiddle, async (req: Request, res: Response) => {
   console.log('Cards');
+  const whereParam =
+    req.query.projectId === 'undefined' || isNaN(Number(req.query.projectId))
+      ? {}
+      : { projectId: Number(req.query.projectId) };
   const profil = await prisma.profil.findUnique({
     where: {
-      address: req.session?.address,//req.session?.address,
+      address: req.session?.address, //req.session?.address,
     },
     include: {
-      investments: {include:{sellorders:true, buyOrders:true, creditsOwnedPerGroup:true}},
+      investments: {
+        where: whereParam,
+        include: {
+          sellorders: true,
+          buyOrders: true,
+          creditsOwnedPerGroup: true,
+        },
+      },
     },
   });
   const projectIds = profil?.investments.map((item) => item.projectId);
@@ -23,47 +34,65 @@ router.get('/investments',authMiddle, async (req: Request, res: Response) => {
     },
     include: {
       registryDetails: true,
-      batchGroups: {include:{batches:true}},
+      batchGroups: { include: { batches: true } },
     },
   });
   const investmentProjects = profil?.investments.map((item) => {
     const pro = projects.find((el) => el.id === item.projectId);
     return { ...item, project: pro };
   });
-  console.log("investmentProjects",investmentProjects)
+  console.log('investmentProjects', investmentProjects);
   return res.status(200).json(investmentProjects);
 });
 
+router.get(
+  '/investments/:investmentId',
+  authMiddle,
+  async (req: Request, res: Response) => {
+    const id = (req.params.investmentId as string) || '';
+    console.log('id inv', id);
+    try {
+      const investment = await prisma.investment.findUnique({
+        where: { id: id },
+        include: { sellorders: true },
+      });
+      return res.status(200).json(investment);
+    } catch {
+      return res.status(500).json({});
+    }
+  }
+);
+
 router.get('/project-originator', async (req: Request, res: Response) => {
   const originator = (req.query.originator as string) || '';
-  console.log("originator",originator);
+  console.log('originator', originator);
 
   const projects = await prisma.project.findMany({
     where: {
       AND: [
-       {
-        originator: originator,
-       }, 
-      //  {
-      //   batchGroups: {
-      //     some: {
-      //       isMinted:true,
-      //     }
-      //   }
-      //  }
-      ]
+        {
+          originator: originator,
+        },
+        //  {
+        //   batchGroups: {
+        //     some: {
+        //       isMinted:true,
+        //     }
+        //   }
+        //  }
+      ],
     },
     include: {
       sdgDetails: true,
       registryDetails: true,
-      batchGroups: {include:{batches:true}},
+      batchGroups: { include: { batches: true } },
     },
   });
   console.log(projects);
-  
+
   const investestments = await prisma.investment.findMany({
-    where:{projectId:{in: projects?.map((el) => el.id)}},
-  })
+    where: { projectId: { in: projects?.map((el) => el.id) } },
+  });
   const investmentsProjects = projects?.map((item) => {
     const inv = investestments.find((el) => el.projectId === item.id);
     return { ...inv, project: item };
@@ -72,33 +101,37 @@ router.get('/project-originator', async (req: Request, res: Response) => {
   return res.json(investmentsProjects);
 });
 
-
-router.get('/credit-transaction',authMiddle, async (req: Request, res: Response) => {
-  console.log('Credit Transation');
-  console.log("date0",req.query.date)
-  const date = req.query.date !== "undefined" ? req.query.date as string : "1970-01-01";
-  console.log('date',date);
-  try {
-    const profil = await prisma.profil.findUnique({
-      where: {
-        address: req.session?.address
-      },
-      include: {
-        creditTransactions: {
-          where:{
-            created:{gte: new Date(date)}
-          }
+router.get(
+  '/credit-transaction',
+  authMiddle,
+  async (req: Request, res: Response) => {
+    console.log('Credit Transation');
+    console.log('date0', req.query.date);
+    const date =
+      req.query.date !== 'undefined'
+        ? (req.query.date as string)
+        : '1970-01-01';
+    console.log('date', date);
+    try {
+      const profil = await prisma.profil.findUnique({
+        where: {
+          address: req.session?.address,
         },
-      },
-    });
-    console.log(profil);
-    return res.status(200).json(profil?.creditTransactions);
-  } catch(e){
-    console.log("error",e)
-    return res.status(500).json(undefined)
+        include: {
+          creditTransactions: {
+            where: {
+              created: { gte: new Date(date) },
+            },
+          },
+        },
+      });
+      console.log(profil);
+      return res.status(200).json(profil?.creditTransactions);
+    } catch (e) {
+      console.log('error', e);
+      return res.status(500).json(undefined);
+    }
   }
-
-});
-
+);
 
 export default router;

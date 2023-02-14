@@ -31,9 +31,17 @@ export async function createSellOrder(event: Event, block_date: Date) {
               addressProjectId: `${owner}_${projectId}`,
             },
             data: {
-              creditPrice: pricePerUnit as number,
+              creditPrice: {
+                increment: (pricePerUnit as number) * (units as number),
+              },
+              quantity: {
+                increment: units as number,
+              },
               creditsOwned: {
                 decrement: units as number,
+              },
+              totalValue: {
+                increment: (pricePerUnit as number) * (units as number),
               },
               sellorders: {
                 create: {
@@ -63,7 +71,7 @@ export async function createSellOrder(event: Event, block_date: Date) {
       },
     });
   } catch (error) {
-        // @ts-ignore
-        console.log(`Error occurred (create sell order): ${e.message}`);
+    // @ts-ignore
+    console.log(`Error occurred (create sell order): ${e.message}`);
   }
 }

@@ -123,6 +123,7 @@ model Investment {
   projectId            Int
   addressProjectId     String?                @unique @default(uuid())
   creditsOwned         Int
+  totalValue           Float                  @default(0)
   retiredCredits       Int
   creditsOwnedPerGroup CreditsOwnedPerGroup[]
   creditPrice          Float // Brauch ich evt nicht mehr, da in buyorder drin

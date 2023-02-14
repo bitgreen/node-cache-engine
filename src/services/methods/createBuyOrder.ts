@@ -42,6 +42,15 @@ export async function createBuyOrder(event: Event, block_date: Date) {
                 // creditsOwned: {
                 //   decrement: units as number,
                 // },
+                creditPrice: {
+                  decrement: ((pricePerUnit as number) * (units as number)) 
+                },
+                quantity: {
+                  decrement: (units as number)
+                },
+                totalValue: {
+                  decrement: ( pricePerUnit as number) * (units as number),
+                },
                 sellorders: {
                   update: {
                     where: {
@@ -97,6 +106,15 @@ export async function createBuyOrder(event: Event, block_date: Date) {
                 creditsOwned: {
                   increment: units as number,
                 },
+                totalValue: {
+                  increment: ( pricePerUnit as number) * (units as number),
+                },
+                creditPrice: {
+                  increment: ((pricePerUnit as number) * (units as number)) 
+                },
+                quantity: {
+                  increment: (units as number)
+                },
                 creditsOwnedPerGroup: {
                   upsert: {
                     where: {
@@ -128,9 +146,10 @@ export async function createBuyOrder(event: Event, block_date: Date) {
                 projectId: projectId as number,
                 creditsOwned: units as number,
                 retiredCredits: 0,
+                totalValue: ( pricePerUnit as number) * (units as number),
                 addressProjectId: `${buyer}_${projectId}`,
-                creditPrice: pricePerUnit as number,
-                quantity: 0,
+                creditPrice: ((pricePerUnit as number) * (units as number)) ,
+                quantity: units as number,
                 creditsOwnedPerGroup: {
                   create: {
                     groupId: groupId as number,
