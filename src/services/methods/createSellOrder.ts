@@ -31,9 +31,7 @@ export async function createSellOrder(event: Event, block_date: Date) {
               addressProjectId: `${owner}_${projectId}`,
             },
             data: {
-              creditPrice: {
-                increment: (pricePerUnit as number) * (units as number),
-              },
+              creditPrice:  (pricePerUnit as number),
               quantity: {
                 increment: units as number,
               },

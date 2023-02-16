@@ -106,8 +106,8 @@ router.post('/cart', authMiddle, async (req: Request, res: Response) => {
 
 router.patch('/full-cart', authMiddle, async (req: Request, res: Response) => {
   console.log('patch cart', req.body);
-  const { cartId, batchEntitiyId, quantity } = req.body;
-  console.log(cartId, batchEntitiyId, quantity);
+  const { cartId, batchEntitiyId, quantity,calls } = req.body;
+  console.log(cartId, batchEntitiyId, quantity,calls);
   if (
     isNaN(Number(cartId)) ||
     isNaN(Number(batchEntitiyId)) ||
@@ -124,7 +124,7 @@ router.patch('/full-cart', authMiddle, async (req: Request, res: Response) => {
             batchEntities: {
               update: {
                 where: { id: batchEntitiyId as number },
-                data: { quantity: quantity as number },
+                data: { quantity: quantity as number, calls:calls },
               },
             },
           },

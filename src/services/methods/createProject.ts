@@ -5,6 +5,7 @@ import { prisma } from '../prisma';
 import { convertHex } from '../../utils/converter';
 import { ApiPromise } from '@polkadot/api';
 import { kMaxLength } from 'buffer';
+import { RegistryName } from '@prisma/client';
 
 export async function createProject(
   api: ApiPromise,
@@ -42,7 +43,7 @@ export async function createProject(
       return {
         name: convertHex(reg.name as string),
         summary: convertHex(reg.summary),
-        regName: convertHex(reg.regName),
+        regName: convertHex(reg.regName as string ) as RegistryName,
       };
     });
     let sdgDetails = project.sdgDetails?.map((reg) => {

@@ -29,12 +29,10 @@ router.get('/get-block', async (req: Request, res: Response) => {
 });
 router.get('/get-last-block', async (req: Request, res: Response) => {
   const val = await prisma.block.findFirst({
-    where: {id: 1}
-  })
-  return res.json(val)
-})
-
-
+    where: { id: 1 },
+  });
+  return res.json(val);
+});
 
 router.get('/transactions', async (req: Request, res: Response) => {
   const {
@@ -94,7 +92,7 @@ router.get('/transaction', async (req: Request, res: Response) => {
       sender: true,
       recipient: true,
       amount: true,
-      gasFees:true,
+      gasFees: true,
       createdAt: true,
     },
   });
@@ -104,19 +102,48 @@ router.get('/transaction', async (req: Request, res: Response) => {
   });
 });
 
-
-
 router.get('/assets/transaction', async (req: Request, res: Response) => {
-  const { account } = req.query;
-  
-  const assetTransaction = await prisma.assetTransaction.findMany({
-    where: {
-      recipient: account as string,
-    },
-  });
+  try {
+    const { account } = req.query;
 
-  res.json(assetTransaction);
+    const assetTransaction = await prisma.assetTransaction.findMany({
+      where: {
+        recipient: account as string,
+      },
+    });
+    const assetIds = assetTransaction?.map((item) => item.assetId);
+    console.log('assetIds', assetIds);
+    const uniqassetIds = [...new Set(assetIds)];
+    console.log('uniqassetIds', uniqassetIds);
+  
+    const projects = await prisma.project.findMany({
+      where: {
+        batchGroups: { some: { assetId: { in: uniqassetIds } } },
+      },
+      include: {
+        registryDetails: true,
+        batchGroups: { include: { batches: true } },
+      },
+    });
+    console.log('projects', projects);
+    const assetTransactions = assetTransaction.map((item) => {
+      const pro = projects.find((el) =>
+        el.batchGroups.some((group) => group.assetId === item.assetId)
+      );
+      return {
+        ...item,
+        assetName: pro?.name,
+        nftImage: pro?.images && pro?.images.length > 0 ? pro?.images[0] : '',
+      };
+    });
+  
+    res.json(assetTransactions);
+  } catch (e) {
+    res.status(500).json({ error: e})
+  }
+
 });
+
 router.get('/tokens/transaction', async (req: Request, res: Response) => {
   const { account } = req.query;
 
@@ -139,8 +166,8 @@ router.get('/balance', async (req: Request, res: Response) => {
 
   try {
     const api = await initApi();
-    const account  = await api.query.system.account(address)
-    const {data} = (account.toHuman() as unknown) as Account;
+    const account = await api.query.system.account(address);
+    const { data } = account.toHuman() as unknown as Account;
     res.json(data.free);
   } catch (e) {
     console.error(e);
@@ -159,7 +186,7 @@ router.get('/account', async (req: Request, res: Response) => {
 
   try {
     const api = await initApi();
-    const account  = await api.query.system.account(address)
+    const account = await api.query.system.account(address);
     const accountBalance = account.toHuman();
     res.json({ accountBalance });
   } catch (e) {

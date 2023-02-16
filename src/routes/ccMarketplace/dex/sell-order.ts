@@ -16,7 +16,7 @@ router.get('/sell-orders/:assetId', async (req: Request, res: Response) => {
     },
   });
 
-  return res.status(200).json(sellOrders);
+  return res.status(200).json(sellOrders.sort((a,b) => b.pricePerUnit -a.pricePerUnit));
 });
 
 router.get('/sell-order', async (req: Request, res: Response) => {

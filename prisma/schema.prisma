@@ -68,12 +68,12 @@ model Batch {
 }
 
 model RegistryDetails {
-  id         String  @id @default(uuid())
+  id         String        @id @default(uuid())
   name       String
   summary    String
-  regName    String
-  registryId Int     @unique
-  project    Project @relation(fields: [registryId], references: [id], onDelete: Cascade)
+  regName    RegistryName?
+  registryId Int           @unique
+  project    Project       @relation(fields: [registryId], references: [id], onDelete: Cascade)
 }
 
 model Royalties {
@@ -104,13 +104,12 @@ model Profil {
   emailStatus     VerificationStatus @default(NOT_VERIFIED)
   emailVerifiedAt DateTime?
 
-  activityTransactionReceipts Boolean @default(false)
-  activityOffersFilled        Boolean @default(false)
-  marketingNews               Boolean @default(false)
-  isOriginator                Boolean @default(false)
+  activityTransactionReceipts Boolean  @default(false)
+  activityOffersFilled        Boolean  @default(false)
+  marketingNews               Boolean  @default(false)
+  userType                    UserType @default(Individual)
 
   investments        Investment[]
-  createdProjects    Int[]
   creditTransactions CreditTransaction[]
 
   stars     Star[]
@@ -176,6 +175,7 @@ model CreditTransaction {
   id            String                @id @default(uuid())
   type          CreditTransactionType
   description   String
+  projectId     Int                   @default(0)
   credits       Int
   creditPrice   Float
   from          String
@@ -199,7 +199,7 @@ model CartItem {
 
 model BatchEntity {
   id            Int      @id @default(autoincrement())
-  orderId       Int
+  calls         String[]
   quantity      Int
   assetId       Int
   creditPrice   Float
@@ -250,6 +250,11 @@ enum SdgType {
   LifeOnLand
   PeaceJusticeAndStrongInstitutions
   ParternshipsForTheGoals
+}
+
+enum UserType {
+  Individual
+  Originator
 }
 
 enum ProjectState {

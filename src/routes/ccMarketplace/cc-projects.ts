@@ -20,7 +20,7 @@ router.get('/project', async (req: Request, res: Response) => {
       include: {
         sdgDetails: true,
         registryDetails: true,
-        batchGroups: {include:{batches:true}},
+        batchGroups: { include: { batches: true } },
       },
       orderBy: [sortFilter],
     }),
@@ -38,8 +38,6 @@ router.get('/project', async (req: Request, res: Response) => {
     count: resultCount,
   });
 });
-
-
 
 router.get('/project/:projectId', async (req: Request, res: Response) => {
   const projectId = Number(req.params.projectId);
@@ -109,6 +107,28 @@ router.get(
   }
 );
 
+router.get(
+  '/starred-project',
+  authMiddle,
+  async (req: Request, res: Response) => {
+    const address = req.session?.address || ""
+
+    const profile = await prisma.profil.findUnique({
+      where: {address:address},
+      include: {stars: true}
+    });
+    const sIds = profile?.stars.map((s) => s.projectId)
+    const projects = await prisma.project.findMany({
+      where: {id: {in:sIds }},
+      include: {
+        registryDetails:true, 
+        sdgDetails: true
+      }
+    })
+    return res.json(projects)
+  }
+);
+
 router.post(
   '/project/:projectId/star',
   authMiddle,
@@ -158,25 +178,22 @@ router.delete(
   }
 );
 
-router.delete(
-  '/project/delete',
-  async (req: Request, res: Response) => {
-    const projectId = Number(req.query.projectId);
+router.delete('/project/delete', async (req: Request, res: Response) => {
+  const projectId = Number(req.query.projectId);
 
-    console.log('projectId', projectId);
-    if (isNaN(projectId)) {
-      res.status(400).end();
-      return;
-    }
-
-    await prisma.project.delete({
-      where: {
-        id: projectId,
-      },
-    });
-
-    res.status(200).json(true);
+  console.log('projectId', projectId);
+  if (isNaN(projectId)) {
+    res.status(400).end();
+    return;
   }
-);
+
+  await prisma.project.delete({
+    where: {
+      id: projectId,
+    },
+  });
+
+  res.status(200).json(true);
+});
 
 export default router;

@@ -42,9 +42,6 @@ export async function createBuyOrder(event: Event, block_date: Date) {
                 // creditsOwned: {
                 //   decrement: units as number,
                 // },
-                creditPrice: {
-                  decrement: ((pricePerUnit as number) * (units as number)) 
-                },
                 quantity: {
                   decrement: (units as number)
                 },
@@ -83,6 +80,7 @@ export async function createBuyOrder(event: Event, block_date: Date) {
           creditTransactions: {
             create: {
               type: CreditTransactionType.SALE,
+              projectId: projectId as number,
               description:
                 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Ut a ullamcorper dignissim euismod amet, ridiculus.',
               credits: units as number,
@@ -109,9 +107,7 @@ export async function createBuyOrder(event: Event, block_date: Date) {
                 totalValue: {
                   increment: ( pricePerUnit as number) * (units as number),
                 },
-                creditPrice: {
-                  increment: ((pricePerUnit as number) * (units as number)) 
-                },
+                creditPrice: pricePerUnit as number,
                 quantity: {
                   increment: (units as number)
                 },
@@ -173,6 +169,7 @@ export async function createBuyOrder(event: Event, block_date: Date) {
           creditTransactions: {
             create: {
               type: CreditTransactionType.PURCHASE,
+              projectId: projectId as number,
               description:
                 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Ut a ullamcorper dignissim euismod amet, ridiculus.',
               credits: units as number,

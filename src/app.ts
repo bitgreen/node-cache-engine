@@ -6,7 +6,7 @@ import cors, { CorsOptions } from 'cors';
 import { PrismaClient } from '@prisma/client';
 import * as dotenv from 'dotenv';
 import cookieParser from 'cookie-parser';
-import carbonCredit from './routes/carbon-credit.js';
+import carbonCredit from './routes/carbon-credit'; //./routes/carbon-credit.js
 import transaction from './routes/transaction';
 import profile from './routes/ccMarketplace/profile/profile';
 import ccProjects from './routes/ccMarketplace/cc-projects';
@@ -14,7 +14,7 @@ import cart from './routes/ccMarketplace/profile/cart';
 import investments from './routes/ccMarketplace/dex/investments';
 import sellOrder from './routes/ccMarketplace/dex/sell-order';
 // import ipfs from './routes/ccMarketplace/ipfs';
-import authentification from './routes/authentification/authentification.js';
+import authentification from './routes/authentification/authentification'; //./routes/authentification/authentification.js
 
 /* config */
 dotenv.config();

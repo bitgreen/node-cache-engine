@@ -1,7 +1,7 @@
 import { Codec } from '@polkadot/types-codec/types';
 import { prisma } from '../prisma';
 import { Event } from '@polkadot/types/interfaces';
-import { ProjectState, SellOrder } from '@prisma/client';
+import { CreditTransactionType, ProjectState, SellOrder } from '@prisma/client';
 import internal from 'stream';
 import { convertHex } from '../../utils/converter';
 
@@ -81,6 +81,19 @@ export async function retireTokens(event: Event, block_date: Date) {
                   },
                 },
               },
+            },
+          },
+          creditTransactions: {
+            create: {
+              type: CreditTransactionType.RETIRE,
+              projectId: projectId as number,
+              description:
+                'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Ut a ullamcorper dignissim euismod amet, ridiculus.',
+              credits: amount as number,
+              creditPrice: 0,
+              from: account as string,
+              to: account as string,
+              fee: 0,
             },
           },
         },
