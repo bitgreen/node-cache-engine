@@ -32,8 +32,6 @@ export async function createAssetTransaction(event: Event, api: ApiPromise) {
     console.log(assetId, from, to, amount);
 
     const [balanceBBB, balanceUSDT] = await queryBalances(api, to as string, "USDT")
-    console.log('balanceUSDT', balanceUSDT);
-    console.log('balanceBBB', balanceBBB);
     await prisma.assetTransaction.create({
       data: {
         sender: from as string,
@@ -56,8 +54,6 @@ export async function createTokenTransaction(event: Event, api: ApiPromise) {
     console.log(currencyId, from, to, amount);
 
     const [balanceBBB, balanceUSDT] = await queryBalances(api, to as string, currencyId as string)
-    console.log('balanceUSDT', balanceUSDT);
-    console.log('balanceBBB', balanceBBB);
     await prisma.tokenTransaction.create({
       data: {
         sender: from as string,

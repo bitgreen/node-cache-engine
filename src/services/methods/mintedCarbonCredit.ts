@@ -22,11 +22,8 @@ export async function ccMinted(
         amount = arg.toJSON() as number;
       }
     });
-    console.log('MINTED');
     if (groupId === -1 || !projectId || !amount) return;
     // connect asset id with vcu project
-    console.log('MINTED 1');
-    console.log('amount', amount);
 
     const projectArgs = await prisma.project.findUnique({
       include: {
@@ -91,8 +88,7 @@ export async function ccMinted(
       projectArgs?.originator as string,
       'USDT'
     );
-    console.log('balanceUSDT', balanceUSDT);
-    console.log('balanceBBB', balanceBBB);
+
     await prisma.assetTransaction.create({
       data: {
         sender: '',

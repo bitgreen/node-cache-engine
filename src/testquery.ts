@@ -18,54 +18,65 @@ async function main() {
 
   console.log("test")
   // const id = 8;
-  const api = await initApi();
-
-  // let data  = await api.query["carbonCredits"]["projects"](id)
-  // console.log(data.toJSON())
-  // console.log(data.toHuman())
-
-  // let [assetId, from, to, amount] = [12,"dfdjfdjf","5DjjUGJKbbKTx1mFsRNZj4wa9BiabU6T7k6ndxmfcFkMZGX7", 100]
-  // console.log(assetId, from, to, amount);
-
-  // //BBB Tokens Balance
-  // let dataQuery = await api.query['system']['account'](to);
-  // const {data:dataBBB} = (dataQuery.toHuman() as unknown) as Account;
-  // console.log("data BBB", dataBBB);
-
-  // let dataQueryUSDT = await api.query['tokens']['accounts'](to, "USDT");
-  // const {free:balanceUSDT} = (dataQueryUSDT.toHuman() as unknown) as BalanceData;
-  // console.log("balanceUSDT", balanceUSDT);
-
-  // await prisma.assetTransaction.create({
-  //     data:{
-  //         sender    : from as string,
-  //         recipient : to as string,
-  //         assetId   : assetId as number,
-  //         balance   : dataBBB.free,
-  //         balanceUsd : balanceUSDT,
-  //     }
-  // })
-
-  let [currencyId, from, to, amount] = ["USDT","dfdjfdjf","5DjjUGJKbbKTx1mFsRNZj4wa9BiabU6T7k6ndxmfcFkMZGX7", 100]
-    console.log(currencyId, from, to, amount);
-
-    //BBB Tokens Balance
-    let dataQuery = await api.query['system']['account'](to);
-    const {data:dataBBB} = (dataQuery.toHuman() as unknown) as Account;
-    console.log("data BBB", dataBBB);
-
-    let dataQueryUSDT = await api.query['tokens']['accounts'](to,currencyId );
-    const {free:balanceUSDT} = (dataQueryUSDT.toHuman() as unknown) as BalanceData;
-    console.log("balanceUSDT", balanceUSDT);
-    await prisma.tokenTransaction.create({
-        data:{
-            sender    : from as string,
-            recipient : to as string,
-            tokencode: currencyId as string,
-            balance   : dataBBB.free,
-            balanceUsd : balanceUSDT,
+  // const api = await initApi();
+  const orderId = 74
+  const profile = await prisma.profil.findFirst({
+    where:{
+      investments: {
+        some: {
+          sellorders: {
+            some: {orderId: orderId}
+          }
         }
-    })
+      }
+    },
+    include: {
+      investments: {include: {sellorders:true}}
+    }
+  })
+  console.log("profile",profile)
+  const account = profile?.address;
+  const inv= profile?.investments.find((i) => i.sellorders.findIndex((s) => s.orderId === orderId) !==-1)
+  console.log("inv",inv)
+
+  const sellOrder = inv?.sellorders.find((s) => s.orderId === orderId);
+  console.log("sellOrder",sellOrder)
+
+  await prisma.profil.update({
+    where:{ address: account},
+    data:{
+      investments: {
+        update: {
+          where: {id: inv?.id},
+          data: {
+            creditsOwned: {
+              increment: sellOrder?.unitsRemain as number,
+            },
+            creditsOwnedPerGroup: {
+              update: {
+                where: {
+                  addressGroupId: `${account}_${sellOrder?.groupId}_${inv?.projectId}`,
+                },
+                data: {
+                  creditsOwned: {
+                    increment: sellOrder?.unitsRemain as number,
+                  },
+                },
+              },
+            },
+            sellorders:{
+              update: {
+                where: {orderId:orderId},
+                data: {
+                  isCancel: true, 
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  })
 }
 
 main().catch(console.error);

@@ -161,6 +161,7 @@ model SellOrder {
   orderId      Int         @id
   assetId      Int
   units        Int
+  groupId      Int?
   unitsRemain  Int         @default(0)
   pricePerUnit Float
   isCancel     Boolean?    @default(false)

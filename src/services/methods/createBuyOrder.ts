@@ -3,14 +3,9 @@ import { prisma } from '../prisma';
 import { Event } from '@polkadot/types/interfaces';
 import {
   CreditTransactionType,
-  Investment,
-  Prisma,
-  ProjectState,
-  SellOrder,
 } from '@prisma/client';
 
 export async function createBuyOrder(event: Event, block_date: Date) {
-  //[orderId, assetId, units, pricePerUnit, owner]
   try {
     let dataBlock = event.data.toJSON();
     let [
@@ -23,7 +18,7 @@ export async function createBuyOrder(event: Event, block_date: Date) {
       seller,
       buyer,
     ] = dataBlock as (Number | string)[];
-    console.log('event.data.toJSON()', dataBlock);
+
     console.log(orderId, units, pricePerUnit, seller, buyer);
 
     // Seller and Buyer
@@ -61,19 +56,6 @@ export async function createBuyOrder(event: Event, block_date: Date) {
                     },
                   },
                 },
-                // creditsOwnedPerGroup: {
-                //   update: {
-                //     where: {
-                //       addressGroupId: `${seller}_${groupId}_${projectId}`,
-                //     },
-                //     data: {
-                //       creditsOwned: {
-                //         decrement: units as number,
-                //       },
-                //     },
-                //   },
-                // },
-                // buyOrders: buyOrderParams,
               },
             },
           },
@@ -144,7 +126,7 @@ export async function createBuyOrder(event: Event, block_date: Date) {
                 retiredCredits: 0,
                 totalValue: ( pricePerUnit as number) * (units as number),
                 addressProjectId: `${buyer}_${projectId}`,
-                creditPrice: ((pricePerUnit as number) * (units as number)) ,
+                creditPrice: pricePerUnit as number ,
                 quantity: units as number,
                 creditsOwnedPerGroup: {
                   create: {

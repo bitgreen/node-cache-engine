@@ -1,4 +1,3 @@
-import { Codec } from '@polkadot/types-codec/types';
 import { prisma } from '../prisma';
 import { Event } from '@polkadot/types/interfaces';
 import { ProjectState } from '@prisma/client';

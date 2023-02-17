@@ -1,10 +1,9 @@
-import { BatchGroups, Project } from '../../types/prismaTypes';
-import { Extrinsic, Event } from '@polkadot/types/interfaces';
+import { Project } from '../../types/prismaTypes';
+import { Event } from '@polkadot/types/interfaces';
 import type { Codec } from '@polkadot/types-codec/types';
 import { prisma } from '../prisma';
 import { convertHex } from '../../utils/converter';
 import { ApiPromise } from '@polkadot/api';
-import { kMaxLength } from 'buffer';
 import { RegistryName } from '@prisma/client';
 
 export async function createProject(

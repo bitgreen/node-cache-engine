@@ -7,42 +7,45 @@ import { authenticatedAddress } from '../../../services/authentification';
 const router = express.Router();
 
 router.get('/investments', authMiddle, async (req: Request, res: Response) => {
-  console.log('Cards');
-  const whereParam =
-    req.query.projectId === 'undefined' || isNaN(Number(req.query.projectId))
-      ? {}
-      : { projectId: Number(req.query.projectId) };
-  const profil = await prisma.profil.findUnique({
-    where: {
-      address: req.session?.address, //req.session?.address,
-    },
-    include: {
-      investments: {
-        where: whereParam,
-        include: {
-          sellorders: true,
-          buyOrders: true,
-          creditsOwnedPerGroup: true,
+  try {
+    console.log('/investments');
+    const whereParam =
+      req.query.projectId === 'undefined' || isNaN(Number(req.query.projectId))
+        ? {}
+        : { projectId: Number(req.query.projectId) };
+    const profil = await prisma.profil.findUnique({
+      where: {
+        address: req.session?.address, //req.session?.address,
+      },
+      include: {
+        investments: {
+          where: whereParam,
+          include: {
+            sellorders: true,
+            buyOrders: true,
+            creditsOwnedPerGroup: true,
+          },
         },
       },
-    },
-  });
-  const projectIds = profil?.investments.map((item) => item.projectId);
-  const projects = await prisma.project.findMany({
-    where: {
-      id: { in: projectIds },
-    },
-    include: {
-      registryDetails: true,
-      batchGroups: { include: { batches: true } },
-    },
-  });
-  const investmentProjects = profil?.investments.map((item) => {
-    const pro = projects.find((el) => el.id === item.projectId);
-    return { ...item, project: pro };
-  });
-  console.log('investmentProjects', investmentProjects);
-  return res.status(200).json(investmentProjects);
+    });
+    const projectIds = profil?.investments.map((item) => item.projectId);
+    const projects = await prisma.project.findMany({
+      where: {
+        id: { in: projectIds },
+      },
+      include: {
+        registryDetails: true,
+        batchGroups: { include: { batches: true } },
+      },
+    });
+    const investmentProjects = profil?.investments.map((item) => {
+      const pro = projects.find((el) => el.id === item.projectId);
+      return { ...item, project: pro };
+    });
+    return res.status(200).json(investmentProjects);
+  } catch (e) {
+    return res.status(500).json(e);
+  }
 });
 
 router.get(
@@ -50,7 +53,7 @@ router.get(
   authMiddle,
   async (req: Request, res: Response) => {
     const id = (req.params.investmentId as string) || '';
-    console.log('id inv', id);
+    console.log('/investments/:investmentId');
     try {
       const investment = await prisma.investment.findUnique({
         where: { id: id },
@@ -65,40 +68,35 @@ router.get(
 
 router.get('/project-originator', async (req: Request, res: Response) => {
   const originator = (req.query.originator as string) || '';
-  console.log('originator', originator);
+  console.log('/project-originator');
+  try {
+    const projects = await prisma.project.findMany({
+      where: {
+        AND: [
+          {
+            originator: originator,
+          },
+        ],
+      },
+      include: {
+        sdgDetails: true,
+        registryDetails: true,
+        batchGroups: { include: { batches: true } },
+      },
+    });
 
-  const projects = await prisma.project.findMany({
-    where: {
-      AND: [
-        {
-          originator: originator,
-        },
-        //  {
-        //   batchGroups: {
-        //     some: {
-        //       isMinted:true,
-        //     }
-        //   }
-        //  }
-      ],
-    },
-    include: {
-      sdgDetails: true,
-      registryDetails: true,
-      batchGroups: { include: { batches: true } },
-    },
-  });
-  console.log(projects);
+    const investestments = await prisma.investment.findMany({
+      where: { projectId: { in: projects?.map((el) => el.id) } },
+    });
+    const investmentsProjects = projects?.map((item) => {
+      const inv = investestments.find((el) => el.projectId === item.id);
+      return { ...inv, project: item };
+    });
 
-  const investestments = await prisma.investment.findMany({
-    where: { projectId: { in: projects?.map((el) => el.id) } },
-  });
-  const investmentsProjects = projects?.map((item) => {
-    const inv = investestments.find((el) => el.projectId === item.id);
-    return { ...inv, project: item };
-  });
-
-  return res.json(investmentsProjects);
+    return res.json(investmentsProjects);
+  } catch (e) {
+    return res.status(500).json(e);
+  }
 });
 
 router.get(

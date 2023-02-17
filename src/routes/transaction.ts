@@ -9,53 +9,100 @@ import { GenericStorageEntryFunction } from '@polkadot/api/types';
 const router = express.Router();
 
 router.get('/get-block', async (req: Request, res: Response) => {
-  let block_number = req.query.block_number as string;
+  console.log('/get-block');
+  try {
+    let block_number = req.query.block_number as string;
 
-  const api = await initApi();
+    const api = await initApi();
 
-  const block_hash = (await api.rpc.chain.getBlockHash(
-    block_number
-  )) as BlockHash;
+    const block_hash = (await api.rpc.chain.getBlockHash(
+      block_number
+    )) as BlockHash;
 
-  let [signed_block, block_events] = await Promise.all([
-    api.rpc.chain.getBlock(block_hash),
-    api.query.system.events.at(block_hash),
-  ]);
+    let [signed_block, block_events] = await Promise.all([
+      api.rpc.chain.getBlock(block_hash),
+      api.query.system.events.at(block_hash),
+    ]);
 
-  res.json({
-    signed_block: signed_block.toHuman(),
-    block_events: block_events.toHuman(),
-  });
+    res.json({
+      signed_block: signed_block.toHuman(),
+      block_events: block_events.toHuman(),
+    });
+  } catch (e) {
+    return res.status(500).json(e);
+  }
 });
 router.get('/get-last-block', async (req: Request, res: Response) => {
-  const val = await prisma.block.findFirst({
-    where: { id: 1 },
-  });
-  return res.json(val);
+  console.log('/get-last-block');
+  try {
+    const val = await prisma.block.findFirst({
+      where: { id: 1 },
+    });
+    return res.json(val);
+  } catch (e) {
+    return res.status(500).json(e);
+  }
 });
 
 router.get('/transactions', async (req: Request, res: Response) => {
-  const {
-    account,
-    dateStart = '2000-01-01',
-    dateEnd = '2200-01-01',
-  } = req.query;
+  console.log('/transactions');
 
-  const account_query = account
-    ? {
-        OR: [{ sender: account as string }, { recipient: account as string }],
-      }
-    : {};
-
-  let transactions;
   try {
-    transactions = await prisma.transaction.findMany({
-      where: {
-        createdAt: {
-          gte: new Date(dateStart as string),
-          lte: new Date(dateEnd as string),
+    const {
+      account,
+      dateStart = '2000-01-01',
+      dateEnd = '2200-01-01',
+    } = req.query;
+
+    const account_query = account
+      ? {
+          OR: [{ sender: account as string }, { recipient: account as string }],
+        }
+      : {};
+
+    let transactions;
+    try {
+      transactions = await prisma.transaction.findMany({
+        where: {
+          createdAt: {
+            gte: new Date(dateStart as string),
+            lte: new Date(dateEnd as string),
+          },
+          ...account_query,
         },
-        ...account_query,
+        select: {
+          blockNumber: true,
+          hash: true,
+          sender: true,
+          recipient: true,
+          amount: true,
+          gasFees: true,
+          createdAt: true,
+        },
+        orderBy: {
+          createdAt: 'desc',
+        },
+      });
+    } catch (e) {
+      transactions = null;
+    }
+
+    res.json({
+      transactions: transactions,
+    });
+  } catch (e) {
+    return res.status(500).json(e);
+  }
+});
+
+router.get('/transaction', async (req: Request, res: Response) => {
+  console.log('/transaction');
+  try {
+    const { hash = '' } = req.query;
+
+    const transaction = await prisma.transaction.findUnique({
+      where: {
+        hash: hash as string,
       },
       select: {
         blockNumber: true,
@@ -66,43 +113,18 @@ router.get('/transactions', async (req: Request, res: Response) => {
         gasFees: true,
         createdAt: true,
       },
-      orderBy: {
-        createdAt: 'desc',
-      },
+    });
+
+    res.json({
+      transaction: transaction,
     });
   } catch (e) {
-    transactions = null;
+    return res.status(500).json(e);
   }
-
-  res.json({
-    transactions: transactions,
-  });
-});
-
-router.get('/transaction', async (req: Request, res: Response) => {
-  const { hash = '' } = req.query;
-
-  const transaction = await prisma.transaction.findUnique({
-    where: {
-      hash: hash as string,
-    },
-    select: {
-      blockNumber: true,
-      hash: true,
-      sender: true,
-      recipient: true,
-      amount: true,
-      gasFees: true,
-      createdAt: true,
-    },
-  });
-
-  res.json({
-    transaction: transaction,
-  });
 });
 
 router.get('/assets/transaction', async (req: Request, res: Response) => {
+  console.log('/assets/transaction');
   try {
     const { account } = req.query;
 
@@ -115,7 +137,7 @@ router.get('/assets/transaction', async (req: Request, res: Response) => {
     console.log('assetIds', assetIds);
     const uniqassetIds = [...new Set(assetIds)];
     console.log('uniqassetIds', uniqassetIds);
-  
+
     const projects = await prisma.project.findMany({
       where: {
         batchGroups: { some: { assetId: { in: uniqassetIds } } },
@@ -136,15 +158,16 @@ router.get('/assets/transaction', async (req: Request, res: Response) => {
         nftImage: pro?.images && pro?.images.length > 0 ? pro?.images[0] : '',
       };
     });
-  
+
     res.json(assetTransactions);
   } catch (e) {
-    res.status(500).json({ error: e})
+    res.status(500).json(e);
   }
-
 });
 
 router.get('/tokens/transaction', async (req: Request, res: Response) => {
+  console.log('/tokens/transaction');
+  try {
   const { account } = req.query;
 
   const tokensTransaction = await prisma.tokenTransaction.findMany({
@@ -154,6 +177,9 @@ router.get('/tokens/transaction', async (req: Request, res: Response) => {
   });
 
   res.json(tokensTransaction);
+} catch (e) {
+  res.status(500).json(e);
+}
 });
 
 router.get('/balance', async (req: Request, res: Response) => {

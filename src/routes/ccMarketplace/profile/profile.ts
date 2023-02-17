@@ -8,55 +8,65 @@ import { UserType } from '@prisma/client';
 const router = express.Router();
 
 router.get('/profile', authMiddle, async (req: Request, res: Response) => {
-  const profil = await prisma.profil.findUnique({
-    where: {
-      address: req.session?.address,
-    },
-  });
-  return res.status(200).json(profil);
+  console.log("/profile");
+  try {
+    const profil = await prisma.profil.findUnique({
+      where: {
+        address: req.session?.address,
+      },
+    });
+    return res.status(200).json(profil);
+  } catch (e) {
+    return res.status(500).json(e);
+  }
 });
 
 router.get('/check-profile/:address', async (req: Request, res: Response) => {
-  const address = req.params.address
-  const profil = await prisma.profil.findUnique({
-    where: {
-      address: address,
-    },
-  });
-  if (!profil) return res.status(200).json({success:false})
-  return res.status(200).json({success:true})
+  console.log("/check-profile/:address");
+  try {
+    const address = req.params.address;
+    const profil = await prisma.profil.findUnique({
+      where: {
+        address: address,
+      },
+    });
+    if (!profil) return res.status(200).json({ success: false });
+    return res.status(200).json({ success: true });
+  } catch (e) {
+    return res.status(500).json(e);
+  }
 });
 
 router.put('/profile', async (req: Request, res: Response) => {
   // const auth_address = await authenticatedAddress(req);
+  console.log("put /profile");
   try {
     const { profile, isLogin } = req.body;
-    console.log('prfil body', profile);
-    console.log('isLogin body', isLogin);
-    const updateParams = isLogin =="true"
-      ? {}
-      : {
-          firstName: profile.firstName
-            ? validator.escape(validator.trim(`${profile.firstName}`))
-            : '',
-          lastName: profile.lastName
-            ? validator.escape(validator.trim(`${profile.lastName}`))
-            : '',
-          email: profile.email
-            ? validator.escape(validator.trim(`${profile.lastName}`))
-            : '',
-            userType: profile.userType ? profile.userType : UserType.Individual, 
-          // avatar: profile.avatar, // TODO: temp disabled
-          activityTransactionReceipts: profile.activityTransactionReceipts
-            ? validator.toBoolean(`${profile.activityTransactionReceipts}`)
-            : false,
-          activityOffersFilled: profile.activityOffersFilled
-            ? validator.toBoolean(`${profile.activityOffersFilled}`)
-            : false,
-          marketingNews: profile.activityOffersFilled
-            ? validator.toBoolean(`${profile.marketingNews}`)
-            : false,
-        };
+    const updateParams =
+      isLogin == 'true'
+        ? {}
+        : {
+            firstName: profile.firstName
+              ? validator.escape(validator.trim(`${profile.firstName}`))
+              : '',
+            lastName: profile.lastName
+              ? validator.escape(validator.trim(`${profile.lastName}`))
+              : '',
+            email: profile.email
+              ? validator.escape(validator.trim(`${profile.lastName}`))
+              : '',
+            userType: profile.userType ? profile.userType : UserType.Individual,
+            // avatar: profile.avatar, // TODO: temp disabled
+            activityTransactionReceipts: profile.activityTransactionReceipts
+              ? validator.toBoolean(`${profile.activityTransactionReceipts}`)
+              : false,
+            activityOffersFilled: profile.activityOffersFilled
+              ? validator.toBoolean(`${profile.activityOffersFilled}`)
+              : false,
+            marketingNews: profile.activityOffersFilled
+              ? validator.toBoolean(`${profile.marketingNews}`)
+              : false,
+          };
     const result = await prisma.profil.upsert({
       where: {
         address: profile.address,
@@ -82,12 +92,11 @@ router.put('/profile', async (req: Request, res: Response) => {
           : false,
       },
     });
-  
+
     return res.status(200).json(result);
   } catch (err) {
-    return res.status(500).json(err)
+    return res.status(500).json(err);
   }
-  
 });
 
 // router.get('/profile/:address', async (req: Request, res: Response) => {

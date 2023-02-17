@@ -1,8 +1,8 @@
 import { Codec } from '@polkadot/types-codec/types';
 import { prisma } from '../prisma';
 import { Event } from '@polkadot/types/interfaces';
-import { CreditTransactionType, ProjectState, SellOrder } from '@prisma/client';
-import internal from 'stream';
+import { CreditTransactionType } from '@prisma/client';
+
 import { convertHex } from '../../utils/converter';
 
 interface RetireData {
@@ -16,7 +16,6 @@ export async function retireTokens(event: Event, block_date: Date) {
   //[orderId, assetId, units, pricePerUnit, owner]
   try {
     let data = event.data.toJSON();
-    console.log(event.data.toHuman());
 
     let [projectId, groupId, assetId, account, amount, retireData] = data as (
       | Number
@@ -24,9 +23,8 @@ export async function retireTokens(event: Event, block_date: Date) {
       | RetireData[]
     )[];
     let retireDataUpdate = retireData as RetireData[];
-    console.log('retireDataUpdate', retireDataUpdate);
-
     console.log(projectId, account, amount, retireData);
+
     let retiredCreditsSum = retireDataUpdate.reduce(
       (acc, cv) => acc + cv.count,
       0
