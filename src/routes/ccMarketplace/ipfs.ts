@@ -4,6 +4,7 @@ import { promises as fs } from 'fs';
 const router = express.Router();
 
 router.post('/ipfs', async (req: Request, res: Response) => {
+  console.log("IPFS, received a request")
   const files = await assertFiles(req);
   const file = files.file;
 

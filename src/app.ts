@@ -13,7 +13,7 @@ import ccProjects from './routes/ccMarketplace/cc-projects';
 import cart from './routes/ccMarketplace/profile/cart';
 import investments from './routes/ccMarketplace/dex/investments';
 import sellOrder from './routes/ccMarketplace/dex/sell-order';
-// import ipfs from './routes/ccMarketplace/ipfs';
+import ipfs from './routes/ccMarketplace/ipfs';
 import authentification from './routes/authentification/authentification'; //./routes/authentification/authentification.js
 
 /* config */
@@ -44,7 +44,7 @@ const mainLoop = async () => {
   app.use('', carbonCredit);
   app.use('', transaction);
   app.use('', ccProjects);
-  //   app.use('', ipfs);
+  app.use('', ipfs);
   app.use('', profile);
   app.use('', authentification);
   app.use('', cart);
@@ -61,4 +61,4 @@ const mainLoop = async () => {
 // run main function
 mainLoop().catch(console.error);
 
-// write a fetch command in javascript 
+// write a fetch command in javascript
