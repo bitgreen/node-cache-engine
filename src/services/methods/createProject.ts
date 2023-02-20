@@ -73,13 +73,6 @@ export async function createProject(
       });
     }
 
-    let location = project.location.map((f) => {
-      return {
-        latitude: f[0],
-        longitude: f[1],
-      };
-    });
-
     await prisma.project.create({
       data: {
         id: projectId,
@@ -88,9 +81,7 @@ export async function createProject(
           : 'empty',
         name: convertHex(project.name),
         description: convertHex(project.description as string),
-        location: {
-          create: location,
-        },
+        location: convertHex(project.location as string),
         images: images,
         videos: videos,
         documents: documents,

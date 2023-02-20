@@ -13,7 +13,7 @@ model Project {
   name                String            @db.VarChar
   state               ProjectState      @default(SUBMITTED)
   description         String?
-  location            Location[]
+  location            String            @default("")
   images              String[]
   videos              String[]
   documents           String[]
@@ -28,13 +28,13 @@ model Project {
   listedToMarketplace Boolean           @default(false)
 }
 
-model Location {
-  id        Int      @id @default(autoincrement())
-  latitude  Float
-  longitude Float
-  projectId Int?
-  project   Project? @relation(fields: [projectId], references: [id], onDelete: Cascade)
-}
+// model Location {
+//   id        Int      @id @default(autoincrement())
+//   latitude  Float
+//   longitude Float
+//   projectId Int?
+//   project   Project? @relation(fields: [projectId], references: [id], onDelete: Cascade)
+// }
 
 model BatchGroups {
   id          Int      @id @default(autoincrement())
