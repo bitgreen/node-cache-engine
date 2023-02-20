@@ -4,7 +4,7 @@ on:
       - testnet
 name: Deploy website on push
 jobs:
-  web-deploy:
+  deploy:
     name: Deploy
     runs-on: ubuntu-latest
     steps:
@@ -21,9 +21,10 @@ jobs:
         npm install
         npm run build
     
-    - name: Sync files
-      uses: SamKirkland/FTP-Deploy-Action@4.3.3
-      with:
-        server: ftp.yourSite.com
-        username: myFtpUserName
-        password: ${{ secrets.password }}
+    - name: Deploy to Server
+      uses: easingthemes/ssh-deploy@main
+      env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          REMOTE_HOST: ${{ secrets.REMOTE_HOST }}
+          REMOTE_USER: ${{ secrets.REMOTE_USER }}
+          TARGET: ${{ secrets.REMOTE_TARGET }}

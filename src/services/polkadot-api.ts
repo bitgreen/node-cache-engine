@@ -19,6 +19,6 @@ export async function initApi() {
     rpc: rpc,
   } as ApiOptions);
   await api.isReady;
-
+  
   return api;
 }

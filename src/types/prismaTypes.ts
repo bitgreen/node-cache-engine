@@ -16,3 +16,7 @@ const BatchGroupsArg = Prisma.validator<Prisma.BatchGroupsArgs>()({
   include: { batches: true },
 });
 export type BatchGroups = Prisma.BatchGroupsGetPayload<typeof BatchGroupsArg>;
+
+const CartItemArgs = Prisma.validator<Prisma.CartItemArgs>()({include: {batchEntities:true}})
+type CartItem1 = Prisma.CartItemGetPayload<typeof CartItemArgs>
+export type CartItem = Omit<CartItem1, "profilId" | "id">; 

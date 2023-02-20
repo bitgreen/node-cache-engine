@@ -6,12 +6,15 @@ import cors, { CorsOptions } from 'cors';
 import { PrismaClient } from '@prisma/client';
 import * as dotenv from 'dotenv';
 import cookieParser from 'cookie-parser';
-import carbonCredit from './routes/carbon-credit.js';
+import carbonCredit from './routes/carbon-credit'; //./routes/carbon-credit.js
 import transaction from './routes/transaction';
 import profile from './routes/ccMarketplace/profile/profile';
 import ccProjects from './routes/ccMarketplace/cc-projects';
-// import ipfs from './routes/ccMarketplace/ipfs';
-import authentification from './routes/authentification/authentification.js';
+import cart from './routes/ccMarketplace/profile/cart';
+import investments from './routes/ccMarketplace/dex/investments';
+import sellOrder from './routes/ccMarketplace/dex/sell-order';
+import ipfs from './routes/ccMarketplace/ipfs';
+import authentification from './routes/authentification/authentification'; //./routes/authentification/authentification.js
 
 /* config */
 dotenv.config();
@@ -41,9 +44,12 @@ const mainLoop = async () => {
   app.use('', carbonCredit);
   app.use('', transaction);
   app.use('', ccProjects);
-  //   app.use('', ipfs);
+  app.use('', ipfs);
   app.use('', profile);
   app.use('', authentification);
+  app.use('', cart);
+  app.use('', investments);
+  app.use('', sellOrder);
   // app.use("", require("./routes/test-routes"));
 
   /* serve api */
@@ -54,3 +60,5 @@ const mainLoop = async () => {
 
 // run main function
 mainLoop().catch(console.error);
+
+// write a fetch command in javascript

@@ -15,6 +15,7 @@ export async function authMiddle(
   res: Response,
   next: NextFunction
 ) {
+  // console.log("cookies", req.cookies.session)
   if (!req.cookies.session) {
     return res
       .status(401)

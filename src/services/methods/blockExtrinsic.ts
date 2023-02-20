@@ -10,11 +10,12 @@ export async function blockExtrinsic(
   api: ApiPromise,
   blockNumber: BlockNumber | number
 ) {
-  const blockHash = (await api.rpc.chain.getBlockHash(
-    blockNumber
-  )) as BlockHash;
-  const apiAt = await api.at(blockHash);
   try {
+    const blockHash = (await api.rpc.chain.getBlockHash(
+      blockNumber
+    )) as BlockHash;
+    const apiAt = await api.at(blockHash);
+
     let [signedBlock, blockEvents] = await Promise.all([
       api.rpc.chain.getBlock(blockHash),
       apiAt.query.system.events() as Promise<Vec<EventRecord>>,

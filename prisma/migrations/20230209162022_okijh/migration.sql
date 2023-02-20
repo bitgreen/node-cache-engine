@@ -1,0 +1,4 @@
+-- AlterTable
+ALTER TABLE "Block" ALTER COLUMN "id" SET DEFAULT 1,
+ALTER COLUMN "id" DROP DEFAULT;
+DROP SEQUENCE "Block_id_seq";
