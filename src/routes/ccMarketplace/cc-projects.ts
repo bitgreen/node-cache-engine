@@ -75,7 +75,7 @@ router.post(
     console.log('post /project/:projectId/edit');
 
     try {
-      const projectId = Number(req.query.projectId);
+      const projectId = Number(req.params.projectId);
       if (isNaN(projectId)) return res.status(400).end();
 
       const isOwner = await prisma.project.count({
@@ -94,6 +94,7 @@ router.post(
         data: {
           name: req.body.title,
           description: req.body.description,
+          images:  req.body.featuredImageUrls,
         },
       });
 
