@@ -24,6 +24,7 @@ import { prisma } from '../prisma';
 import { Event } from '@polkadot/types/interfaces';
 import { ApiPromise } from '@polkadot/api';
 import { Account, BalanceData } from '@/types/types';
+import axios from 'axios';
 
 export async function createAssetTransaction(event: Event, api: ApiPromise) {
   try {
@@ -53,7 +54,19 @@ export async function createTokenTransaction(event: Event, api: ApiPromise) {
     let [currencyId, from, to, amount] = eventData as (Number | string)[];
     console.log(currencyId, from, to, amount);
 
-    const [balanceBBB, balanceUSDT] = await queryBalances(api, to as string, currencyId as string)
+    let [balanceBBB, balanceUSDT] = await queryBalances(api, to as string, currencyId as string)
+    if (currencyId == "DOT") {
+      try {
+        const response = await axios.get("https://api.coingecko.com/api/v3/simple/price?ids=polkadot&vs_currencies=USD")
+        const data = response.data
+        balanceUSDT = data.polkadot.usd.toString();
+        console.log("polkadot in usd", balanceUSDT)
+      } catch(error) {
+        // @ts-ignore
+        console.log(`Error occurred (asset Transaction) gecko api: ${error.message}`);
+      }
+
+    }
     await prisma.tokenTransaction.create({
       data: {
         sender: from as string,

@@ -67,7 +67,7 @@ export async function createSellOrder(event: Event, block_date: Date) {
         },
       },
     });
-  } catch (error) {
+  } catch (e) {
     // @ts-ignore
     console.log(`Error occurred (create sell order): ${e.message}`);
   }

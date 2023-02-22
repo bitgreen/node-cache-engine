@@ -6,6 +6,8 @@ import { initApi } from './services/polkadot-api';
 import { prisma } from './services/prisma';
 import { convertHex } from './utils/converter';
 import { Account, BalanceData } from './types/types';
+import { ApiPromise } from '@polkadot/api';
+import axios from 'axios';
 
 interface RetireData {
   name: string;
@@ -18,65 +20,45 @@ async function main() {
 
   console.log("test")
   // const id = 8;
-  // const api = await initApi();
-  const orderId = 74
-  const profile = await prisma.profil.findFirst({
-    where:{
-      investments: {
-        some: {
-          sellorders: {
-            some: {orderId: orderId}
-          }
-        }
-      }
-    },
-    include: {
-      investments: {include: {sellorders:true}}
-    }
-  })
-  console.log("profile",profile)
-  const account = profile?.address;
-  const inv= profile?.investments.find((i) => i.sellorders.findIndex((s) => s.orderId === orderId) !==-1)
-  console.log("inv",inv)
+  const api = await initApi();
+  try {
+    
+    let [currencyId, from, to, amount] = ["DOT", "5CJpxdAFyLd1YhGBmC7FToe2SWrtR6UvGZcqpjKbxYUhRjWx", "5DjjUGJKbbKTx1mFsRNZj4wa9BiabU6T7k6ndxmfcFkMZGX7", 100]
+    console.log(currencyId, from, to, amount);
 
-  const sellOrder = inv?.sellorders.find((s) => s.orderId === orderId);
-  console.log("sellOrder",sellOrder)
-
-  await prisma.profil.update({
-    where:{ address: account},
-    data:{
-      investments: {
-        update: {
-          where: {id: inv?.id},
-          data: {
-            creditsOwned: {
-              increment: sellOrder?.unitsRemain as number,
-            },
-            creditsOwnedPerGroup: {
-              update: {
-                where: {
-                  addressGroupId: `${account}_${sellOrder?.groupId}_${inv?.projectId}`,
-                },
-                data: {
-                  creditsOwned: {
-                    increment: sellOrder?.unitsRemain as number,
-                  },
-                },
-              },
-            },
-            sellorders:{
-              update: {
-                where: {orderId:orderId},
-                data: {
-                  isCancel: true, 
-                }
-              }
-            }
-          }
-        }
-      }
+    let [balanceBBB, balanceUSDT] = await queryBalances(api, to as string, currencyId as string)
+    if (currencyId == "DOT") {
+      const response = await axios.get("https://api.coingecko.com/api/v3/simple/price?ids=polkadot&vs_currencies=USD")
+      const data = response.data
+      balanceUSDT = data.polkadot.usd.toString();
+      console.log("polkadot in usd", balanceUSDT)
     }
-  })
+    await prisma.tokenTransaction.create({
+      data: {
+        sender: from as string,
+        recipient: to as string,
+        tokencode: currencyId as string,
+        balance: balanceBBB,
+        balanceUsd: balanceUSDT,
+      },
+    });
+  } catch (e) {
+    // @ts-ignore
+    console.log(`Error occurred (asset Transaction): ${e.message}`);
+  }
+}
+
+
+async function queryBalances(api: ApiPromise, to: string, currencyId: string) {
+    //BBB Tokens Balance
+    let dataQuery = await api.query['system']['account'](to);
+    const { data: dataBBB } = dataQuery.toHuman() as unknown as Account;
+    console.log('data BBB', dataBBB);
+
+    let dataQueryUSDT = await api.query['tokens']['accounts'](to, currencyId);
+    const { free: balanceUSDT } = dataQueryUSDT.toHuman() as unknown as BalanceData;
+    return [dataBBB.free,balanceUSDT ]
+
 }
 
 main().catch(console.error);

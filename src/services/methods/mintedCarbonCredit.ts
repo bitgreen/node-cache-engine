@@ -22,6 +22,7 @@ export async function ccMinted(
         amount = arg.toJSON() as number;
       }
     });
+    console.log("Carbon credits minted", projectId,groupId,amount)
     if (groupId === -1 || !projectId || !amount) return;
     // connect asset id with vcu project
 

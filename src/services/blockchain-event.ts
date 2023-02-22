@@ -19,6 +19,7 @@ import { retireTokens } from './methods/retireTokens';
 import { updateBlockNumber } from './methods/updateBlockNumber';
 import { createAssetTransaction, createTokenTransaction } from './methods/createAssetsAndTokens';
 import { sellOrderCancelled } from './methods/sellOrderCancelled';
+import { resubmitProject } from './methods/resubmitProject';
 
 export async function processBlock(
   api: ApiPromise,
@@ -76,6 +77,10 @@ export async function processBlock(
             console.log('retire tokens');
             await retireTokens(event, blockDate);
           }
+          // if (event.method === BlockEvent.ProjectResubmitted) {
+          //   console.log('resubmit project');
+          //   await resubmitProject(api,event, blockDate);
+          // }
         }
         if (event.section === 'balances') {
           if (event.method === BlockEvent.Transfer) {
