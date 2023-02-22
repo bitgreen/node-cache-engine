@@ -17,7 +17,7 @@ import { createSellOrder } from './methods/createSellOrder';
 import { createBuyOrder } from './methods/createBuyOrder';
 import { retireTokens } from './methods/retireTokens';
 import { updateBlockNumber } from './methods/updateBlockNumber';
-import { createAssetTransaction, createTokenTransaction } from './methods/createAssetsAndTokens';
+import { createAssetTransaction, createIssuedAssetTransaction, createTokenTransaction } from './methods/createAssetsAndTokens';
 import { sellOrderCancelled } from './methods/sellOrderCancelled';
 import { resubmitProject } from './methods/resubmitProject';
 
@@ -105,6 +105,10 @@ export async function processBlock(
           if (event.method === BlockEvent.TransderAssets) {
             console.log('Asset called');
             createAssetTransaction(event, api);
+          }
+          if (event.method === BlockEvent.Issued) {
+            console.log('Issued asset called');
+            createIssuedAssetTransaction(event, api);
           }
         }
         if (event.section === 'tokens') {

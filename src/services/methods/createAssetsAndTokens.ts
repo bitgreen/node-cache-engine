@@ -48,6 +48,28 @@ export async function createAssetTransaction(event: Event, api: ApiPromise) {
   }
 }
 
+export async function createIssuedAssetTransaction(event: Event, api: ApiPromise) {
+  try {
+    let eventData = event.data.toJSON();
+    let [assetId, owner, totalSupply] = eventData as (Number | string)[];
+    console.log(assetId, owner, totalSupply);
+
+    const [balanceBBB, balanceUSDT] = await queryBalances(api, owner as string, "USDT")
+    await prisma.assetTransaction.create({
+      data: {
+        sender: owner as string,
+        recipient: owner as string,
+        assetId: assetId as number,
+        balance: balanceBBB,
+        balanceUsd: balanceUSDT,
+      },
+    });
+  } catch (e) {
+    // @ts-ignore
+    console.log(`Error occurred (issued asset Transaction): ${e.message}`);
+  }
+}
+
 export async function createTokenTransaction(event: Event, api: ApiPromise) {
   try {
     let eventData = event.data.toJSON();

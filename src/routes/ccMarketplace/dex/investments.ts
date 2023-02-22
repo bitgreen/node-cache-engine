@@ -35,6 +35,7 @@ router.get('/investments', authMiddle, async (req: Request, res: Response) => {
       },
       include: {
         registryDetails: true,
+        sdgDetails:true,
         batchGroups: { include: { batches: true } },
       },
     });

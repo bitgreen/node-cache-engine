@@ -11,7 +11,8 @@ export enum BlockEvent {
   SellOrderCancelled   = 'SellOrderCancelled',
   BuyOrderFilled   = 'BuyOrderFilled',
   TransferTokens = "Transfer",
-  TransderAssets = "Transferred"
+  TransderAssets = "Transferred",
+  Issued = "Issued"
 
 }
 
