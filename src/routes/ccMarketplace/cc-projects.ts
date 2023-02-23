@@ -1,9 +1,10 @@
 import { Project } from '../../types/prismaTypes';
 import { prisma } from '../../services/prisma';
-import { addProjectPrices, createProjectFilter } from '../../utils/filters';
+import { createProjectFilter } from '../../utils/filters';
 import express, { Request, Response } from 'express';
 import { authenticatedAddress } from '../../services/authentification';
 import { authMiddle } from '../authentification/auth-middleware';
+import { addProjectTokens, filterAndAddProjectPrice } from '../../utils/projectsCalc';
 const router = express.Router();
 
 router.get('/project', async (req: Request, res: Response) => {
@@ -11,7 +12,7 @@ router.get('/project', async (req: Request, res: Response) => {
   console.log('/project');
   const { filters, sortFilter, cursor, cursorObj } = createProjectFilter(req);
   try {
-    const [projects, resultCount] = await prisma.$transaction([
+    let [projects, resultCount] = await prisma.$transaction([
       prisma.project.findMany({
         where: filters,
         take: limit,
@@ -28,9 +29,46 @@ router.get('/project', async (req: Request, res: Response) => {
         where: filters,
       }),
     ]);
-
-    const projectsWithMinMaxCreditPrices: Project = addProjectPrices(projects);
-    // console.log(projectsWithMinMaxCreditPrices);
+    const minCreditPrice = (req.query.minCreditPrice as string) ?? undefined;
+    const maxCreditPrice = (req.query.maxCreditPrice as string) ?? undefined;
+    // console.log('credit prices 0', req.query.minCreditPrice, req.query.maxCreditPrice );
+    // console.log('credit prices', minCreditPrice, maxCreditPrice);
+    if (minCreditPrice && maxCreditPrice) {
+      const invs = await prisma.investment.findMany({
+        where: {
+          AND: [
+            {
+              projectId: {
+                in: projects.map((p) => p.id),
+              },
+            },
+            {
+              sellorders: {
+                some: {
+                  AND: [
+                    {
+                      isCancel: false,
+                    },
+                    {
+                      isSold: false,
+                    },
+                    {
+                      pricePerUnit: {
+                        gte: Number(minCreditPrice),
+                        lte: Number(maxCreditPrice),
+                      },
+                    },
+                  ],
+                },
+              },
+            },
+          ],
+        },
+        include: { sellorders: true },
+      });
+      projects = filterAndAddProjectPrice(projects,invs)
+    }
+    const projectsWithMinMaxCreditPrices: Project = addProjectTokens(projects);
 
     return res.json({
       projects: projectsWithMinMaxCreditPrices,
@@ -94,7 +132,7 @@ router.post(
         data: {
           name: req.body.title,
           description: req.body.description,
-          images:  req.body.featuredImageUrls,
+          images: req.body.featuredImageUrls,
         },
       });
 

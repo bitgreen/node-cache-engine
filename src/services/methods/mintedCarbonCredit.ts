@@ -5,33 +5,24 @@ import { Extrinsic, Event } from '@polkadot/types/interfaces';
 import { queryBalances } from './createAssetsAndTokens';
 
 export async function ccMinted(
-  ex: Extrinsic,
+  event: Event,
   block_date: Date,
   api: ApiPromise
 ) {
-  let projectId,
-    groupId: number = -1,
-    amount;
+
   try {
-    ex.args.map(async (arg: Codec, d: number) => {
-      if (d === 0) {
-        projectId = arg.toJSON();
-      } else if (d === 1) {
-        groupId = arg.toJSON() as number;
-      } else if (d === 2) {
-        amount = arg.toJSON() as number;
-      }
-    });
-    console.log("Carbon credits minted", projectId,groupId,amount)
-    if (groupId === -1 || !projectId || !amount) return;
-    // connect asset id with vcu project
+    let data = event.data.toJSON();
+    let [projectId, groupId, recipient, amount] =
+      data as (Number | string)[];
+
+    console.log("Carbon credits minted", projectId,groupId,recipient,amount)
 
     const projectArgs = await prisma.project.findUnique({
       include: {
         batchGroups: true,
       },
       where: {
-        id: projectId,
+        id: projectId as number,
       },
     });
     if (!projectArgs) return;
@@ -39,16 +30,16 @@ export async function ccMinted(
     await prisma.$transaction([
       prisma.project.update({
         where: {
-          id: projectId,
+          id: projectId as number,
         },
         data: {
           batchGroups: {
             update: {
               where: {
-                id: projectArgs?.batchGroups[groupId].id,
+                id: projectArgs?.batchGroups[groupId as number].id,
               },
               data: {
-                minted: amount,
+                minted: amount as number,
                 isMinted: true,
               },
             },
@@ -58,17 +49,17 @@ export async function ccMinted(
       }),
       prisma.profil.update({
         where: {
-          address: projectArgs?.originator,
+          address: recipient as string,
         },
         data: {
           investments: {
             create: {
               projectId: projectArgs.id,
-              addressProjectId: `${projectArgs?.originator}_${projectId}`,
+              addressProjectId: `${recipient}_${projectId}`,
               creditsOwnedPerGroup: {
                 create: {
                   groupId: groupId as number,
-                  addressGroupId: `${projectArgs?.originator}_${groupId}_${projectId}`,
+                  addressGroupId: `${recipient}_${groupId}_${projectId}`,
 
                   creditsOwned: amount as number,
                 },
@@ -86,15 +77,15 @@ export async function ccMinted(
     ]);
     const [balanceBBB, balanceUSDT] = await queryBalances(
       api,
-      projectArgs?.originator as string,
+      recipient as string,
       'USDT'
     );
 
     await prisma.assetTransaction.create({
       data: {
         sender: '',
-        recipient: projectArgs?.originator as string,
-        assetId: projectArgs?.batchGroups[groupId].assetId as number,
+        recipient: recipient as string,
+        assetId: projectArgs?.batchGroups[groupId as number].assetId as number,
         balance: balanceBBB,
         balanceUsd: balanceUSDT,
       },

@@ -71,7 +71,7 @@ export async function processBlock(
             rejectProject(event, blockDate);
           }
           if (event.method === BlockEvent.CarbonCreditMinted) {
-            ccMinted(ex, blockDate,api);
+            ccMinted(event, blockDate,api);
           }
           if (event.method === BlockEvent.CarbonCreditRetired) {
             console.log('retire tokens');

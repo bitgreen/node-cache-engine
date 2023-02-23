@@ -9,8 +9,8 @@ const ProjectArg = Prisma.validator<Prisma.ProjectArgs>()({
   },
 });
 export type Project = Prisma.ProjectGetPayload<typeof ProjectArg> & {
-  minCreditPrice?: string;
-} & { maxCreditPrice?: string } & { location: number[][] };
+  minToken?: string;
+} & { maxToken?: string } & { minPrice?: number } & { maxPrice?: number } ;
 
 const BatchGroupsArg = Prisma.validator<Prisma.BatchGroupsArgs>()({
   include: { batches: true },
@@ -20,3 +20,8 @@ export type BatchGroups = Prisma.BatchGroupsGetPayload<typeof BatchGroupsArg>;
 const CartItemArgs = Prisma.validator<Prisma.CartItemArgs>()({include: {batchEntities:true}})
 type CartItem1 = Prisma.CartItemGetPayload<typeof CartItemArgs>
 export type CartItem = Omit<CartItem1, "profilId" | "id">; 
+
+const InvestmentArg = Prisma.validator<Prisma.InvestmentArgs>()({
+  include: { sellorders: true },
+});
+export type Investment = Prisma.InvestmentGetPayload<typeof InvestmentArg>;
