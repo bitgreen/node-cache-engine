@@ -45,10 +45,10 @@ router.get('/get-last-block', async (req: Request, res: Response) => {
 });
 router.get('/get-last-block', async (req: Request, res: Response) => {
   const val = await prisma.block.findFirst({
-    where: {id: 1}
-  })
-  return res.json(val)
-})
+    where: { id: 1 },
+  });
+  return res.json(val);
+});
 router.get('/transactions', async (req: Request, res: Response) => {
   console.log('/transactions');
 
@@ -131,12 +131,10 @@ router.get('/transaction', async (req: Request, res: Response) => {
 router.get('/assets/transaction', async (req: Request, res: Response) => {
   console.log('/assets/transaction');
   try {
-    const { account } = req.query;
-
+    const { account, assetId } = req.query;
+    const aId = Number(assetId) ? Number(assetId) : undefined
     const assetTransaction = await prisma.assetTransaction.findMany({
-      where: {
-        recipient: account as string,
-      },
+      where: { AND: [{ account: account as string }, {assetId:aId}] },
     });
     const assetIds = assetTransaction?.map((item) => item.assetId);
     console.log('assetIds', assetIds);
@@ -173,18 +171,18 @@ router.get('/assets/transaction', async (req: Request, res: Response) => {
 router.get('/tokens/transaction', async (req: Request, res: Response) => {
   console.log('/tokens/transaction');
   try {
-  const { account } = req.query;
+    const { account } = req.query;
 
-  const tokensTransaction = await prisma.tokenTransaction.findMany({
-    where: {
-      recipient: account as string,
-    },
-  });
+    const tokensTransaction = await prisma.tokenTransaction.findMany({
+      where: {
+        account: account as string,
+      },
+    });
 
-  res.json(tokensTransaction);
-} catch (e) {
-  res.status(500).json(e);
-}
+    res.json(tokensTransaction);
+  } catch (e) {
+    res.status(500).json(e);
+  }
 });
 
 router.get('/balance', async (req: Request, res: Response) => {

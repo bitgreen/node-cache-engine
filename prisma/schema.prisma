@@ -306,9 +306,8 @@ model Asset {
 }
 
 model AssetTransaction {
-  id         Int      @id @default(autoincrement())
-  sender     String   @db.VarChar(48)
-  recipient  String   @db.VarChar(48)
+  // id         Int      @id @default(autoincrement())
+  account    String   @default("") @db.VarChar(48)
   assetId    Int
   assetLogo  String?
   nftImage   String?
@@ -316,12 +315,13 @@ model AssetTransaction {
   balanceUsd String?
   assetName  String?
   createdAt  DateTime @default(now()) @db.Timestamp(6)
+
+  @@id([account, assetId])
 }
 
 model TokenTransaction {
   id         Int      @id @default(autoincrement())
-  sender     String   @db.VarChar(48)
-  recipient  String   @db.VarChar(48)
+  account    String?  @unique @default(uuid()) @db.VarChar(48)
   tokencode  String
   tokenLogo  String?
   balance    String?
