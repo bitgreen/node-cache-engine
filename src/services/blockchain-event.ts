@@ -13,6 +13,13 @@ import { ccMinted } from './methods/mintedCarbonCredit';
 import { blockExtrinsic } from './methods/blockExtrinsic';
 import { transaction } from './methods/transaction';
 import { rejectProject } from './methods/rejectProject';
+import { createSellOrder } from './methods/createSellOrder';
+import { createBuyOrder } from './methods/createBuyOrder';
+import { retireTokens } from './methods/retireTokens';
+import { updateBlockNumber } from './methods/updateBlockNumber';
+import { createAssetTransaction, createIssuedAssetTransaction, createTokenTransaction } from './methods/createAssetsAndTokens';
+import { sellOrderCancelled } from './methods/sellOrderCancelled';
+import { resubmitProject } from './methods/resubmitProject';
 
 export async function processBlock(
   api: ApiPromise,
@@ -27,6 +34,7 @@ export async function processBlock(
   signedBlock.block.extrinsics.map(async (ex: Extrinsic, index: number) => {
     const isSigned = ex.isSigned;
     const hash = ex.hash.toString();
+    updateBlockNumber(blockNumber as number, hash);
     let extrinsicSuccess = false,
       newAssetId: number | undefined;
 
@@ -48,13 +56,13 @@ export async function processBlock(
         ({ phase }: EventRecord) =>
           phase.isApplyExtrinsic && phase.asApplyExtrinsic.eq(index)
       )
-      .map(async ({ event }: EventRecord) => {
+      .map(async ({ event }: EventRecord, i) => {
         if (!extrinsicSuccess) return;
-        console.log("event.section", event.section)
-        console.log("method", event.method)
-        if (event.section === 'vcu') {
+        console.log('event.section', event.section);
+        console.log('method', event.method);
+        if (event.section === 'carbonCredits') {
           if (event.method === BlockEvent.ProjectCreated) {
-            createProject(ex, event, blockDate);
+            createProject(api, event, blockDate);
           }
           if (event.method === BlockEvent.ProjectApproved) {
             approveProject(event, blockDate);
@@ -63,12 +71,50 @@ export async function processBlock(
             rejectProject(event, blockDate);
           }
           if (event.method === BlockEvent.CarbonCreditMinted) {
-            ccMinted(ex, blockDate);
+            ccMinted(event, blockDate,api);
+          }
+          if (event.method === BlockEvent.CarbonCreditRetired) {
+            console.log('retire tokens');
+            await retireTokens(event, blockDate);
+          }
+          // if (event.method === BlockEvent.ProjectResubmitted) {
+          //   console.log('resubmit project');
+          //   await resubmitProject(api,event, blockDate);
+          // }
+        }
+        if (event.section === 'balances') {
+          if (event.method === BlockEvent.Transfer) {
+            transaction(event, blockNumber as number, blockDate, hash + i);
           }
         }
-        if (event.section === "balances") {
-          if (event.method === BlockEvent.Transfer) {
-            transaction(event, blockNumber as number, blockDate, hash);
+        if (event.section === 'dex') {
+          if (event.method === BlockEvent.SellOrderCreated) {
+            console.log('sell order created');
+            createSellOrder(event, blockDate);
+          }
+          if (event.method === BlockEvent.SellOrderCancelled) {
+            console.log('sell order cancelled');
+            sellOrderCancelled(event);
+          }
+          if (event.method === BlockEvent.BuyOrderFilled) {
+            console.log('buy order created');
+            createBuyOrder(event, blockDate);
+          }
+        }
+        if (event.section === 'assets') {
+          if (event.method === BlockEvent.TransderAssets) {
+            console.log('Asset called');
+            createAssetTransaction(event, api);
+          }
+          if (event.method === BlockEvent.Issued) {
+            console.log('Issued asset called');
+            createIssuedAssetTransaction(event, api);
+          }
+        }
+        if (event.section === 'tokens') {
+          if (event.method === BlockEvent.TransferTokens) {
+            console.log('tokens called');
+            createTokenTransaction(event, api);
           }
         }
       });

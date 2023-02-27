@@ -1,4 +1,4 @@
-import { SdgType } from '@prisma/client';
+import { SdgType, SellOrder } from '@prisma/client';
 import { BatchGroups, Project } from './../types/prismaTypes';
 import { Prisma } from '@prisma/client';
 import { Request } from 'express';
@@ -16,12 +16,13 @@ export function createProjectFilter(req: Request) {
   const projectSdgsFilter = projectSdgs
     ? projectSdgs.split(',').map((str) => str as SdgType)
     : undefined;
-  const minCreditPrice = (req.query.minCreditPrice as string) ?? undefined;
-  const maxCreditPrice = (req.query.maxCreditPrice as string) ?? undefined;
-  const minCreditPriceFilter = createCreditPriceFilter(
-    Number(minCreditPrice),
-    Number(maxCreditPrice)
-  );
+    console.log("projectSdgsFilter",projectSdgsFilter)
+  // const minCreditPrice = (req.query.minCreditPrice as string) ?? undefined;
+  // const maxCreditPrice = (req.query.maxCreditPrice as string) ?? undefined;
+  // const minCreditPriceFilter = createCreditPriceFilter(
+  //   Number(minCreditPrice),
+  //   Number(maxCreditPrice)
+  // );
   const ids = (req.query.ids as string) ?? undefined;
   const idsFilter = ids
     ? ids.split(',').map((str) => parseInt(str))
@@ -39,7 +40,7 @@ export function createProjectFilter(req: Request) {
     AND: [
       // { ...projectTypesFilter },
       { ...projectStatesFilter },
-      { ...minCreditPriceFilter },
+      // { ...minCreditPriceFilter },
       { ...creationYearFilter },
       {
         OR: [
@@ -186,30 +187,7 @@ function createSorting(sortby: ProjectSortOptions) {
 }
 
 //Any type fix
-export function addProjectPrices(projects: any) {
-  return projects.map((project: any) => {
-    const [min, max] = calculateMinMaxProjectPrice(project);
-    return {
-      ...project,
-      minCreditPrice: min,
-      maxCreditPrice: max,
-    };
-  });
-}
 
-function calculateMinMaxProjectPrice(project: Project): [number, number] {
-  const sortedBatchGroups = project.batchGroups.sort(function (
-    a: BatchGroups,
-    b: BatchGroups
-  ) {
-    return (a.totalSupply as number) - (b.totalSupply as number);
-  });
-  if (!sortedBatchGroups) return [0, 0];
-  return [
-    sortedBatchGroups[0]?.totalSupply ?? 0,
-    sortedBatchGroups[sortedBatchGroups.length - 1]?.totalSupply ?? 0,
-  ];
-}
 
 enum ProjectSortOptions {
   DEFAULT = '',

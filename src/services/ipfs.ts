@@ -1,7 +1,6 @@
 import { Request } from 'express';
 import formidable, { Files } from 'formidable';
 import { create } from 'ipfs-http-client';
-import { IPFSHTTPClient } from 'ipfs-http-client/dist/src/types';
 
 export async function assertFiles(req: Request) {
   return new Promise<Files>((resolve, reject) => {
@@ -15,16 +14,22 @@ export async function assertFiles(req: Request) {
   });
 }
 
-let client: IPFSHTTPClient;
+const client = create({ url: process.env.INFURA_API_ENDPOINT });
+
+const headers = {
+  Authorization: `Basic ${btoa(process.env.INFURA_PROJECT_ID + ":" + process.env.INFURA_API_KEY)}`,
+}
 
 export async function addFileToIpfs(data: Buffer, contentType: string) {
-  if (!client) client = create({ url: process.env.IPFS_RPC_URL });
   try {
-    const result = await client.add(data, {
-      headers: { 'Content-Type': contentType ?? '' },
+    return await client.add(data, {
+      headers: {
+        ...headers,
+        'Content-Type': contentType ?? ''
+      },
     });
-    return result;
   } catch (error) {
+    console.error(error);
     return undefined;
   }
 }

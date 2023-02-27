@@ -1,75 +1,78 @@
-import { BatchGroups, Project } from '../../types/prismaTypes';
-import { Extrinsic, Event } from '@polkadot/types/interfaces';
+import { Project } from '../../types/prismaTypes';
+import { Event } from '@polkadot/types/interfaces';
 import type { Codec } from '@polkadot/types-codec/types';
 import { prisma } from '../prisma';
 import { convertHex } from '../../utils/converter';
+import { ApiPromise } from '@polkadot/api';
+import { RegistryName } from '@prisma/client';
 
 export async function createProject(
-  ex: Extrinsic,
+  api: ApiPromise,
+  // ex: Extrinsic,
   event: Event,
   block_date: Date
 ) {
-  let projectArg: any;
-  let projectId: number | undefined;
-  ex.args.map(async (arg: Codec, d: number) => {
-    if (d === 0) {
-      projectArg = arg.toJSON();
-    }
-  });
-  let project = projectArg as Project;
-  event.data.map(async (arg: any, d: number) => {
-    if (d === 0) {
-      projectId = arg.toNumber();
-    }
-  });
-
-  if (!project || !projectId) return;
-  let images: string[] = project.images?.map((image: string) =>
-    convertHex(image as string)
-  );
-  let videos: string[] = project.videos?.map((video: string) =>
-    convertHex(video as string)
-  );
-  let documents: string[] = project.documents?.map((document: string) =>
-    convertHex(document as string)
-  );
-  let RegistryDetails = project.registryDetails?.map((reg) => {
-    return {
-      name: convertHex(reg.name as string),
-      summary: convertHex(reg.summary),
-      regName: convertHex(reg.regName),
-    };
-  });
-  let sdgDetails = project.sdgDetails?.map((reg) => {
-    return {
-      sdgType: convertHex(reg.sdgType as string),
-      description: convertHex(reg.description as string),
-      references: convertHex(reg.references as string),
-    };
-  });
-  let royalties = project.royalties?.map((reg) => {
-    return {
-      accountId: convertHex(reg.accountId),
-      percentOfFees: reg.percentOfFees,
-    };
-  });
-  let batchGroups = project.batchGroups?.map((batchGroups: BatchGroups) => {
-    return {
-      ...batchGroups,
-      name: convertHex(batchGroups.name as string),
-      batches: {
-        create: batchGroups.batches,
-      },
-    };
-  });
-  let location = project.location.map((f) => {
-    return {
-      latitude: f[0],
-      longitude: f[1],
-    };
-  });
-
   try {
+    let dataEvent = event.data.toJSON();
+    let [projectId] = dataEvent as number[];
+
+    const exist = await prisma.project.findUnique({
+      where: {id: projectId}
+    })
+    if (exist) {
+      console.log("Exist");
+      return;
+    } 
+
+    let dataQuery = await api.query['carbonCredits']['projects'](projectId);
+    const projectArg = dataQuery.toJSON();
+    let project = projectArg as unknown as Project;
+
+    if (!project || !projectId) return;
+    let images: string[] = project.images?.map((image: string) =>
+      convertHex(image as string)
+    );
+    let videos: string[] = project.videos?.map((video: string) =>
+      convertHex(video as string)
+    );
+    let documents: string[] = project.documents?.map((document: string) =>
+      convertHex(document as string)
+    );
+    let RegistryDetails = project.registryDetails?.map((reg) => {
+      return {
+        name: convertHex(reg.name as string),
+        summary: convertHex(reg.summary),
+        regName: convertHex(reg.regName as string ) as RegistryName,
+      };
+    });
+    let sdgDetails = project.sdgDetails?.map((reg) => {
+      return {
+        sdgType: convertHex(reg.sdgType as string),
+        description: convertHex(reg.description as string),
+        references: convertHex(reg.references as string),
+      };
+    });
+    let royalties = project.royalties?.map((reg) => {
+      return {
+        accountId: convertHex(reg.accountId),
+        percentOfFees: reg.percentOfFees,
+      };
+    });
+    let batchGroups = [];
+    for (const [key, value] of Object.entries(project.batchGroups)) {
+      batchGroups.push({
+        ...value,
+        assetId: Date.now() + 1,
+        groupId: Number(key),
+        name: convertHex(value.name as string),
+        batches: {
+          create: value.batches.map((batch) => {
+            return { ...batch, uuid: convertHex(batch.uuid as string) };
+          }),
+        },
+      });
+    }
+
     await prisma.project.create({
       data: {
         id: projectId,
@@ -78,9 +81,7 @@ export async function createProject(
           : 'empty',
         name: convertHex(project.name),
         description: convertHex(project.description as string),
-        location: {
-          create: location,
-        },
+        location: convertHex(project.location as string),
         images: images,
         videos: videos,
         documents: documents,
@@ -100,8 +101,8 @@ export async function createProject(
         created: block_date.toISOString(),
       },
     });
-  } catch (e) {
+   } catch (e) {
     // @ts-ignore
     console.log(`Error occurred (creating project): ${e.message}`);
-  }
+   }
 }

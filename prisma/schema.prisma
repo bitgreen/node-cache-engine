@@ -8,68 +8,72 @@ datasource db {
 }
 
 model Project {
-  id              Int               @id
-  originator      String            @db.VarChar(64)
-  name            String            @db.VarChar
-  state           ProjectState      @default(SUBMITTED)
-  description     String?
-  location        Location[]
-  images          String[]
-  videos          String[]
-  documents       String[]
-  type            ProjectType       @default(AGRICULTURE_FORESTRY_AND_OTHER_LAND_USE)
-  registryDetails RegistryDetails[]
-  sdgDetails      SdgDetails[]
-  royalties       Royalties[]
-  batchGroups     BatchGroups[]
-  created         DateTime          @default(now()) @db.Timestamp(6)
-  updated         DateTime?         @default(now()) @db.Timestamp(6)
-  approved        Boolean?          @default(false)
+  id                  Int               @id
+  originator          String            @db.VarChar(64)
+  name                String            @db.VarChar
+  state               ProjectState      @default(SUBMITTED)
+  description         String?
+  location            String            @default("")
+  images              String[]
+  videos              String[]
+  documents           String[]
+  type                ProjectType       @default(AGRICULTURE_FORESTRY_AND_OTHER_LAND_USE)
+  registryDetails     RegistryDetails[]
+  sdgDetails          SdgDetails[]
+  royalties           Royalties[]
+  batchGroups         BatchGroups[]
+  created             DateTime          @default(now()) @db.Timestamp(6)
+  updated             DateTime?         @default(now()) @db.Timestamp(6)
+  approved            Boolean?          @default(false)
+  listedToMarketplace Boolean           @default(false)
 }
 
-model Location {
-  id        Int      @id @default(autoincrement())
-  latitude  Float
-  longitude Float
-  projectId Int?
-  project   Project? @relation(fields: [projectId], references: [id])
-}
+// model Location {
+//   id        Int      @id @default(autoincrement())
+//   latitude  Float
+//   longitude Float
+//   projectId Int?
+//   project   Project? @relation(fields: [projectId], references: [id], onDelete: Cascade)
+// }
 
 model BatchGroups {
   id          Int      @id @default(autoincrement())
   name        String?  @db.VarChar
   uuid        String?
-  assetId     Int
+  assetId     Int      @unique
   totalSupply Int?
   minted      Int?
+  isMinted    Boolean? @default(false)
   retired     Int?
+  groupId     Int?
   batches     Batch[]
   projectId   Int?
-  project     Project? @relation(fields: [projectId], references: [id])
+  project     Project? @relation(fields: [projectId], references: [id], onDelete: Cascade)
 }
 
 model Batch {
   id           Int     @id @default(autoincrement())
   name         String? @db.VarChar
-  uuid         String?
+  uuid         String? @unique
   issuanceYear Int?
   startDate    Int?
   endDate      Int?
   totalSupply  Int?
   minted       Int?
   retired      Int?
+  groupId      Int?
 
   batchGroupId Int
-  batchGroups  BatchGroups @relation(fields: [batchGroupId], references: [id])
+  batchGroups  BatchGroups @relation(fields: [batchGroupId], references: [id], onDelete: Cascade)
 }
 
 model RegistryDetails {
-  id         String  @id @default(uuid())
+  id         String        @id @default(uuid())
   name       String
   summary    String
-  regName    String
-  registryId Int     @unique
-  project    Project @relation(fields: [registryId], references: [id])
+  regName    RegistryName?
+  registryId Int           @unique
+  project    Project       @relation(fields: [registryId], references: [id], onDelete: Cascade)
 }
 
 model Royalties {
@@ -78,7 +82,7 @@ model Royalties {
   accountId     String @db.VarChar(64)
   percentOfFees Float? @db.Real
 
-  project Project @relation(fields: [projectId], references: [id])
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
 }
 
 model SdgDetails {
@@ -87,7 +91,7 @@ model SdgDetails {
   sdgType     SdgType?
   description String?
   references  String?
-  project     Project  @relation(fields: [projectId], references: [id])
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
 }
 
 model Profil {
@@ -100,12 +104,109 @@ model Profil {
   emailStatus     VerificationStatus @default(NOT_VERIFIED)
   emailVerifiedAt DateTime?
 
-  activityTransactionReceipts Boolean @default(false)
-  activityOffersFilled        Boolean @default(false)
-  marketingNews               Boolean @default(false)
+  activityTransactionReceipts Boolean  @default(false)
+  activityOffersFilled        Boolean  @default(false)
+  marketingNews               Boolean  @default(false)
+  userType                    UserType @default(Individual)
 
-  stars Star[]
-  KYC   KYC?
+  investments        Investment[]
+  creditTransactions CreditTransaction[]
+
+  stars     Star[]
+  KYC       KYC?
+  cartItems CartItem[]
+}
+
+model Investment {
+  id                   String                 @id @default(uuid())
+  projectId            Int
+  addressProjectId     String?                @unique @default(uuid())
+  creditsOwned         Int
+  totalValue           Float                  @default(0)
+  retiredCredits       Int
+  creditsOwnedPerGroup CreditsOwnedPerGroup[]
+  creditPrice          Float // Brauch ich evt nicht mehr, da in buyorder drin
+  quantity             Int
+  sellorders           SellOrder[]
+  buyOrders            BuyOrder[]             @relation("investment")
+  // buyOrdersForRetire BuyOrder[]  @relation("investmentForRetire")
+  Profil               Profil?                @relation(fields: [profilAddress], references: [address], onDelete: Cascade)
+  profilAddress        String?
+}
+
+model CreditsOwnedPerGroup {
+  id             String      @id @default(uuid())
+  addressGroupId String?     @unique
+  creditsOwned   Int
+  groupId        Int
+  Investment     Investment? @relation(fields: [investmentId], references: [id], onDelete: Cascade)
+  investmentId   String?
+}
+
+model BuyOrder {
+  id             Int         @id @default(autoincrement())
+  creditsOwned   Int
+  retiredCredits Int
+  creditPrice    Float
+  orderId        Int
+  groupId        Int //notwendig, da man sonst die einzelnen Käufe nicht den Gruppen zuordnen kann
+  created        DateTime    @default(now()) @db.Timestamp(6)
+  Investment     Investment? @relation(fields: [investmentId], references: [id], onDelete: Cascade, name: "investment")
+  investmentId   String?
+  // InvestmentForRetire   Investment? @relation(fields: [investmentIdForRetire], references: [id], onDelete: Cascade, name: "investmentForRetire")
+  // investmentIdForRetire String?
+}
+
+model SellOrder {
+  orderId      Int         @id
+  assetId      Int
+  units        Int
+  groupId      Int?
+  unitsRemain  Int         @default(0)
+  pricePerUnit Float
+  isCancel     Boolean?    @default(false)
+  isSold       Boolean?    @default(false)
+  owner        String
+  created      DateTime    @default(now()) @db.Timestamp(6)
+  Investment   Investment? @relation(fields: [investmentId], references: [id], onDelete: Cascade)
+  investmentId String?
+}
+
+model CreditTransaction {
+  id            String                @id @default(uuid())
+  type          CreditTransactionType
+  description   String
+  projectId     Int                   @default(0)
+  credits       Int
+  creditPrice   Float
+  from          String
+  to            String
+  created       DateTime              @default(now()) @db.Timestamp(6)
+  fee           Float
+  Profil        Profil?               @relation(fields: [profilAddress], references: [address], onDelete: Cascade)
+  profilAddress String?
+}
+
+model CartItem {
+  id              Int           @id @default(autoincrement())
+  projectName     String
+  projectImageUrl String        @default("")
+  projectPrices   Float[]
+  projectId       Int
+  batchEntities   BatchEntity[]
+  profilId        String
+  profil          Profil        @relation(fields: [profilId], references: [address], onDelete: Cascade)
+}
+
+model BatchEntity {
+  id            Int      @id @default(autoincrement())
+  calls         String[]
+  quantity      Int
+  assetId       Int
+  creditPrice   Float
+  issuanceYear  Int?
+  batchEntityId Int
+  CartItem      CartItem @relation(fields: [batchEntityId], references: [id], onDelete: Cascade)
 }
 
 model KYC {
@@ -115,13 +216,13 @@ model KYC {
   LastName      String
   Address       String
   Country       String
-  Profil        Profil?            @relation(fields: [profilAddress], references: [address])
+  Profil        Profil?            @relation(fields: [profilAddress], references: [address], onDelete: Cascade)
 }
 
 model Star {
   profilAddress String
   projectId     Int
-  profil        Profil @relation(fields: [profilAddress], references: [address])
+  profil        Profil @relation(fields: [profilAddress], references: [address], onDelete: Cascade)
 
   @@id([profilAddress, projectId])
 }
@@ -150,6 +251,11 @@ enum SdgType {
   LifeOnLand
   PeaceJusticeAndStrongInstitutions
   ParternshipsForTheGoals
+}
+
+enum UserType {
+  Individual
+  Originator
 }
 
 enum ProjectState {
@@ -200,20 +306,40 @@ model Asset {
 }
 
 model AssetTransaction {
-  id          Int      @id @default(autoincrement())
-  blockNumber Int
-  hash        String   @unique @db.VarChar(66)
-  sender      String   @db.VarChar(48)
-  recipient   String   @db.VarChar(48)
-  amount      Int
-  assetId     Int
-  createdAt   DateTime @db.Timestamp(6)
+  id         Int      @id @default(autoincrement())
+  sender     String   @db.VarChar(48)
+  recipient  String   @db.VarChar(48)
+  assetId    Int
+  assetLogo  String?
+  nftImage   String?
+  balance    String?
+  balanceUsd String?
+  assetName  String?
+  createdAt  DateTime @default(now()) @db.Timestamp(6)
+}
+
+model TokenTransaction {
+  id         Int      @id @default(autoincrement())
+  sender     String   @db.VarChar(48)
+  recipient  String   @db.VarChar(48)
+  tokencode  String
+  tokenLogo  String?
+  balance    String?
+  balanceUsd String?
+  tokenName  String?
+  createdAt  DateTime @default(now()) @db.Timestamp(6)
+}
+
+enum CreditTransactionType {
+  PURCHASE
+  SALE
+  RETIRE
 }
 
 model Transaction {
   id          Int      @id @default(autoincrement())
   blockNumber Int
-  hash        String   @unique @db.VarChar(66)
+  hash        String   @unique @db.VarChar(68)
   sender      String   @db.VarChar(64)
   recipient   String   @db.VarChar(64)
   // amount      Decimal  @db.Decimal(65, 0)
@@ -222,8 +348,15 @@ model Transaction {
   createdAt   DateTime @db.Timestamp(6)
 }
 
+// model Block {
+//   number    Int      @id
+//   hash      String   @unique @db.VarChar(66)
+//   createdAt DateTime @db.Timestamp(6)
+// }
 model Block {
-  number    Int      @id
-  hash      String   @unique @db.VarChar(66)
-  createdAt DateTime @db.Timestamp(6)
+  id          Int      @id @default(1)
+  hash        String   @unique @db.VarChar(66)
+  count       Int
+  blockNumber Int
+  createdAt   DateTime @default(now()) @db.Timestamp(6)
 }

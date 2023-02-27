@@ -1,49 +1,95 @@
+import { ApiPromise } from '@polkadot/api';
 import { Codec } from '@polkadot/types-codec/types';
 import { prisma } from '../prisma';
 import { Extrinsic, Event } from '@polkadot/types/interfaces';
+import { queryBalances } from './createAssetsAndTokens';
 
-export async function ccMinted(ex: Extrinsic, block_date: Date) {
-  let projectId,
-    groupId: number = -1,
-    amount;
-  ex.args.map(async (arg: Codec, d: number) => {
-    if (d === 0) {
-      projectId = arg.toJSON();
-    } else if (d === 1) {
-      groupId = arg.toJSON() as number;
-    } else if (d === 2) {
-      amount = arg.toJSON() as number;
-    }
-  });
-  if (groupId === -1 || !projectId) return;
-  // connect asset id with vcu project
+export async function ccMinted(
+  event: Event,
+  block_date: Date,
+  api: ApiPromise
+) {
+
   try {
-    const batchGroupsArg = await prisma.project.findUnique({
+    let data = event.data.toJSON();
+    let [projectId, groupId, recipient, amount] =
+      data as (Number | string)[];
+
+    console.log("Carbon credits minted", projectId,groupId,recipient,amount)
+
+    const projectArgs = await prisma.project.findUnique({
       include: {
         batchGroups: true,
       },
       where: {
-        id: projectId,
+        id: projectId as number,
       },
     });
-    await prisma.project.update({
-      where: {
-        id: projectId,
-      },
-      data: {
-        batchGroups: {
-          update: {
-            where: {
-              id: batchGroupsArg?.batchGroups[groupId].id,
+    if (!projectArgs) return;
+
+    await prisma.$transaction([
+      prisma.project.update({
+        where: {
+          id: projectId as number,
+        },
+        data: {
+          batchGroups: {
+            update: {
+              where: {
+                id: projectArgs?.batchGroups[groupId as number].id,
+              },
+              data: {
+                minted: amount as number,
+                isMinted: true,
+              },
             },
-            data: {
-              minted: amount,
+          },
+          updated: block_date.toISOString(),
+        },
+      }),
+      prisma.profil.update({
+        where: {
+          address: recipient as string,
+        },
+        data: {
+          investments: {
+            create: {
+              projectId: projectArgs.id,
+              addressProjectId: `${recipient}_${projectId}`,
+              creditsOwnedPerGroup: {
+                create: {
+                  groupId: groupId as number,
+                  addressGroupId: `${recipient}_${groupId}_${projectId}`,
+
+                  creditsOwned: amount as number,
+                },
+              },
+              creditsOwned: amount as number,
+              retiredCredits: 0,
+              creditPrice: -1,
+              quantity: 0,
+              sellorders: undefined,
+              buyOrders: undefined,
             },
           },
         },
-        updated: block_date.toISOString(),
-      },
-    });
+      }),
+    ]);
+    // const [balanceBBB, balanceUSDT] = await queryBalances(
+    //   api,
+    //   recipient as string,
+    //   'USDT'
+    // );
+
+    // await prisma.assetTransaction.create({
+    //   data: {
+    //     sender: '',
+    //     recipient: recipient as string,
+    //     assetId: projectArgs?.batchGroups[groupId as number].assetId as number,
+    //     balance: balanceBBB,
+    //     balanceUsd: balanceUSDT,
+    //   },
+    // });
   } catch (e) {
     // @ts-ignore
     console.log(`Error occurred (minting carbon credit): ${e.message}`);

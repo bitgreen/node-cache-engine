@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "Transaction" ALTER COLUMN "hash" SET DATA TYPE VARCHAR(68);

@@ -13,21 +13,21 @@ export async function transaction(
   let recipient: string | undefined;
   let amount: string | undefined;
 
-  event.data.map(async (arg: Codec, d: number) => {
-    if (d === 0) {
-      sender = arg.toString();
-    } else if (d === 1) {
-      recipient = arg.toString();
-    } else if (d === 2) {
-      amount = arg.toString() /// DIVIDER;
-    }
-  });
-
-  console.log("sender", sender)
-  console.log("recipient", recipient)
-  console.log("amount", amount)
-
   try {
+    event.data.map(async (arg: Codec, d: number) => {
+      if (d === 0) {
+        sender = arg.toString();
+      } else if (d === 1) {
+        recipient = arg.toString();
+      } else if (d === 2) {
+        amount = arg.toString(); /// DIVIDER;
+      }
+    });
+
+    console.log('sender', sender);
+    console.log('recipient', recipient);
+    console.log('amount', amount);
+
     await prisma.transaction.create({
       data: {
         blockNumber: blockNumber,
