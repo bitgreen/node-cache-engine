@@ -321,7 +321,7 @@ model AssetTransaction {
 
 model TokenTransaction {
   id         Int      @id @default(autoincrement())
-  account    String?  @unique @default(uuid()) @db.VarChar(48)
+  account    String   @unique @default(uuid()) @db.VarChar(48)
   tokencode  String
   tokenLogo  String?
   balance    String?
