@@ -33,8 +33,8 @@ export function filterAndAddProjectPrice(
   const newProjects: Project[]= [];
   for (const project of projects) {
     const investment = invs.find((i) => i.projectId === project.id);
-    if (!investment) continue;
-    const [min, max] = calculateMinMaxProjectPrice(investment.sellorders);
+    
+    const [min, max] = investment ? calculateMinMaxProjectPrice(investment.sellorders) : [0,0]
 
     newProjects.push({ ...project, minPrice: min, maxPrice: max });
   }

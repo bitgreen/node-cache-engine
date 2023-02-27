@@ -104,22 +104,17 @@ router.get('/transaction', async (req: Request, res: Response) => {
   console.log('/transaction');
   try {
     const { hash = '' } = req.query;
-
-    const transaction = await prisma.transaction.findUnique({
+    if (!hash)
+      return res.json({
+        transaction: [],
+      });
+    const transaction = await prisma.transaction.findMany({
       where: {
-        hash: hash as string,
-      },
-      select: {
-        blockNumber: true,
-        hash: true,
-        sender: true,
-        recipient: true,
-        amount: true,
-        gasFees: true,
-        createdAt: true,
-      },
+        hash: {
+          contains: hash as string,
+        },
+      }
     });
-
     res.json({
       transaction: transaction,
     });
@@ -132,9 +127,9 @@ router.get('/assets/transaction', async (req: Request, res: Response) => {
   console.log('/assets/transaction');
   try {
     const { account, assetId } = req.query;
-    const aId = Number(assetId) ? Number(assetId) : undefined
+    const aId = Number(assetId) ? Number(assetId) : undefined;
     const assetTransaction = await prisma.assetTransaction.findMany({
-      where: { AND: [{ account: account as string }, {assetId:aId}] },
+      where: { AND: [{ account: account as string }, { assetId: aId }] },
     });
     const assetIds = assetTransaction?.map((item) => item.assetId);
     console.log('assetIds', assetIds);

@@ -31,9 +31,7 @@ router.get('/project', async (req: Request, res: Response) => {
     ]);
     const minCreditPrice = (req.query.minCreditPrice as string) ?? undefined;
     const maxCreditPrice = (req.query.maxCreditPrice as string) ?? undefined;
-    // console.log('credit prices 0', req.query.minCreditPrice, req.query.maxCreditPrice );
-    // console.log('credit prices', minCreditPrice, maxCreditPrice);
-    // todo: for admin page all projects
+
     if (minCreditPrice && maxCreditPrice) {
       const invs = await prisma.investment.findMany({
         where: {
