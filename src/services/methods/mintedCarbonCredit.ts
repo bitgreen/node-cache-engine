@@ -75,21 +75,21 @@ export async function ccMinted(
         },
       }),
     ]);
-    const [balanceBBB, balanceUSDT] = await queryBalances(
-      api,
-      recipient as string,
-      'USDT'
-    );
+    // const [balanceBBB, balanceUSDT] = await queryBalances(
+    //   api,
+    //   recipient as string,
+    //   'USDT'
+    // );
 
-    await prisma.assetTransaction.create({
-      data: {
-        sender: '',
-        recipient: recipient as string,
-        assetId: projectArgs?.batchGroups[groupId as number].assetId as number,
-        balance: balanceBBB,
-        balanceUsd: balanceUSDT,
-      },
-    });
+    // await prisma.assetTransaction.create({
+    //   data: {
+    //     sender: '',
+    //     recipient: recipient as string,
+    //     assetId: projectArgs?.batchGroups[groupId as number].assetId as number,
+    //     balance: balanceBBB,
+    //     balanceUsd: balanceUSDT,
+    //   },
+    // });
   } catch (e) {
     // @ts-ignore
     console.log(`Error occurred (minting carbon credit): ${e.message}`);
