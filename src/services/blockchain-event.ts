@@ -58,6 +58,7 @@ export async function processBlock(
       )
       .map(async ({ event }: EventRecord, i) => {
         if (!extrinsicSuccess) return;
+        // if (api.events.system.ExtrinsicSuccess.is(event) == false) return;
         console.log('event.section', event.section);
         console.log('method', event.method);
         if (event.section === 'carbonCredits') {
