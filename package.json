@@ -8,7 +8,7 @@
     "build": "tsc -p .",
     "node": "ts-node dist/subscribeNode.js",
     "node-dev": "ts-node-dev --respawn --pretty --transpile-only src/subscribeNode.ts",
-    "fetch": "ts-node dist/fetchBlock.js",
+    "fetch": "ts-node dist/fetchBlocks.js",
     "fetch-dev": "ts-node-dev --respawn --pretty --transpile-only src/fetchBlocks.ts",
     "app": "ts-node dist/app.js",
     "testquery": "ts-node dist/testquery.js",

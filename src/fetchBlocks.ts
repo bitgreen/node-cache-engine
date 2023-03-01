@@ -19,6 +19,7 @@ program
     false
   )
   .option('-a, --analyze-only', 'analyze only, dont crawl all data', false)
+  // .option('--sleep', 'sleep', '500')
   .parse(process.argv);
 
 program.parse();
@@ -27,7 +28,6 @@ const options = program.opts();
 
 async function main() {
   const api = await initApi();
-
   const block_start = !isNaN(options.blockStart)
     ? parseInt(options.blockStart)
     : 1;
@@ -44,12 +44,19 @@ async function main() {
     block_number++
   ) {
     const block_processed = await processBlock(api, block_number);
+    await sleep(500);
 
     if (!block_processed) {
       // TODO: Subscribe here
       break;
     }
   }
+}
+
+function sleep(ms:number) {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
 }
 
 main().catch(console.error);
