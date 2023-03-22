@@ -19,7 +19,7 @@ import { retireTokens } from './methods/retireTokens';
 import { updateBlockNumber } from './methods/updateBlockNumber';
 import { createAssetTransaction, createIssuedAssetTransaction, createTokenTransaction } from './methods/createAssetsAndTokens';
 import { sellOrderCancelled } from './methods/sellOrderCancelled';
-import { resubmitProject } from './methods/resubmitProject';
+import { updateProject } from './methods/updateProject';
 
 export async function processBlock(
   api: ApiPromise,
@@ -34,6 +34,7 @@ export async function processBlock(
   signedBlock.block.extrinsics.map(async (ex: Extrinsic, index: number) => {
     const isSigned = ex.isSigned;
     const hash = ex.hash.toString();
+    console.log(hash)
     updateBlockNumber(blockNumber as number, hash);
     let extrinsicSuccess = false,
       newAssetId: number | undefined;
@@ -77,6 +78,10 @@ export async function processBlock(
           if (event.method === BlockEvent.CarbonCreditRetired) {
             console.log('retire tokens');
             await retireTokens(event, blockDate);
+          }
+          if (event.method === BlockEvent.ProjectUpdated) {
+            console.log('UPDATE project');
+            await updateProject(api,event, blockDate);
           }
           // if (event.method === BlockEvent.ProjectResubmitted) {
           //   console.log('resubmit project');

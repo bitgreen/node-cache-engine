@@ -12,7 +12,9 @@ export enum BlockEvent {
   BuyOrderFilled   = 'BuyOrderFilled',
   TransferTokens = "Transfer",
   TransderAssets = "Transferred",
-  Issued = "Issued"
+  Issued = "Issued",
+  ProjectUpdated  = "ProjectUpdated",
+
 
 }
 
