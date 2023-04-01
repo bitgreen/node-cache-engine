@@ -110,17 +110,17 @@ export async function processBlock(
         if (event.section === 'assets') {
           if (event.method === BlockEvent.TransderAssets) {
             console.log('Asset called');
-            createAssetTransaction(event, api);
+            createAssetTransaction(event, api,blockNumber as number);
           }
           if (event.method === BlockEvent.Issued) {
             console.log('Issued asset called');
-            createIssuedAssetTransaction(event, api);
+            createIssuedAssetTransaction(event, api,blockNumber as number);
           }
         }
         if (event.section === 'tokens') {
           if (event.method === BlockEvent.TransferTokens) {
             console.log('tokens called');
-            createTokenTransaction(event, api);
+            createTokenTransaction(event, api,blockNumber as number);
           }
         }
       });

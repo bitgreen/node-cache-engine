@@ -306,28 +306,42 @@ model Asset {
 }
 
 model AssetTransaction {
-  // id         Int      @id @default(autoincrement())
-  account    String   @default("") @db.VarChar(48)
-  assetId    Int
-  assetLogo  String?
-  nftImage   String?
-  balance    String?
-  balanceUsd String?
-  assetName  String?
-  createdAt  DateTime @default(now()) @db.Timestamp(6)
+  id          Int        @id @default(autoincrement())
+  blockNumber Int        @default(0)
+  sender      String     @default("") @db.VarChar(48)
+  recipient   String     @default("") @db.VarChar(48)
+  assetId     Int
+  amount      String?
+  assetInfo   AssetInfo?
+  createdAt   DateTime   @default(now()) @db.Timestamp(6)
 
-  @@id([account, assetId])
+  // @@id([account, assetId])
+}
+
+model AssetInfo {
+  id               Int               @id @default(autoincrement())
+  assetName        String?
+  assetLogo        String?
+  nftImage         String?
+  AssetTransaction AssetTransaction? @relation(fields: [id], references: [id], onDelete: Cascade)
 }
 
 model TokenTransaction {
-  id         Int      @id @default(autoincrement())
-  account    String   @unique @default(uuid()) @db.VarChar(48)
-  tokencode  String
-  tokenLogo  String?
-  balance    String?
-  balanceUsd String?
-  tokenName  String?
-  createdAt  DateTime @default(now()) @db.Timestamp(6)
+  id          Int      @id @default(autoincrement())
+  blockNumber Int      @default(0)
+  sender      String   @default("") @db.VarChar(48)
+  recipient   String   @default("") @db.VarChar(48)
+  tokenId     String   @default("")
+  tokenName   String?
+  tokenLogo   String?
+  amount      String?
+  createdAt   DateTime @default(now()) @db.Timestamp(6)
+}
+
+model ExchangeRate {
+  id               Int   @id @default(autoincrement())
+  exchangeRateDOT  Float
+  exchangeRateUSDT Float
 }
 
 enum CreditTransactionType {

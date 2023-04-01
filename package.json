@@ -32,6 +32,7 @@
     "formidable": "^2.1.1",
     "fs": "^0.0.1-security",
     "ipfs-http-client": "^56.0.2",
+    "node-cron": "^3.0.2",
     "validator": "^13.7.0"
   },
   "devDependencies": {
@@ -40,6 +41,7 @@
     "@types/cors": "^2.8.13",
     "@types/formidable": "^2.0.5",
     "@types/node": "^17.0.40",
+    "@types/node-cron": "^3.0.7",
     "@types/validator": "^13.7.10",
     "prisma": "^3.15.2",
     "ts-node": "^10.8.1",
