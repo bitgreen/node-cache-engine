@@ -128,7 +128,7 @@ router.get('/assets/transaction', async (req: Request, res: Response) => {
   try {
     const { account, assetId, take } = req.query;
     const aId = !isNaN(Number(assetId)) ? Number(assetId) : undefined;
-    const assetTransaction = await prisma.assetTransaction.findMany({
+    const assetTransactions = await prisma.assetTransaction.findMany({
       where: {
         AND: [
           {
@@ -143,31 +143,6 @@ router.get('/assets/transaction', async (req: Request, res: Response) => {
       take: !isNaN(Number(take)) ? Number(take) : undefined,
 
     });
-    const assetIds = assetTransaction?.map((item) => item.assetId);
-    console.log('assetIds', assetIds);
-    const uniqassetIds = [...new Set(assetIds)];
-    console.log('uniqassetIds', uniqassetIds);
-
-    const projects = await prisma.project.findMany({
-      where: {
-        batchGroups: { some: { assetId: { in: uniqassetIds } } },
-      },
-      include: {
-        registryDetails: true,
-        batchGroups: { include: { batches: true } },
-      },
-    });
-    console.log('projects', projects);
-    const assetTransactions = assetTransaction.map((item) => {
-      const pro = projects.find((el) =>
-        el.batchGroups.some((group) => group.assetId === item.assetId)
-      );
-      return {
-        ...item,
-        assetName: pro?.name,
-        nftImage: pro?.images && pro?.images.length > 0 ? pro?.images[0] : '',
-      };
-    });
 
     res.json(assetTransactions);
   } catch (e) {
@@ -180,14 +155,14 @@ router.get('/tokens/transaction', async (req: Request, res: Response) => {
   try {
     const { account, take } = req.query;
 
-    const tokensTransaction = await prisma.tokenTransaction.findMany({
+    const tokensTransactions = await prisma.tokenTransaction.findMany({
       where: {
         OR: [{ recipient: account as string }, { sender: account as string }],
       },
       take: !isNaN(Number(take)) ? Number(take) : undefined,
     });
 
-    res.json(tokensTransaction);
+    res.json(tokensTransactions);
   } catch (e) {
     res.status(500).json(e);
   }

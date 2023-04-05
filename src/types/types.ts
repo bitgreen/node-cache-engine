@@ -14,6 +14,7 @@ export enum BlockEvent {
   TransderAssets = "Transferred",
   Issued = "Issued",
   ProjectUpdated  = "ProjectUpdated",
+  BatchGroupAdded = "BatchGroupAdded"
 
 
 }

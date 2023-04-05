@@ -20,6 +20,7 @@ import { updateBlockNumber } from './methods/updateBlockNumber';
 import { createAssetTransaction, createIssuedAssetTransaction, createTokenTransaction } from './methods/createAssetsAndTokens';
 import { sellOrderCancelled } from './methods/sellOrderCancelled';
 import { updateProject } from './methods/updateProject';
+import { updateBatchGroupInProject } from './methods/addBatchgroup';
 
 export async function processBlock(
   api: ApiPromise,
@@ -82,6 +83,10 @@ export async function processBlock(
           if (event.method === BlockEvent.ProjectUpdated) {
             console.log('UPDATE project');
             await updateProject(api,event, blockDate);
+          }
+          if (event.method === BlockEvent.BatchGroupAdded) {
+            console.log('UPDATE batch groups');
+            await updateBatchGroupInProject(api,event, blockDate);
           }
           // if (event.method === BlockEvent.ProjectResubmitted) {
           //   console.log('resubmit project');
