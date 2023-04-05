@@ -104,20 +104,20 @@ async function getMetadata(api: ApiPromise, assetId: number) {
   return metaData;
 }
 
-function getExchangeRate(currencyId: String): number {
-  let exchangeRate = 1;
-  switch (currencyId) {
-    case 'USDT': {
-      exchangeRate = 1.02; // here gecko coin api
-      break;
-    }
-    case 'DOT': {
-      exchangeRate = 6.28; // here gecko coin api
-      break;
-    }
-  }
-  return exchangeRate;
-}
+// function getExchangeRate(currencyId: String): number {
+//   let exchangeRate = 1;
+//   switch (currencyId) {
+//     case 'USDT': {
+//       exchangeRate = 1.02; // here gecko coin api
+//       break;
+//     }
+//     case 'DOT': {
+//       exchangeRate = 6.28; // here gecko coin api
+//       break;
+//     }
+//   }
+//   return exchangeRate;
+// }
 
 export async function queryBalances(
   api: ApiPromise,

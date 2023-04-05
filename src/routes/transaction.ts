@@ -141,7 +141,6 @@ router.get('/assets/transaction', async (req: Request, res: Response) => {
         ],
       },
       take: !isNaN(Number(take)) ? Number(take) : undefined,
-
     });
 
     res.json(assetTransactions);
@@ -167,6 +166,49 @@ router.get('/tokens/transaction', async (req: Request, res: Response) => {
     res.status(500).json(e);
   }
 });
+router.get(
+  '/tokens-assets/ids',
+  async (req: Request, res: Response) => {
+    console.log('/tokens-assets/ids');
+    try {
+      const { account } = req.query;
+      const [tokens, assets] = await prisma.$transaction([
+        prisma.tokenTransaction.findMany({
+          where: {
+            OR: [
+              { recipient: account as string },
+              { sender: account as string },
+            ],
+          },
+          select: {
+            tokenId: true
+          }
+        }),
+        prisma.assetTransaction.findMany({
+          where: {
+            OR: [
+              { recipient: account as string },
+              { sender: account as string },
+            ],
+          },
+          select: {
+            assetId: true
+          }
+        }),
+      ]);
+      const uniqeAssetIds = [...new Set(assets.map((tk) => tk.assetId).filter(Boolean))];
+      const uniqeTokenIds = [...new Set(tokens.map((tk) => tk.tokenId).filter(Boolean))];
+
+      res.json({
+        assets: uniqeAssetIds, 
+        tokens: uniqeTokenIds
+      }
+      );
+    } catch (e) {
+      res.status(500).json(e);
+    }
+  }
+);
 
 router.get('/balance', async (req: Request, res: Response) => {
   const { address, assetId } = req.query;
