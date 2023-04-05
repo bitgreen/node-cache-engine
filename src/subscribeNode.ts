@@ -10,6 +10,13 @@ import { initApi } from './services/polkadot-api';
 
 // main function (must be async)
 async function main() {
+
+  // schedule("*/15 * * * *",() => {
+  //   fetchExchangeRate()
+  //   console.log("---------------------");
+  //   console.log("Cron job for exchange rate executed");
+  // })
+
   const api = await initApi();
 
   // Retrieve the chain & node information via rpc calls

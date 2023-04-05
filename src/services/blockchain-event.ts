@@ -20,6 +20,7 @@ import { updateBlockNumber } from './methods/updateBlockNumber';
 import { createAssetTransaction, createIssuedAssetTransaction, createTokenTransaction } from './methods/createAssetsAndTokens';
 import { sellOrderCancelled } from './methods/sellOrderCancelled';
 import { updateProject } from './methods/updateProject';
+import { updateBatchGroupInProject } from './methods/addBatchgroup';
 
 export async function processBlock(
   api: ApiPromise,
@@ -83,6 +84,10 @@ export async function processBlock(
             console.log('UPDATE project');
             await updateProject(api,event, blockDate);
           }
+          if (event.method === BlockEvent.BatchGroupAdded) {
+            console.log('UPDATE batch groups');
+            await updateBatchGroupInProject(api,event, blockDate);
+          }
           // if (event.method === BlockEvent.ProjectResubmitted) {
           //   console.log('resubmit project');
           //   await resubmitProject(api,event, blockDate);
@@ -108,19 +113,19 @@ export async function processBlock(
           }
         }
         if (event.section === 'assets') {
-          if (event.method === BlockEvent.TransderAssets) {
+          if (event.method === BlockEvent.TransferAssets) {
             console.log('Asset called');
-            createAssetTransaction(event, api);
+            createAssetTransaction(event, api,blockNumber as number);
           }
           if (event.method === BlockEvent.Issued) {
             console.log('Issued asset called');
-            createIssuedAssetTransaction(event, api);
+            createIssuedAssetTransaction(event, api,blockNumber as number);
           }
         }
         if (event.section === 'tokens') {
           if (event.method === BlockEvent.TransferTokens) {
             console.log('tokens called');
-            createTokenTransaction(event, api);
+            createTokenTransaction(event, api,blockNumber as number);
           }
         }
       });

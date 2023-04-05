@@ -113,7 +113,7 @@ router.get('/transaction', async (req: Request, res: Response) => {
         hash: {
           contains: hash as string,
         },
-      }
+      },
     });
     res.json({
       transaction: transaction,
@@ -126,35 +126,21 @@ router.get('/transaction', async (req: Request, res: Response) => {
 router.get('/assets/transaction', async (req: Request, res: Response) => {
   console.log('/assets/transaction');
   try {
-    const { account, assetId } = req.query;
-    const aId = Number(assetId) ? Number(assetId) : undefined;
-    const assetTransaction = await prisma.assetTransaction.findMany({
-      where: { AND: [{ account: account as string }, { assetId: aId }] },
-    });
-    const assetIds = assetTransaction?.map((item) => item.assetId);
-    console.log('assetIds', assetIds);
-    const uniqassetIds = [...new Set(assetIds)];
-    console.log('uniqassetIds', uniqassetIds);
-
-    const projects = await prisma.project.findMany({
+    const { account, assetId, take } = req.query;
+    const aId = !isNaN(Number(assetId)) ? Number(assetId) : undefined;
+    const assetTransactions = await prisma.assetTransaction.findMany({
       where: {
-        batchGroups: { some: { assetId: { in: uniqassetIds } } },
+        AND: [
+          {
+            OR: [
+              { recipient: account as string },
+              { sender: account as string },
+            ],
+          },
+          { assetId: aId },
+        ],
       },
-      include: {
-        registryDetails: true,
-        batchGroups: { include: { batches: true } },
-      },
-    });
-    console.log('projects', projects);
-    const assetTransactions = assetTransaction.map((item) => {
-      const pro = projects.find((el) =>
-        el.batchGroups.some((group) => group.assetId === item.assetId)
-      );
-      return {
-        ...item,
-        assetName: pro?.name,
-        nftImage: pro?.images && pro?.images.length > 0 ? pro?.images[0] : '',
-      };
+      take: !isNaN(Number(take)) ? Number(take) : undefined,
     });
 
     res.json(assetTransactions);
@@ -166,19 +152,63 @@ router.get('/assets/transaction', async (req: Request, res: Response) => {
 router.get('/tokens/transaction', async (req: Request, res: Response) => {
   console.log('/tokens/transaction');
   try {
-    const { account } = req.query;
+    const { account, take } = req.query;
 
-    const tokensTransaction = await prisma.tokenTransaction.findMany({
+    const tokensTransactions = await prisma.tokenTransaction.findMany({
       where: {
-        account: account as string,
+        OR: [{ recipient: account as string }, { sender: account as string }],
       },
+      take: !isNaN(Number(take)) ? Number(take) : undefined,
     });
 
-    res.json(tokensTransaction);
+    res.json(tokensTransactions);
   } catch (e) {
     res.status(500).json(e);
   }
 });
+router.get(
+  '/tokens-assets/ids',
+  async (req: Request, res: Response) => {
+    console.log('/tokens-assets/ids');
+    try {
+      const { account } = req.query;
+      const [tokens, assets] = await prisma.$transaction([
+        prisma.tokenTransaction.findMany({
+          where: {
+            OR: [
+              { recipient: account as string },
+              { sender: account as string },
+            ],
+          },
+          select: {
+            tokenId: true
+          }
+        }),
+        prisma.assetTransaction.findMany({
+          where: {
+            OR: [
+              { recipient: account as string },
+              { sender: account as string },
+            ],
+          },
+          select: {
+            assetId: true
+          }
+        }),
+      ]);
+      const uniqeAssetIds = [...new Set(assets.map((tk) => tk.assetId).filter(Boolean))];
+      const uniqeTokenIds = [...new Set(tokens.map((tk) => tk.tokenId).filter(Boolean))];
+
+      res.json({
+        assets: uniqeAssetIds, 
+        tokens: uniqeTokenIds
+      }
+      );
+    } catch (e) {
+      res.status(500).json(e);
+    }
+  }
+);
 
 router.get('/balance', async (req: Request, res: Response) => {
   const { address, assetId } = req.query;

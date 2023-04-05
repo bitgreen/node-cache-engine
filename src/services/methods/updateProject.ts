@@ -63,44 +63,7 @@ export async function updateProject(
     //     },
     //   };
     // });
-    // chain not allow batch update therefore always same data
-    let batchGroups = Object.entries(project.batchGroups).map(
-      ([key, value], i) => {
-        return prisma.batchGroups.upsert({
-          where: {
-            assetId: value.assetId,
-          },
-          update: {
-            ...value,
-            batches: {
-              upsert: value.batches.map((batch) => ({
-                where: {
-                  uuid: convertHex(batch.uuid as string) as string,
-                },
-                update: {
-                  ...batch,
-                },
-                create: {
-                  ...batch,
-                  uuid: convertHex(batch.uuid as string),
-                },
-              })),
-            },
-          },
-          create: {
-            ...value,
-            assetId: Date.now() + 1,
-            groupId: Number(key),
-            name: convertHex(value.name as string),
-            batches: {
-              create: value.batches.map((batch) => {
-                return { ...batch, uuid: convertHex(batch.uuid as string) };
-              }),
-            },
-          },
-        });
-      }
-    );
+
 
     // await prisma.$transaction(batchGroups);
     await prisma.project.update({
@@ -126,7 +89,7 @@ export async function updateProject(
         //   update: royalties,
         // },
         approved: project.approved,
-        created: block_date.toISOString(),
+        updated: block_date.toISOString(),
       },
     });
   } catch (e) {
