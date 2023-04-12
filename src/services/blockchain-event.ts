@@ -29,7 +29,6 @@ export async function processBlock(
   console.log(`Chain is at block: #${blockNumber}`);
   const { signedBlock, blockEvents } = await blockExtrinsic(api, blockNumber);
   if (!signedBlock || !blockEvents) return;
-
   const blockDate = new Date();
   // parse block
   signedBlock.block.extrinsics.map(async (ex: Extrinsic, index: number) => {
@@ -128,6 +127,11 @@ export async function processBlock(
             createTokenTransaction(event, api,blockNumber as number);
           }
         }
+        if (event.section === 'kyc') {
+          if (event.method === BlockEvent.MemberAdded) {
+            console.log('member added kyc');
+          }
+        } 
       });
   });
 

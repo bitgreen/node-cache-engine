@@ -13,6 +13,7 @@ import ccProjects from './routes/ccMarketplace/cc-projects';
 import cart from './routes/ccMarketplace/profile/cart';
 import investments from './routes/ccMarketplace/dex/investments';
 import sellOrder from './routes/ccMarketplace/dex/sell-order';
+import kyc from './routes/ccMarketplace/kyc/kyc-approval';
 import ipfs from './routes/ccMarketplace/ipfs';
 import authentification from './routes/authentification/authentification'; //./routes/authentification/authentification.js
 
@@ -50,6 +51,7 @@ const mainLoop = async () => {
   app.use('', cart);
   app.use('', investments);
   app.use('', sellOrder);
+  app.use('', kyc);
   // app.use("", require("./routes/test-routes"));
 
   /* serve api */
