@@ -16,7 +16,7 @@ import { rejectProject } from './methods/rejectProject';
 import { createSellOrder } from './methods/createSellOrder';
 import { createBuyOrder } from './methods/createBuyOrder';
 import { retireTokens } from './methods/retireTokens';
-import { updateBlockNumber } from './methods/updateBlockNumber';
+import { updateBlock } from './methods/updateBlock';
 import { createAssetTransaction, createIssuedAssetTransaction, createTokenTransaction } from './methods/createAssetsAndTokens';
 import { sellOrderCancelled } from './methods/sellOrderCancelled';
 import { updateProject } from './methods/updateProject';
@@ -26,17 +26,27 @@ export async function processBlock(
   api: ApiPromise,
   blockNumber: BlockNumber | number
 ) {
-  console.log(`Chain is at block: #${blockNumber}`);
+  console.log(`Processing block: #${blockNumber}`);
   const { signedBlock, blockEvents } = await blockExtrinsic(api, blockNumber);
   if (!signedBlock || !blockEvents) return;
 
-  const blockDate = new Date();
+  let blockDate: Date
+
+  const extrinsics = signedBlock.block.extrinsics.toHuman()
+  // @ts-ignore
+  for(const extrinsic of extrinsics) {
+    if(extrinsic.method.method === 'set' && extrinsic.method.section === 'timestamp') {
+      blockDate = new Date(parseInt(extrinsic.method.args.now.replaceAll(/,/g, '')))
+    }
+  }
+
   // parse block
   signedBlock.block.extrinsics.map(async (ex: Extrinsic, index: number) => {
     const isSigned = ex.isSigned;
     const hash = ex.hash.toString();
-    console.log(hash)
-    updateBlockNumber(blockNumber as number, hash);
+
+    await updateBlock(blockNumber as number, hash, blockDate);
+
     let extrinsicSuccess = false,
       newAssetId: number | undefined;
 

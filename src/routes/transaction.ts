@@ -33,21 +33,23 @@ router.get('/get-block', async (req: Request, res: Response) => {
   }
 });
 router.get('/get-last-block', async (req: Request, res: Response) => {
-  console.log('/get-last-block');
   try {
-    const val = await prisma.block.findFirst({
-      where: { id: 1 },
+    const blocks = await prisma.block.findMany({
+      select: {
+        number: true
+      },
+      orderBy: {
+        number: 'desc'
+      }
     });
-    return res.json(val);
+
+    return res.json({
+      count: blocks.length,
+      blockNumber: blocks[0].number
+    });
   } catch (e) {
     return res.status(500).json(e);
   }
-});
-router.get('/get-last-block', async (req: Request, res: Response) => {
-  const val = await prisma.block.findFirst({
-    where: { id: 1 },
-  });
-  return res.json(val);
 });
 router.get('/transactions', async (req: Request, res: Response) => {
   console.log('/transactions');
