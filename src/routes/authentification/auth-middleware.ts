@@ -31,3 +31,15 @@ export async function authMiddle(
   req.session = session;
   next();
 }
+
+export async function authKYC(req: Request, res: Response, next: NextFunction) {
+  const header = req.headers['authorization'];
+  // hashing password
+  if (!header || header !== process.env.PASSWORD_KYC) {
+    return res
+      .status(401)
+      .json({ authenticated: false, error: 'Not authenticated' });
+  }
+
+  next();
+}
