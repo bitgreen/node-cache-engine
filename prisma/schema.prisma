@@ -212,10 +212,10 @@ model BatchEntity {
 model KYC {
   profilAddress String             @id
   status        VerificationStatus @default(NOT_VERIFIED)
-  FirstName     String
-  LastName      String
-  Address       String
-  Country       String
+  FirstName     String?
+  LastName      String?
+  Address       String?
+  Country       String?
   Profil        Profil?            @relation(fields: [profilAddress], references: [address], onDelete: Cascade)
 }
 

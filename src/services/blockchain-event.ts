@@ -138,6 +138,11 @@ export async function processBlock(
             createTokenTransaction(event, api,blockNumber as number);
           }
         }
+        if (event.section === 'kyc') {
+          if (event.method === BlockEvent.MemberAdded) {
+            console.log('member added kyc');
+          }
+        } 
       });
   });
 
