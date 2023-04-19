@@ -2,7 +2,7 @@ import { prisma } from '../prisma';
 import { Event } from '@polkadot/types/interfaces';
 import { ProjectState } from '@prisma/client';
 
-export async function approveProject(event: Event, block_date: Date) {
+export async function approveProject(event: Event, updatedAt: Date) {
   try {
     let projectId;
     let assetIds: number[] = [];
@@ -47,7 +47,7 @@ export async function approveProject(event: Event, block_date: Date) {
             },
           })),
         },
-        updated: block_date.toISOString(),
+        updatedAt: updatedAt.toISOString(),
       },
     });
   } catch (e) {

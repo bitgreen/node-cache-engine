@@ -15,7 +15,8 @@ interface MetaData {
 export async function createAssetTransaction(
   event: Event,
   api: ApiPromise,
-  blockNumber: number
+  blockNumber: number,
+  createdAt: Date
 ) {
   try {
     let eventData = event.data.toJSON();
@@ -28,6 +29,7 @@ export async function createAssetTransaction(
         blockNumber: blockNumber,
         assetId: assetId as number,
         amount: amount.toString(),
+        createdAt: createdAt.toISOString(),
         assetInfo: {
           create: {
             assetName: metaData.name,
@@ -44,7 +46,8 @@ export async function createAssetTransaction(
 export async function createIssuedAssetTransaction(
   event: Event,
   api: ApiPromise,
-  blockNumber: number
+  blockNumber: number,
+  createdAt: Date
 ) {
   try {
     let eventData = event.data.toJSON();
@@ -57,6 +60,7 @@ export async function createIssuedAssetTransaction(
         blockNumber: blockNumber,
         assetId: assetId as number,
         amount: totalSupply.toString(),
+        createdAt: createdAt.toISOString(),
         assetInfo: {
           create: {
             assetName: metaData.name,
@@ -73,7 +77,8 @@ export async function createIssuedAssetTransaction(
 export async function createTokenTransaction(
   event: Event,
   api: ApiPromise,
-  blockNumber: number
+  blockNumber: number,
+  createdAt: Date
 ) {
   try {
     let eventData = event.data.toJSON();
@@ -88,6 +93,7 @@ export async function createTokenTransaction(
           tokenId: currencyId as string,
           tokenName: '',
           amount: amountConverted,
+          createdAt: createdAt.toISOString()
         },
       }),
     ]);

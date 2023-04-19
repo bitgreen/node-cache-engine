@@ -2,7 +2,7 @@ import { Codec } from '@polkadot/types-codec/types';
 import { prisma } from '../prisma';
 import { Event } from '@polkadot/types/interfaces';
 
-export async function createSellOrder(event: Event, block_date: Date) {
+export async function createSellOrder(event: Event, createdAt: Date) {
   //[orderId, assetId, units, pricePerUnit, owner]
   try {
     let data = event.data.toJSON();
@@ -48,6 +48,7 @@ export async function createSellOrder(event: Event, block_date: Date) {
                   orderId: orderId as number,
                   pricePerUnit: pricePerUnit as number,
                   owner: owner as string,
+                  createdAt: createdAt.toISOString()
                 },
               },
               creditsOwnedPerGroup: {

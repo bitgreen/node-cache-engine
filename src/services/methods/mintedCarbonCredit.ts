@@ -6,7 +6,7 @@ import { queryBalances } from './createAssetsAndTokens';
 
 export async function ccMinted(
   event: Event,
-  block_date: Date,
+  updatedAt: Date,
   api: ApiPromise
 ) {
 
@@ -44,7 +44,7 @@ export async function ccMinted(
               },
             },
           },
-          updated: block_date.toISOString(),
+          updatedAt: updatedAt.toISOString(),
         },
       }),
       prisma.profil.update({

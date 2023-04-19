@@ -98,7 +98,7 @@ export async function createProject(
           create: batchGroups,
         },
         approved: project.approved,
-        created: block_date.toISOString(),
+        createdAt: createdAt.toISOString(),
       },
     });
    } catch (e) {

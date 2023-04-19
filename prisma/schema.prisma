@@ -22,8 +22,8 @@ model Project {
   sdgDetails          SdgDetails[]
   royalties           Royalties[]
   batchGroups         BatchGroups[]
-  created             DateTime          @default(now()) @db.Timestamp(6)
-  updated             DateTime?         @default(now()) @db.Timestamp(6)
+  createdAt           DateTime          @db.Timestamp(6)
+  updatedAt           DateTime?         @db.Timestamp(6)
   approved            Boolean?          @default(false)
   listedToMarketplace Boolean           @default(false)
 }
@@ -150,7 +150,7 @@ model BuyOrder {
   creditPrice    Float
   orderId        Int
   groupId        Int //notwendig, da man sonst die einzelnen Käufe nicht den Gruppen zuordnen kann
-  created        DateTime    @default(now()) @db.Timestamp(6)
+  createdAt      DateTime    @db.Timestamp(6)
   Investment     Investment? @relation(fields: [investmentId], references: [id], onDelete: Cascade, name: "investment")
   investmentId   String?
   // InvestmentForRetire   Investment? @relation(fields: [investmentIdForRetire], references: [id], onDelete: Cascade, name: "investmentForRetire")
@@ -167,7 +167,8 @@ model SellOrder {
   isCancel     Boolean?    @default(false)
   isSold       Boolean?    @default(false)
   owner        String
-  created      DateTime    @default(now()) @db.Timestamp(6)
+  createdAt    DateTime    @db.Timestamp(6)
+  cancelledAt  DateTime?   @db.Timestamp(6)
   Investment   Investment? @relation(fields: [investmentId], references: [id], onDelete: Cascade)
   investmentId String?
 }
@@ -181,7 +182,7 @@ model CreditTransaction {
   creditPrice   Float
   from          String
   to            String
-  created       DateTime              @default(now()) @db.Timestamp(6)
+  createdAt     DateTime              @db.Timestamp(6)
   fee           Float
   Profil        Profil?               @relation(fields: [profilAddress], references: [address], onDelete: Cascade)
   profilAddress String?
@@ -313,9 +314,7 @@ model AssetTransaction {
   assetId     Int
   amount      String?
   assetInfo   AssetInfo?
-  createdAt   DateTime   @default(now()) @db.Timestamp(6)
-
-  // @@id([account, assetId])
+  createdAt   DateTime   @db.Timestamp(6)
 }
 
 model AssetInfo {
@@ -335,7 +334,7 @@ model TokenTransaction {
   tokenName   String?
   tokenLogo   String?
   amount      String?
-  createdAt   DateTime @default(now()) @db.Timestamp(6)
+  createdAt   DateTime @db.Timestamp(6)
 }
 
 model ExchangeRate {

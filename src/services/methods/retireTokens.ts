@@ -12,7 +12,7 @@ interface RetireData {
   count: number;
 }
 
-export async function retireTokens(event: Event, block_date: Date) {
+export async function retireTokens(event: Event, updatedAt: Date) {
   //[orderId, assetId, units, pricePerUnit, owner]
   try {
     let data = event.data.toJSON();
@@ -34,6 +34,7 @@ export async function retireTokens(event: Event, block_date: Date) {
       prisma.project.update({
         where: { id: projectId as number },
         data: {
+          updatedAt: updatedAt.toISOString(),
           batchGroups: {
             update: retireDataUpdate.map((retireData) => ({
               where: { assetId: assetId as number },
