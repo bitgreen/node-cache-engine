@@ -129,7 +129,7 @@ function createCreditPriceFilter(min: number, max: number) {
 function createCreationYearFilter(startYear: number, endYear: number) {
   if (startYear && endYear) {
     return {
-      created: {
+      createdAt: {
         gte: new Date(`${startYear}-01-01`),
         lte: new Date(`${endYear}-12-31`),
       },
@@ -137,14 +137,14 @@ function createCreationYearFilter(startYear: number, endYear: number) {
   }
   if (!startYear && endYear) {
     return {
-      created: {
+      createdAt: {
         lte: new Date(`${endYear}-12-31`),
       },
     };
   }
   if (startYear && !endYear) {
     return {
-      created: {
+      createdAt: {
         gte: new Date(`${startYear}-01-01`),
       },
     };
@@ -163,11 +163,11 @@ function createSorting(sortby: ProjectSortOptions) {
       };
     case ProjectSortOptions.DATE_ASC:
       return {
-        created: Prisma.SortOrder.asc,
+        createdAt: Prisma.SortOrder.asc,
       };
     case ProjectSortOptions.DATE_DESC:
       return {
-        created: Prisma.SortOrder.desc,
+        createdAt: Prisma.SortOrder.desc,
       };
     case ProjectSortOptions.VALUE_ASC:
       return {

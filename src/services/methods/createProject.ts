@@ -10,7 +10,7 @@ export async function createProject(
   api: ApiPromise,
   // ex: Extrinsic,
   event: Event,
-  block_date: Date
+  createdAt: Date
 ) {
   try {
     let dataEvent = event.data.toJSON();
