@@ -95,10 +95,12 @@ model SdgDetails {
 }
 
 model Profil {
-  address   String  @id
-  firstName String?
-  lastName  String?
-  avatar    String?
+  address              String  @id
+  firstName            String?
+  lastName             String?
+  avatar               String?
+  orginatorName        String? @default("")
+  orginatorDescription String? @default("")
 
   email           String?            @unique
   emailStatus     VerificationStatus @default(NOT_VERIFIED)
