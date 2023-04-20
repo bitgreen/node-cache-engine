@@ -267,11 +267,16 @@ router.delete('/project/delete',authKYC, async (req: Request, res: Response) => 
       return;
     }
 
-    await prisma.project.delete({
+    const deleteProject = prisma.project.delete({
       where: {
         id: projectId,
       },
     });
+    const deleteInvestments = prisma.investment.deleteMany({
+      where: {projectId: projectId},
+    })
+    await prisma.$transaction([deleteProject, deleteInvestments])
+    
 
     res.status(200).json(true);
   } catch (e) {
