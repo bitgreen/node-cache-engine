@@ -69,7 +69,7 @@ router.get('/project', async (req: Request, res: Response) => {
       projects = filterAndAddProjectPrice(projects,invs,minCreditQuantityLimit)
     }
     const projectsWithMinMaxCreditPrices: Project = addProjectTokens(projects);
-
+    console.log("projectsWithMinMaxCreditPrices",projectsWithMinMaxCreditPrices)
     return res.json({
       projects: projectsWithMinMaxCreditPrices,
       nextId: projects.length === limit ? projects[limit - 1].id : undefined,

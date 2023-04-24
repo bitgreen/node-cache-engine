@@ -8,8 +8,8 @@ export function createProjectFilter(req: Request) {
   const cursorObj =
     cursor === '' ? undefined : { id: parseInt(cursor as string) };
   const search = (req.query.search as string) ?? '';
-  // const projectTypes = (req.query.projectType as string) ?? undefined;
-  // const projectTypesFilter = createFilter(projectTypes, 'type');
+  const projectTypes = (req.query.projectType as string) ?? undefined;
+  const projectTypesFilter = createFilter(projectTypes, 'type');
   const projectStates = (req.query.projectState as string) ?? undefined;
   const projectStatesFilter = createFilter(projectStates, 'state');
   const projectSdgs = (req.query.sdgs as string) ?? undefined;
@@ -37,7 +37,7 @@ export function createProjectFilter(req: Request) {
   const sortFilter = createSorting(sort);
   const filters = {
     AND: [
-      // { ...projectTypesFilter },
+      { ...projectTypesFilter },
       { ...projectStatesFilter },
       // { ...minCreditPriceFilter },
       { ...creationYearFilter },

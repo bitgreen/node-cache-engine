@@ -9,13 +9,11 @@ export async function ccMinted(
   block_date: Date,
   api: ApiPromise
 ) {
-
   try {
     let data = event.data.toJSON();
-    let [projectId, groupId, recipient, amount] =
-      data as (Number | string)[];
+    let [projectId, groupId, recipient, amount] = data as (Number | string)[];
 
-    console.log("Carbon credits minted", projectId,groupId,recipient,amount)
+    console.log('Carbon credits minted', projectId, groupId, recipient, amount);
 
     const projectArgs = await prisma.project.findUnique({
       include: {
@@ -26,7 +24,14 @@ export async function ccMinted(
       },
     });
     if (!projectArgs) return;
-
+    console.log(
+      'TEST',
+      projectArgs?.batchGroups.find((bg) => bg.groupId == groupId)
+    );
+    console.log(
+      'TEST2',
+      projectArgs?.batchGroups.find((bg) => bg.groupId == groupId)?.id
+    );
     await prisma.$transaction([
       prisma.project.update({
         where: {
@@ -36,7 +41,8 @@ export async function ccMinted(
           batchGroups: {
             update: {
               where: {
-                id: projectArgs?.batchGroups[groupId as number].id,
+                id: projectArgs?.batchGroups.find((bg) => bg.groupId == groupId)
+                  ?.id,
               },
               data: {
                 minted: amount as number,
@@ -53,23 +59,39 @@ export async function ccMinted(
         },
         data: {
           investments: {
-            create: {
-              projectId: projectArgs.id,
-              addressProjectId: `${recipient}_${projectId}`,
-              creditsOwnedPerGroup: {
-                create: {
-                  groupId: groupId as number,
-                  addressGroupId: `${recipient}_${groupId}_${projectId}`,
+            upsert: {
+              where: { addressProjectId: `${recipient}_${projectId}` },
+              create: {
+                projectId: projectArgs.id,
+                addressProjectId: `${recipient}_${projectId}`,
+                creditsOwnedPerGroup: {
+                  create: {
+                    groupId: groupId as number,
+                    addressGroupId: `${recipient}_${groupId}_${projectId}`,
 
-                  creditsOwned: amount as number,
+                    creditsOwned: amount as number,
+                  },
                 },
+                creditsOwned: amount as number,
+                retiredCredits: 0,
+                creditPrice: -1,
+                quantity: 0,
+                sellorders: undefined,
+                buyOrders: undefined,
               },
-              creditsOwned: amount as number,
-              retiredCredits: 0,
-              creditPrice: -1,
-              quantity: 0,
-              sellorders: undefined,
-              buyOrders: undefined,
+              update: {
+                creditsOwnedPerGroup: {
+                  create: {
+                    groupId: groupId as number,
+                    addressGroupId: `${recipient}_${groupId}_${projectId}`,
+
+                    creditsOwned: amount as number,
+                  },
+                },
+                creditsOwned: {
+                  increment: amount as number,
+                }
+              },
             },
           },
         },
