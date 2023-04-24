@@ -33,7 +33,8 @@ const mainLoop = async () => {
   /* setup app */
   const app: Express = express();
 
-  app.use(express.urlencoded({ extended: true }));
+  // Raise file size limit to 20mb so that we can upload large files through /ipfs.
+  app.use(express.urlencoded({ extended: true, limit: '20mb' }));
   app.use(express.json());
   app.use(cookieParser());
 
