@@ -13,6 +13,7 @@ import ccProjects from './routes/ccMarketplace/cc-projects';
 import cart from './routes/ccMarketplace/profile/cart';
 import investments from './routes/ccMarketplace/dex/investments';
 import sellOrder from './routes/ccMarketplace/dex/sell-order';
+import kyc from './routes/ccMarketplace/kyc/kyc-approval';
 import ipfs from './routes/ccMarketplace/ipfs';
 import authentification from './routes/authentification/authentification'; //./routes/authentification/authentification.js
 
@@ -32,11 +33,12 @@ const mainLoop = async () => {
   /* setup app */
   const app: Express = express();
 
-  app.use(express.urlencoded({ extended: true }));
+  // Raise file size limit to 20mb so that we can upload large files through /ipfs.
+  app.use(express.urlencoded({ extended: true, limit: '20mb' }));
   app.use(express.json());
   app.use(cookieParser());
 
-  app.use(cors({ credentials: true, origin: 'http://localhost:3000' }));
+  app.use(cors({ credentials: true, origin: '*' }));
   app.get('/', function (req: Request, res: Response) {
     res.send('Hello from Bitgreen!');
   });
@@ -50,6 +52,7 @@ const mainLoop = async () => {
   app.use('', cart);
   app.use('', investments);
   app.use('', sellOrder);
+  app.use('', kyc);
   // app.use("", require("./routes/test-routes"));
 
   /* serve api */

@@ -8,7 +8,7 @@ import { UserType } from '@prisma/client';
 const router = express.Router();
 
 router.get('/profile', authMiddle, async (req: Request, res: Response) => {
-  console.log("/profile");
+  console.log('/profile');
   try {
     const profil = await prisma.profil.findUnique({
       where: {
@@ -22,7 +22,7 @@ router.get('/profile', authMiddle, async (req: Request, res: Response) => {
 });
 
 router.get('/check-profile/:address', async (req: Request, res: Response) => {
-  console.log("/check-profile/:address");
+  console.log('/check-profile/:address');
   try {
     const address = req.params.address;
     const profil = await prisma.profil.findUnique({
@@ -39,7 +39,7 @@ router.get('/check-profile/:address', async (req: Request, res: Response) => {
 
 router.put('/profile', async (req: Request, res: Response) => {
   // const auth_address = await authenticatedAddress(req);
-  console.log("put /profile");
+  console.log('put /profile');
   try {
     const { profile, isLogin } = req.body;
     const updateParams =
@@ -51,6 +51,14 @@ router.put('/profile', async (req: Request, res: Response) => {
               : '',
             lastName: profile.lastName
               ? validator.escape(validator.trim(`${profile.lastName}`))
+              : '',
+            orginatorName: profile.orginatorName
+              ? validator.escape(validator.trim(`${profile.orginatorName}`))
+              : '',
+            orginatorDescription: profile.orginatorDescription
+              ? validator.escape(
+                  validator.trim(`${profile.orginatorDescription}`)
+                )
               : '',
             email: profile.email
               ? validator.escape(validator.trim(`${profile.lastName}`))
@@ -80,6 +88,12 @@ router.put('/profile', async (req: Request, res: Response) => {
         lastName: profile.lastName
           ? validator.escape(validator.trim(`${profile.lastName}`))
           : '',
+        orginatorName: profile.orginatorName
+          ? validator.escape(validator.trim(`${profile.orginatorName}`))
+          : '',
+        orginatorDescription: profile.orginatorDescription
+          ? validator.escape(validator.trim(`${profile.orginatorDescription}`))
+          : '',
         // avatar: profile.avatar, // TODO: temp disabled
         activityTransactionReceipts: profile.activityTransactionReceipts
           ? validator.toBoolean(`${profile.activityTransactionReceipts}`)
@@ -99,20 +113,23 @@ router.put('/profile', async (req: Request, res: Response) => {
   }
 });
 
-// router.get('/profile/:address', async (req: Request, res: Response) => {
-//   const address = req.params.address;
-//   console.log('Profile');
-//   if (typeof address !== 'string') return res.status(400).end();
+router.get('/profile-info/:address', async (req: Request, res: Response) => {
+  const address = req.params.address;
+  console.log('Profile');
+  if (typeof address !== 'string') return res.status(400).end();
 
-//   const profil = await prisma.profil.findUnique({
-//     where: {
-//       address: address,
-//     },
-//   });
-//   if (profil === null)
-//     return res.status(404).json({ error: 'Profil not found' });
+  const profil = await prisma.profil.findUnique({
+    where: {
+      address: address,
+    },
+  });
+  if (profil === null)
+    return res.status(404).json({ error: 'Profil not found' });
 
-//   return res.status(200).json(profil);
-// });
+  return res.status(200).json({
+    orginatorName: profil.orginatorName,
+    orginatorDescription: profil.orginatorDescription,
+  });
+});
 
 export default router;

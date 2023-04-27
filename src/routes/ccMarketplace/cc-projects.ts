@@ -3,7 +3,7 @@ import { prisma } from '../../services/prisma';
 import { createProjectFilter } from '../../utils/filters';
 import express, { Request, Response } from 'express';
 import { authenticatedAddress } from '../../services/authentification';
-import { authMiddle } from '../authentification/auth-middleware';
+import { authKYC, authMiddle } from '../authentification/auth-middleware';
 import { addProjectTokens, filterAndAddProjectPrice } from '../../utils/projectsCalc';
 const router = express.Router();
 
@@ -31,9 +31,7 @@ router.get('/project', async (req: Request, res: Response) => {
     ]);
     const minCreditPrice = (req.query.minCreditPrice as string) ?? undefined;
     const maxCreditPrice = (req.query.maxCreditPrice as string) ?? undefined;
-    // console.log('credit prices 0', req.query.minCreditPrice, req.query.maxCreditPrice );
-    // console.log('credit prices', minCreditPrice, maxCreditPrice);
-    // todo: for admin page all projects
+    const minCreditQuantity = (req.query.minCreditQuantity as string) ?? undefined;
     if (minCreditPrice && maxCreditPrice) {
       const invs = await prisma.investment.findMany({
         where: {
@@ -67,10 +65,11 @@ router.get('/project', async (req: Request, res: Response) => {
         },
         include: { sellorders: true },
       });
-      projects = filterAndAddProjectPrice(projects,invs)
+      const minCreditQuantityLimit = Number(minCreditQuantity) ? Number(minCreditQuantity) : 0;
+      projects = filterAndAddProjectPrice(projects,invs,minCreditQuantityLimit)
     }
     const projectsWithMinMaxCreditPrices: Project = addProjectTokens(projects);
-
+    console.log("projectsWithMinMaxCreditPrices",projectsWithMinMaxCreditPrices)
     return res.json({
       projects: projectsWithMinMaxCreditPrices,
       nextId: projects.length === limit ? projects[limit - 1].id : undefined,
@@ -257,7 +256,7 @@ router.delete(
   }
 );
 
-router.delete('/project/delete', async (req: Request, res: Response) => {
+router.delete('/project/delete',authKYC, async (req: Request, res: Response) => {
   console.log('delete /project/delete');
 
   try {
@@ -268,13 +267,66 @@ router.delete('/project/delete', async (req: Request, res: Response) => {
       return;
     }
 
-    await prisma.project.delete({
+    const deleteProject = prisma.project.delete({
       where: {
         id: projectId,
       },
     });
+    const deleteInvestments = prisma.investment.deleteMany({
+      where: {projectId: projectId},
+    })
+    await prisma.$transaction([deleteProject, deleteInvestments])
+    
 
     res.status(200).json(true);
+  } catch (e) {
+    return res.status(500).json(e);
+  }
+});
+router.get('/project-orginator/:address', async (req: Request, res: Response) => {
+  console.log('get /project-orginator/:address');
+
+  try {
+    const address = req.params.address
+
+    const projects = await prisma.project.findMany({
+      where: {
+        originator: address,
+      },
+      include: {
+        sdgDetails: true,
+        batchGroups: {include: {batches: true}}
+      }
+    });
+    const invs = await prisma.investment.findMany({
+      where: {
+        AND: [
+          {
+            projectId: {
+              in: projects.map((p) => p.id),
+            },
+          },
+          {
+            sellorders: {
+              some: {
+                AND: [
+                  {
+                    isCancel: false,
+                  },
+                  {
+                    isSold: false,
+                  }
+                ],
+              },
+            },
+          },
+        ],
+      },
+      include: { sellorders: true },
+    });
+    const projectsFiltered = filterAndAddProjectPrice(projects,invs,0)
+
+    res.status(200).json(projectsFiltered);
   } catch (e) {
     return res.status(500).json(e);
   }

@@ -33,22 +33,29 @@ router.get('/get-block', async (req: Request, res: Response) => {
   }
 });
 router.get('/get-last-block', async (req: Request, res: Response) => {
-  console.log('/get-last-block');
   try {
-    const val = await prisma.block.findFirst({
-      where: { id: 1 },
+    const blocks = await prisma.block.findMany({
+      select: {
+        number: true
+      },
+      orderBy: {
+        number: 'desc'
+      }
     });
-    return res.json(val);
+
+    const lastBlock = blocks[0].number
+    const totalBlocksFetched = blocks.length
+    const syncedPercentage = (totalBlocksFetched / lastBlock * 100).toFixed(2)
+
+    return res.json({
+      syncedPercentage,
+      totalBlocksFetched,
+      lastBlock
+    });
   } catch (e) {
     return res.status(500).json(e);
   }
 });
-router.get('/get-last-block', async (req: Request, res: Response) => {
-  const val = await prisma.block.findFirst({
-    where: {id: 1}
-  })
-  return res.json(val)
-})
 router.get('/transactions', async (req: Request, res: Response) => {
   console.log('/transactions');
 
@@ -104,22 +111,17 @@ router.get('/transaction', async (req: Request, res: Response) => {
   console.log('/transaction');
   try {
     const { hash = '' } = req.query;
-
-    const transaction = await prisma.transaction.findUnique({
+    if (!hash)
+      return res.json({
+        transaction: [],
+      });
+    const transaction = await prisma.transaction.findMany({
       where: {
-        hash: hash as string,
-      },
-      select: {
-        blockNumber: true,
-        hash: true,
-        sender: true,
-        recipient: true,
-        amount: true,
-        gasFees: true,
-        createdAt: true,
+        hash: {
+          contains: hash as string,
+        },
       },
     });
-
     res.json({
       transaction: transaction,
     });
@@ -128,40 +130,24 @@ router.get('/transaction', async (req: Request, res: Response) => {
   }
 });
 
-router.get('/assets/transaction', async (req: Request, res: Response) => {
-  console.log('/assets/transaction');
+router.get('/asset/transactions', async (req: Request, res: Response) => {
+  console.log('/asset/transactions');
   try {
-    const { account } = req.query;
-
-    const assetTransaction = await prisma.assetTransaction.findMany({
+    const { account, assetId, take } = req.query;
+    const aId = !isNaN(Number(assetId)) ? Number(assetId) : undefined;
+    const assetTransactions = await prisma.assetTransaction.findMany({
       where: {
-        recipient: account as string,
+        AND: [
+          {
+            OR: [
+              { recipient: account as string },
+              { sender: account as string },
+            ],
+          },
+          { assetId: aId },
+        ],
       },
-    });
-    const assetIds = assetTransaction?.map((item) => item.assetId);
-    console.log('assetIds', assetIds);
-    const uniqassetIds = [...new Set(assetIds)];
-    console.log('uniqassetIds', uniqassetIds);
-
-    const projects = await prisma.project.findMany({
-      where: {
-        batchGroups: { some: { assetId: { in: uniqassetIds } } },
-      },
-      include: {
-        registryDetails: true,
-        batchGroups: { include: { batches: true } },
-      },
-    });
-    console.log('projects', projects);
-    const assetTransactions = assetTransaction.map((item) => {
-      const pro = projects.find((el) =>
-        el.batchGroups.some((group) => group.assetId === item.assetId)
-      );
-      return {
-        ...item,
-        assetName: pro?.name,
-        nftImage: pro?.images && pro?.images.length > 0 ? pro?.images[0] : '',
-      };
+      take: !isNaN(Number(take)) ? Number(take) : undefined,
     });
 
     res.json(assetTransactions);
@@ -170,22 +156,68 @@ router.get('/assets/transaction', async (req: Request, res: Response) => {
   }
 });
 
-router.get('/tokens/transaction', async (req: Request, res: Response) => {
-  console.log('/tokens/transaction');
+router.get('/token/transactions', async (req: Request, res: Response) => {
+  console.log('/token/transactions');
   try {
-  const { account } = req.query;
+    const { account, take } = req.query;
 
-  const tokensTransaction = await prisma.tokenTransaction.findMany({
-    where: {
-      recipient: account as string,
-    },
-  });
+    const tokensTransactions = await prisma.tokenTransaction.findMany({
+      where: {
+        OR: [{ recipient: account as string }, { sender: account as string }],
+      },
+      take: !isNaN(Number(take)) ? Number(take) : undefined,
+    });
 
-  res.json(tokensTransaction);
-} catch (e) {
-  res.status(500).json(e);
-}
+    res.json(tokensTransactions);
+  } catch (e) {
+    res.status(500).json(e);
+  }
 });
+router.get(
+  '/tokens-assets/ids',
+  async (req: Request, res: Response) => {
+    console.log('/tokens-assets/ids');
+    try {
+      const { account } = req.query;
+      const [tokens, assets] = await prisma.$transaction([
+        prisma.tokenTransaction.findMany({
+          where: {
+            OR: [
+              { recipient: account as string },
+              { sender: account as string },
+            ],
+          },
+          select: {
+            tokenId: true
+          }
+        }),
+        prisma.assetTransaction.findMany({
+          where: {
+            OR: [
+              { recipient: account as string },
+              { sender: account as string },
+            ],
+          },
+          select: {
+            assetId: true
+          }
+        }),
+      ]);
+      const uniqeAssetIds = [...new Set(assets.map((tk) => tk.assetId).filter(assetId => {
+        return assetId || assetId === 0
+      }))];
+      const uniqeTokenIds = [...new Set(tokens.map((tk) => tk.tokenId).filter(Boolean))];
+
+      res.json({
+        assets: uniqeAssetIds, 
+        tokens: uniqeTokenIds
+      }
+      );
+    } catch (e) {
+      res.status(500).json(e);
+    }
+  }
+);
 
 router.get('/balance', async (req: Request, res: Response) => {
   const { address, assetId } = req.query;

@@ -28,13 +28,18 @@ function calculateMinMaxProjectTokens(project: Project): [number, number] {
 
 export function filterAndAddProjectPrice(
   projects: any[],
-  invs: Investment[]
+  invs: Investment[],
+  minCreditQuantity: number
 ) {
+ 
   const newProjects: Project[]= [];
   for (const project of projects) {
-    const investment = invs.find((i) => i.projectId === project.id);
-    if (!investment) continue;
-    const [min, max] = calculateMinMaxProjectPrice(investment.sellorders);
+    const investment = invs.filter((i) => i.projectId === project.id);
+    const sellOrders: SellOrder[] = []
+    investment.forEach((i) => i.sellorders.forEach((s) => sellOrders.push(s)))
+    const minQ = sellOrders.reduce((acc, val) => acc+ val.unitsRemain ,0 )
+    if (minQ < minCreditQuantity) continue;
+    const [min, max] = investment ? calculateMinMaxProjectPrice(sellOrders) : [0,0]
 
     newProjects.push({ ...project, minPrice: min, maxPrice: max });
   }

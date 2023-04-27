@@ -1,7 +1,7 @@
 import { prisma } from '../prisma';
 import { Event } from '@polkadot/types/interfaces';
 
-export async function sellOrderCancelled(event: Event) {
+export async function sellOrderCancelled(event: Event, cancelledAt: Date) {
   try {
     let data = event.data.toJSON();
     let [orderId] = data as (number)[];
@@ -50,7 +50,8 @@ export async function sellOrderCancelled(event: Event) {
                 update: {
                   where: {orderId:orderId},
                   data: {
-                    isCancel: true, 
+                    isCancel: true,
+                    cancelledAt: cancelledAt.toISOString()
                   }
                 }
               }

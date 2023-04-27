@@ -22,8 +22,8 @@ model Project {
   sdgDetails          SdgDetails[]
   royalties           Royalties[]
   batchGroups         BatchGroups[]
-  created             DateTime          @default(now()) @db.Timestamp(6)
-  updated             DateTime?         @default(now()) @db.Timestamp(6)
+  createdAt           DateTime          @db.Timestamp(6)
+  updatedAt           DateTime?         @db.Timestamp(6)
   approved            Boolean?          @default(false)
   listedToMarketplace Boolean           @default(false)
 }
@@ -95,10 +95,12 @@ model SdgDetails {
 }
 
 model Profil {
-  address   String  @id
-  firstName String?
-  lastName  String?
-  avatar    String?
+  address              String  @id
+  firstName            String?
+  lastName             String?
+  avatar               String?
+  orginatorName        String? @default("")
+  orginatorDescription String? @default("")
 
   email           String?            @unique
   emailStatus     VerificationStatus @default(NOT_VERIFIED)
@@ -150,7 +152,7 @@ model BuyOrder {
   creditPrice    Float
   orderId        Int
   groupId        Int //notwendig, da man sonst die einzelnen Käufe nicht den Gruppen zuordnen kann
-  created        DateTime    @default(now()) @db.Timestamp(6)
+  createdAt      DateTime    @db.Timestamp(6)
   Investment     Investment? @relation(fields: [investmentId], references: [id], onDelete: Cascade, name: "investment")
   investmentId   String?
   // InvestmentForRetire   Investment? @relation(fields: [investmentIdForRetire], references: [id], onDelete: Cascade, name: "investmentForRetire")
@@ -167,7 +169,8 @@ model SellOrder {
   isCancel     Boolean?    @default(false)
   isSold       Boolean?    @default(false)
   owner        String
-  created      DateTime    @default(now()) @db.Timestamp(6)
+  createdAt    DateTime    @db.Timestamp(6)
+  cancelledAt  DateTime?   @db.Timestamp(6)
   Investment   Investment? @relation(fields: [investmentId], references: [id], onDelete: Cascade)
   investmentId String?
 }
@@ -181,7 +184,7 @@ model CreditTransaction {
   creditPrice   Float
   from          String
   to            String
-  created       DateTime              @default(now()) @db.Timestamp(6)
+  createdAt     DateTime              @db.Timestamp(6)
   fee           Float
   Profil        Profil?               @relation(fields: [profilAddress], references: [address], onDelete: Cascade)
   profilAddress String?
@@ -212,10 +215,10 @@ model BatchEntity {
 model KYC {
   profilAddress String             @id
   status        VerificationStatus @default(NOT_VERIFIED)
-  FirstName     String
-  LastName      String
-  Address       String
-  Country       String
+  FirstName     String?
+  LastName      String?
+  Address       String?
+  Country       String?
   Profil        Profil?            @relation(fields: [profilAddress], references: [address], onDelete: Cascade)
 }
 
@@ -306,28 +309,40 @@ model Asset {
 }
 
 model AssetTransaction {
-  id         Int      @id @default(autoincrement())
-  sender     String   @db.VarChar(48)
-  recipient  String   @db.VarChar(48)
-  assetId    Int
-  assetLogo  String?
-  nftImage   String?
-  balance    String?
-  balanceUsd String?
-  assetName  String?
-  createdAt  DateTime @default(now()) @db.Timestamp(6)
+  id          Int        @id @default(autoincrement())
+  blockNumber Int        @default(0)
+  sender      String     @default("") @db.VarChar(48)
+  recipient   String     @default("") @db.VarChar(48)
+  assetId     Int
+  amount      String?
+  assetInfo   AssetInfo?
+  createdAt   DateTime   @db.Timestamp(6)
+}
+
+model AssetInfo {
+  id               Int               @id @default(autoincrement())
+  assetName        String?
+  assetLogo        String?
+  nftImage         String?
+  AssetTransaction AssetTransaction? @relation(fields: [id], references: [id], onDelete: Cascade)
 }
 
 model TokenTransaction {
-  id         Int      @id @default(autoincrement())
-  sender     String   @db.VarChar(48)
-  recipient  String   @db.VarChar(48)
-  tokencode  String
-  tokenLogo  String?
-  balance    String?
-  balanceUsd String?
-  tokenName  String?
-  createdAt  DateTime @default(now()) @db.Timestamp(6)
+  id          Int      @id @default(autoincrement())
+  blockNumber Int      @default(0)
+  sender      String   @default("") @db.VarChar(48)
+  recipient   String   @default("") @db.VarChar(48)
+  tokenId     String   @default("")
+  tokenName   String?
+  tokenLogo   String?
+  amount      String?
+  createdAt   DateTime @db.Timestamp(6)
+}
+
+model ExchangeRate {
+  id               Int   @id @default(autoincrement())
+  exchangeRateDOT  Float
+  exchangeRateUSDT Float
 }
 
 enum CreditTransactionType {
@@ -348,15 +363,9 @@ model Transaction {
   createdAt   DateTime @db.Timestamp(6)
 }
 
-// model Block {
-//   number    Int      @id
-//   hash      String   @unique @db.VarChar(66)
-//   createdAt DateTime @db.Timestamp(6)
-// }
 model Block {
-  id          Int      @id @default(1)
-  hash        String   @unique @db.VarChar(66)
-  count       Int
-  blockNumber Int
-  createdAt   DateTime @default(now()) @db.Timestamp(6)
+  number    Int      @id
+  hash      String   @unique @db.VarChar(66)
+  createdAt DateTime @db.Timestamp(6)
+  fetchedAt DateTime @default(now()) @db.Timestamp(6)
 }

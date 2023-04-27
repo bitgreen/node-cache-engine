@@ -8,15 +8,14 @@ export function createProjectFilter(req: Request) {
   const cursorObj =
     cursor === '' ? undefined : { id: parseInt(cursor as string) };
   const search = (req.query.search as string) ?? '';
-  // const projectTypes = (req.query.projectType as string) ?? undefined;
-  // const projectTypesFilter = createFilter(projectTypes, 'type');
+  const projectTypes = (req.query.projectType as string) ?? undefined;
+  const projectTypesFilter = createFilter(projectTypes, 'type');
   const projectStates = (req.query.projectState as string) ?? undefined;
   const projectStatesFilter = createFilter(projectStates, 'state');
   const projectSdgs = (req.query.sdgs as string) ?? undefined;
   const projectSdgsFilter = projectSdgs
     ? projectSdgs.split(',').map((str) => str as SdgType)
     : undefined;
-    console.log("projectSdgsFilter",projectSdgsFilter)
   // const minCreditPrice = (req.query.minCreditPrice as string) ?? undefined;
   // const maxCreditPrice = (req.query.maxCreditPrice as string) ?? undefined;
   // const minCreditPriceFilter = createCreditPriceFilter(
@@ -38,7 +37,7 @@ export function createProjectFilter(req: Request) {
   const sortFilter = createSorting(sort);
   const filters = {
     AND: [
-      // { ...projectTypesFilter },
+      { ...projectTypesFilter },
       { ...projectStatesFilter },
       // { ...minCreditPriceFilter },
       { ...creationYearFilter },
@@ -130,7 +129,7 @@ function createCreditPriceFilter(min: number, max: number) {
 function createCreationYearFilter(startYear: number, endYear: number) {
   if (startYear && endYear) {
     return {
-      created: {
+      createdAt: {
         gte: new Date(`${startYear}-01-01`),
         lte: new Date(`${endYear}-12-31`),
       },
@@ -138,14 +137,14 @@ function createCreationYearFilter(startYear: number, endYear: number) {
   }
   if (!startYear && endYear) {
     return {
-      created: {
+      createdAt: {
         lte: new Date(`${endYear}-12-31`),
       },
     };
   }
   if (startYear && !endYear) {
     return {
-      created: {
+      createdAt: {
         gte: new Date(`${startYear}-01-01`),
       },
     };
@@ -164,11 +163,11 @@ function createSorting(sortby: ProjectSortOptions) {
       };
     case ProjectSortOptions.DATE_ASC:
       return {
-        created: Prisma.SortOrder.asc,
+        createdAt: Prisma.SortOrder.asc,
       };
     case ProjectSortOptions.DATE_DESC:
       return {
-        created: Prisma.SortOrder.desc,
+        createdAt: Prisma.SortOrder.desc,
       };
     case ProjectSortOptions.VALUE_ASC:
       return {

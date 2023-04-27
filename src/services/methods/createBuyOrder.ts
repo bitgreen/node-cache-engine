@@ -5,7 +5,7 @@ import {
   CreditTransactionType,
 } from '@prisma/client';
 
-export async function createBuyOrder(event: Event, block_date: Date) {
+export async function createBuyOrder(event: Event, createdAt: Date) {
   try {
     let dataBlock = event.data.toJSON();
     let [
@@ -70,6 +70,7 @@ export async function createBuyOrder(event: Event, block_date: Date) {
               from: seller as string,
               to: buyer as string,
               fee: feesPaid as number,
+              createdAt: createdAt.toISOString()
             },
           },
         },
@@ -117,6 +118,7 @@ export async function createBuyOrder(event: Event, block_date: Date) {
                     creditPrice: pricePerUnit as number,
                     orderId: orderId as number,
                     groupId: groupId as number,
+                    createdAt: createdAt.toISOString()
                   },
                 },
               },
@@ -142,6 +144,7 @@ export async function createBuyOrder(event: Event, block_date: Date) {
                     creditPrice: pricePerUnit as number,
                     orderId: orderId as number,
                     groupId: groupId as number,
+                    createdAt: createdAt.toISOString()
                   },
                 },
                 sellorders: undefined,
@@ -159,6 +162,7 @@ export async function createBuyOrder(event: Event, block_date: Date) {
               from: seller as string,
               to: buyer as string,
               fee: feesPaid as number,
+              createdAt: createdAt.toISOString()
             },
           },
         },

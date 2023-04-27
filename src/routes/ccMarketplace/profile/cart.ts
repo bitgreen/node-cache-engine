@@ -68,6 +68,7 @@ router.post('/cart', authMiddle, async (req: Request, res: Response) => {
       batchEntities,
     } = req.body;
     console.log(projectId, projectName);
+    console.log("batchEntities", batchEntities);
 
     const profil = await prisma.profil.findUnique({
       where: {
