@@ -10,7 +10,7 @@ export async function createProject(
   api: ApiPromise,
   // ex: Extrinsic,
   event: Event,
-  block_date: Date
+  createdAt: Date
 ) {
   try {
     let dataEvent = event.data.toJSON();
@@ -98,7 +98,7 @@ export async function createProject(
           create: batchGroups,
         },
         approved: project.approved,
-        created: block_date.toISOString(),
+        createdAt: createdAt.toISOString(),
       },
     });
    } catch (e) {

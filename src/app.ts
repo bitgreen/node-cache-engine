@@ -38,7 +38,7 @@ const mainLoop = async () => {
   app.use(express.json());
   app.use(cookieParser());
 
-  app.use(cors({ credentials: true, origin: 'http://localhost:3000' }));
+  app.use(cors({ credentials: true, origin: '*' }));
   app.get('/', function (req: Request, res: Response) {
     res.send('Hello from Bitgreen!');
   });

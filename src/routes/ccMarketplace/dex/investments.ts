@@ -119,7 +119,7 @@ router.get(
         include: {
           creditTransactions: {
             where: {
-              created: { gte: new Date(date) },
+              createdAt: { gte: new Date(date) },
             },
           },
         },

@@ -9,7 +9,7 @@ export async function updateProject(
   api: ApiPromise,
   // ex: Extrinsic,
   event: Event,
-  block_date: Date
+  updatedAt: Date
 ) {
   try {
     let dataEvent = event.data.toJSON();
@@ -89,7 +89,7 @@ export async function updateProject(
         //   update: royalties,
         // },
         approved: project.approved,
-        updated: block_date.toISOString(),
+        updatedAt: updatedAt.toISOString(),
       },
     });
   } catch (e) {

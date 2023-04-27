@@ -3,7 +3,7 @@ import { prisma } from '../prisma';
 import { Event } from '@polkadot/types/interfaces';
 import { ProjectState } from '@prisma/client';
 
-export async function rejectProject(event: Event, block_date: Date) {
+export async function rejectProject(event: Event, updatedAt: Date) {
   try {
     let projectId;
     event.data.map(async (arg: any, d: number) => {
@@ -21,7 +21,7 @@ export async function rejectProject(event: Event, block_date: Date) {
       data: {
         approved: false,
         state: ProjectState.DECLINED,
-        updated: block_date.toISOString(),
+        updatedAt: updatedAt.toISOString(),
       },
     });
   } catch (e) {
