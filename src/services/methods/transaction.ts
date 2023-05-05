@@ -6,7 +6,7 @@ import { Event } from '@polkadot/types/interfaces';
 export async function transaction(
   event: Event,
   blockNumber: number,
-  block_date: Date,
+  createdAt: Date,
   hash: string
 ) {
   let sender: string | undefined;
@@ -35,7 +35,7 @@ export async function transaction(
         recipient: recipient as string,
         sender: sender as string,
         amount: amount as string,
-        createdAt: block_date.toISOString(),
+        createdAt: createdAt.toISOString(),
       },
     });
   } catch (e) {

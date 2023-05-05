@@ -16,7 +16,7 @@ import { rejectProject } from './methods/rejectProject';
 import { createSellOrder } from './methods/createSellOrder';
 import { createBuyOrder } from './methods/createBuyOrder';
 import { retireTokens } from './methods/retireTokens';
-import { updateBlockNumber } from './methods/updateBlockNumber';
+import { updateBlock } from './methods/updateBlock';
 import { createAssetTransaction, createIssuedAssetTransaction, createTokenTransaction } from './methods/createAssetsAndTokens';
 import { sellOrderCancelled } from './methods/sellOrderCancelled';
 import { updateProject } from './methods/updateProject';
@@ -26,16 +26,27 @@ export async function processBlock(
   api: ApiPromise,
   blockNumber: BlockNumber | number
 ) {
-  console.log(`Chain is at block: #${blockNumber}`);
+  console.log(`Processing block: #${blockNumber}`);
   const { signedBlock, blockEvents } = await blockExtrinsic(api, blockNumber);
   if (!signedBlock || !blockEvents) return;
-  const blockDate = new Date();
+
+  let blockDate: Date
+
+  const extrinsics = signedBlock.block.extrinsics.toHuman()
+  // @ts-ignore
+  for(const extrinsic of extrinsics) {
+    if(extrinsic.method.method === 'set' && extrinsic.method.section === 'timestamp') {
+      blockDate = new Date(parseInt(extrinsic.method.args.now.replaceAll(/,/g, '')))
+    }
+  }
+
   // parse block
   signedBlock.block.extrinsics.map(async (ex: Extrinsic, index: number) => {
     const isSigned = ex.isSigned;
     const hash = ex.hash.toString();
-    console.log(hash)
-    updateBlockNumber(blockNumber as number, hash);
+
+    await updateBlock(blockNumber as number, hash, blockDate);
+
     let extrinsicSuccess = false,
       newAssetId: number | undefined;
 
@@ -64,16 +75,16 @@ export async function processBlock(
         console.log('method', event.method);
         if (event.section === 'carbonCredits') {
           if (event.method === BlockEvent.ProjectCreated) {
-            createProject(api, event, blockDate);
+            await createProject(api, event, blockDate);
           }
           if (event.method === BlockEvent.ProjectApproved) {
-            approveProject(event, blockDate);
+            await approveProject(event, blockDate);
           }
           if (event.method === BlockEvent.ProjectRejected) {
-            rejectProject(event, blockDate);
+            await rejectProject(event, blockDate);
           }
           if (event.method === BlockEvent.CarbonCreditMinted) {
-            ccMinted(event, blockDate,api);
+            await ccMinted(event, blockDate, api);
           }
           if (event.method === BlockEvent.CarbonCreditRetired) {
             console.log('retire tokens');
@@ -81,11 +92,11 @@ export async function processBlock(
           }
           if (event.method === BlockEvent.ProjectUpdated) {
             console.log('UPDATE project');
-            await updateProject(api,event, blockDate);
+            await updateProject(api, event, blockDate);
           }
           if (event.method === BlockEvent.BatchGroupAdded) {
             console.log('UPDATE batch groups');
-            await updateBatchGroupInProject(api,event, blockDate);
+            await updateBatchGroupInProject(api, event, blockDate);
           }
           // if (event.method === BlockEvent.ProjectResubmitted) {
           //   console.log('resubmit project');
@@ -94,37 +105,38 @@ export async function processBlock(
         }
         if (event.section === 'balances') {
           if (event.method === BlockEvent.Transfer) {
-            transaction(event, blockNumber as number, blockDate, hash + i);
+            await transaction(event, blockNumber as number, blockDate, hash + i);
           }
         }
         if (event.section === 'dex') {
           if (event.method === BlockEvent.SellOrderCreated) {
             console.log('sell order created');
-            createSellOrder(event, blockDate);
+            await createSellOrder(event, blockDate);
           }
           if (event.method === BlockEvent.SellOrderCancelled) {
             console.log('sell order cancelled');
-            sellOrderCancelled(event);
+            await sellOrderCancelled(event, blockDate);
           }
           if (event.method === BlockEvent.BuyOrderFilled) {
             console.log('buy order created');
-            createBuyOrder(event, blockDate);
+            await createBuyOrder(event, blockDate);
           }
         }
         if (event.section === 'assets') {
           if (event.method === BlockEvent.TransferAssets) {
             console.log('Asset called');
-            createAssetTransaction(event, api,blockNumber as number);
+            await createAssetTransaction(event, api, blockNumber as number, blockDate);
           }
           if (event.method === BlockEvent.Issued) {
             console.log('Issued asset called');
-            createIssuedAssetTransaction(event, api,blockNumber as number);
+            await createIssuedAssetTransaction(event, api, blockNumber as number, blockDate);
           }
         }
         if (event.section === 'tokens') {
+          // TODO: Consider adding tokens.balanceSet
           if (event.method === BlockEvent.TransferTokens) {
             console.log('tokens called');
-            createTokenTransaction(event, api,blockNumber as number);
+            await createTokenTransaction(event, api, blockNumber as number, blockDate);
           }
         }
         if (event.section === 'kyc') {

@@ -12,7 +12,7 @@ interface RetireData {
   count: number;
 }
 
-export async function retireTokens(event: Event, block_date: Date) {
+export async function retireTokens(event: Event, createdAt: Date) {
   //[orderId, assetId, units, pricePerUnit, owner]
   try {
     let data = event.data.toJSON();
@@ -92,6 +92,7 @@ export async function retireTokens(event: Event, block_date: Date) {
               from: account as string,
               to: account as string,
               fee: 0,
+              createdAt: createdAt.toISOString(),
             },
           },
         },

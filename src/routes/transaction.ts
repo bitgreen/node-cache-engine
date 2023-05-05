@@ -33,21 +33,28 @@ router.get('/get-block', async (req: Request, res: Response) => {
   }
 });
 router.get('/get-last-block', async (req: Request, res: Response) => {
-  console.log('/get-last-block');
   try {
-    const val = await prisma.block.findFirst({
-      where: { id: 1 },
+    const blocks = await prisma.block.findMany({
+      select: {
+        number: true
+      },
+      orderBy: {
+        number: 'desc'
+      }
     });
-    return res.json(val);
+
+    const lastBlock = blocks[0].number
+    const totalBlocksFetched = blocks.length
+    const syncedPercentage = (totalBlocksFetched / lastBlock * 100).toFixed(2)
+
+    return res.json({
+      syncedPercentage,
+      totalBlocksFetched,
+      lastBlock
+    });
   } catch (e) {
     return res.status(500).json(e);
   }
-});
-router.get('/get-last-block', async (req: Request, res: Response) => {
-  const val = await prisma.block.findFirst({
-    where: { id: 1 },
-  });
-  return res.json(val);
 });
 router.get('/transactions', async (req: Request, res: Response) => {
   console.log('/transactions');
@@ -123,8 +130,8 @@ router.get('/transaction', async (req: Request, res: Response) => {
   }
 });
 
-router.get('/assets/transaction', async (req: Request, res: Response) => {
-  console.log('/assets/transaction');
+router.get('/asset/transactions', async (req: Request, res: Response) => {
+  console.log('/asset/transactions');
   try {
     const { account, assetId, take } = req.query;
     const aId = !isNaN(Number(assetId)) ? Number(assetId) : undefined;
@@ -149,8 +156,8 @@ router.get('/assets/transaction', async (req: Request, res: Response) => {
   }
 });
 
-router.get('/tokens/transaction', async (req: Request, res: Response) => {
-  console.log('/tokens/transaction');
+router.get('/token/transactions', async (req: Request, res: Response) => {
+  console.log('/token/transactions');
   try {
     const { account, take } = req.query;
 
@@ -196,7 +203,9 @@ router.get(
           }
         }),
       ]);
-      const uniqeAssetIds = [...new Set(assets.map((tk) => tk.assetId).filter(Boolean))];
+      const uniqeAssetIds = [...new Set(assets.map((tk) => tk.assetId).filter(assetId => {
+        return assetId || assetId === 0
+      }))];
       const uniqeTokenIds = [...new Set(tokens.map((tk) => tk.tokenId).filter(Boolean))];
 
       res.json({
