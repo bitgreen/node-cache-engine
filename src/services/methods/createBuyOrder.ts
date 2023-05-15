@@ -1,3 +1,4 @@
+import { hexToString } from '@polkadot/util';
 import { Codec } from '@polkadot/types-codec/types';
 import { prisma } from '../prisma';
 import { Event } from '@polkadot/types/interfaces';
@@ -10,6 +11,7 @@ export async function createBuyOrder(event: Event, createdAt: Date) {
     let dataBlock = event.data.toJSON();
     let [
       orderId,
+      sellOrderId,
       units,
       projectId,
       groupId,
@@ -19,7 +21,8 @@ export async function createBuyOrder(event: Event, createdAt: Date) {
       buyer,
     ] = dataBlock as (Number | string)[];
 
-    console.log(orderId, units, pricePerUnit, seller, buyer);
+    console.log(orderId,sellOrderId, units, pricePerUnit, seller, buyer);
+    const convertedPricePerunit = parseFloat((hexToString(pricePerUnit as string) ).replace(/,/g, "").slice(0,-18));
 
     // Seller and Buyer
     await prisma.$transaction([
@@ -41,12 +44,12 @@ export async function createBuyOrder(event: Event, createdAt: Date) {
                   decrement: (units as number)
                 },
                 totalValue: {
-                  decrement: ( pricePerUnit as number) * (units as number),
+                  decrement: ( convertedPricePerunit as number) * (units as number),
                 },
                 sellorders: {
                   update: {
                     where: {
-                      orderId: orderId as number,
+                      orderId: sellOrderId as number,
                     },
                     data: {
                       // isSold: sellOrder?.unitsRemain == units ? true : false,
@@ -66,7 +69,7 @@ export async function createBuyOrder(event: Event, createdAt: Date) {
               description:
                 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Ut a ullamcorper dignissim euismod amet, ridiculus.',
               credits: units as number,
-              creditPrice: pricePerUnit as number,
+              creditPrice: convertedPricePerunit as number,
               from: seller as string,
               to: buyer as string,
               fee: feesPaid as number,
@@ -88,9 +91,9 @@ export async function createBuyOrder(event: Event, createdAt: Date) {
                   increment: units as number,
                 },
                 totalValue: {
-                  increment: ( pricePerUnit as number) * (units as number),
+                  increment: ( convertedPricePerunit as number) * (units as number),
                 },
-                creditPrice: pricePerUnit as number,
+                creditPrice: convertedPricePerunit as number,
                 quantity: {
                   increment: (units as number)
                 },
@@ -115,7 +118,7 @@ export async function createBuyOrder(event: Event, createdAt: Date) {
                   create: {
                     creditsOwned: units as number,
                     retiredCredits: 0,
-                    creditPrice: pricePerUnit as number,
+                    creditPrice: convertedPricePerunit as number,
                     orderId: orderId as number,
                     groupId: groupId as number,
                     createdAt: createdAt.toISOString()
@@ -126,9 +129,9 @@ export async function createBuyOrder(event: Event, createdAt: Date) {
                 projectId: projectId as number,
                 creditsOwned: units as number,
                 retiredCredits: 0,
-                totalValue: ( pricePerUnit as number) * (units as number),
+                totalValue: ( convertedPricePerunit as number) * (units as number),
                 addressProjectId: `${buyer}_${projectId}`,
-                creditPrice: pricePerUnit as number ,
+                creditPrice: convertedPricePerunit as number ,
                 quantity: units as number,
                 creditsOwnedPerGroup: {
                   create: {
@@ -141,7 +144,7 @@ export async function createBuyOrder(event: Event, createdAt: Date) {
                   create: {
                     creditsOwned: units as number,
                     retiredCredits: 0,
-                    creditPrice: pricePerUnit as number,
+                    creditPrice: convertedPricePerunit as number,
                     orderId: orderId as number,
                     groupId: groupId as number,
                     createdAt: createdAt.toISOString()
@@ -158,7 +161,7 @@ export async function createBuyOrder(event: Event, createdAt: Date) {
               description:
                 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Ut a ullamcorper dignissim euismod amet, ridiculus.',
               credits: units as number,
-              creditPrice: pricePerUnit as number,
+              creditPrice: convertedPricePerunit as number,
               from: seller as string,
               to: buyer as string,
               fee: feesPaid as number,
@@ -168,6 +171,10 @@ export async function createBuyOrder(event: Event, createdAt: Date) {
         },
       }),
     ]);
+
+    await prisma.buyOrderReserved.deleteMany({
+      where: {buyorderId: orderId as number},
+    })
    
   } catch (e) {
     // @ts-ignore

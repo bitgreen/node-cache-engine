@@ -21,6 +21,8 @@ import { createAssetTransaction, createIssuedAssetTransaction, createTokenTransa
 import { sellOrderCancelled } from './methods/sellOrderCancelled';
 import { updateProject } from './methods/updateProject';
 import { updateBatchGroupInProject } from './methods/addBatchgroup';
+import { memberAddedKYC } from './methods/memberAddedKYC';
+import { reserveBuyOrder } from './methods/reserveBuyOrder';
 
 export async function processBlock(
   api: ApiPromise,
@@ -118,8 +120,12 @@ export async function processBlock(
             await sellOrderCancelled(event, blockDate);
           }
           if (event.method === BlockEvent.BuyOrderFilled) {
-            console.log('buy order created');
+            console.log('buy order filled');
             await createBuyOrder(event, blockDate);
+          }
+          if (event.method === BlockEvent.BuyOrderCreated) {
+            console.log('buy order created');
+            await reserveBuyOrder(event, blockDate);
           }
         }
         if (event.section === 'assets') {
@@ -142,6 +148,7 @@ export async function processBlock(
         if (event.section === 'kyc') {
           if (event.method === BlockEvent.MemberAdded) {
             console.log('member added kyc');
+            memberAddedKYC(event, blockDate)
           }
         } 
       });

@@ -24,14 +24,14 @@ export async function ccMinted(
       },
     });
     if (!projectArgs) return;
-    console.log(
-      'TEST',
-      projectArgs?.batchGroups.find((bg) => bg.groupId == groupId)
-    );
-    console.log(
-      'TEST2',
-      projectArgs?.batchGroups.find((bg) => bg.groupId == groupId)?.id
-    );
+    // console.log(
+    //   'TEST',
+    //   projectArgs?.batchGroups.find((bg) => bg.groupId == groupId)
+    // );
+    // console.log(
+    //   'TEST2',
+    //   projectArgs?.batchGroups.find((bg) => bg.groupId == groupId)?.id
+    // );
     await prisma.$transaction([
       prisma.project.update({
         where: {

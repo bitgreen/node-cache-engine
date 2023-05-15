@@ -45,4 +45,24 @@ router.get('/sell-order', async (req: Request, res: Response) => {
   }
 });
 
+router.get('/buy-order-reserved', async (req: Request, res: Response) => {
+  try {
+    let {address, sellOrderIds} = req.query;
+    console.log('buy-order-reserved',address, sellOrderIds );
+    const orderIds = (sellOrderIds as string).split(",").map(val => Number(val))
+    console.log("orderIds",orderIds );
+
+    const buyOrderReserved = await prisma.buyOrderReserved.findMany({
+      where: { AND: [
+        {adress: address as string,},
+        {sellorderId: {in: orderIds}}
+      ]},
+    });
+
+    return res.status(200).json(buyOrderReserved);
+  } catch (e) {
+    return res.status(500).json(e);
+  }
+});
+
 export default router;

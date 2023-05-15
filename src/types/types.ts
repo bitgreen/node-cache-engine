@@ -15,7 +15,8 @@ export enum BlockEvent {
   Issued = "Issued",
   ProjectUpdated  = "ProjectUpdated",
   BatchGroupAdded = "BatchGroupAdded",
-  MemberAdded = "MemberAdded"
+  MemberAdded = "MemberAdded",
+  BuyOrderCreated = "BuyOrderCreated"
 
 }
 

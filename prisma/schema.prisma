@@ -159,6 +159,16 @@ model BuyOrder {
   // investmentIdForRetire String?
 }
 
+model BuyOrderReserved {
+  id          Int      @id @default(autoincrement())
+  quantity    Int
+  creditPrice Float
+  adress      String
+  buyorderId  Int
+  sellorderId Int
+  createdAt   DateTime @db.Timestamp(6)
+}
+
 model SellOrder {
   orderId      Int         @id
   assetId      Int
@@ -234,6 +244,7 @@ enum VerificationStatus {
   NOT_VERIFIED
   PENDING
   VERIFIED
+  REJECTED
 }
 
 enum SdgType {
