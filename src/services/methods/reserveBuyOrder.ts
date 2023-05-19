@@ -5,13 +5,13 @@ import { Event } from '@polkadot/types/interfaces';
 
 export async function reserveBuyOrder(event: Event, createdAt: Date) {
   try {
-    let dataBlock = event.data.toJSON();
+    let dataBlock = event.data.toHuman();
     console.log("data", dataBlock);
     console.log("data", event.data.toHuman());
     let [
-      orderId,
-      sellOrderId,
-      units,
+      orderIdChain,
+      sellOrderIdChain,
+      unitsChain,
       projectId,
       groupId,
       pricePerUnit,
@@ -19,19 +19,22 @@ export async function reserveBuyOrder(event: Event, createdAt: Date) {
       totalAmount,
       seller,
       buyer,
-    ] = dataBlock as (Number | string)[];
+    ] = dataBlock as (string)[];
+    const orderId = Number(orderIdChain.replace(/,/g,""))
+    const sellOrderId = Number(sellOrderIdChain.replace(/,/g,""))
+    const units = Number(unitsChain.replace(/,/g,""))
 
     console.log(orderId,sellOrderId, units, pricePerUnit, seller, buyer);
-    const convertedPricePerunit = parseFloat((hexToString(pricePerUnit as string) ).replace(/,/g, "").slice(0,-18));
+    const convertedPricePerunit = parseFloat((pricePerUnit as string ).replace(/,/g, "").slice(0,-18));
     console.log("convertedPricePerunit", convertedPricePerunit);
 
     await prisma.buyOrderReserved.create({
       data: {
-        quantity   : units as number,
+        quantity   : units,
         creditPrice : convertedPricePerunit,
         adress     : buyer as string,
-        buyorderId : orderId as number,
-        sellorderId:  sellOrderId as number,  
+        buyorderId : orderId,
+        sellorderId:  sellOrderId,  
         createdAt: createdAt
       }
     })

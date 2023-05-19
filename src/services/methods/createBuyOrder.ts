@@ -8,21 +8,27 @@ import {
 
 export async function createBuyOrder(event: Event, createdAt: Date) {
   try {
-    let dataBlock = event.data.toJSON();
+    let dataBlock = event.data.toHuman();
     let [
-      orderId,
-      sellOrderId,
-      units,
-      projectId,
-      groupId,
+      orderIdChain,
+      sellOrderIdChain,
+      unitsChain,
+      projectIdChain,
+      groupIdChain,
       pricePerUnit,
-      feesPaid,
+      feesPaidChain,
       seller,
       buyer,
-    ] = dataBlock as (Number | string)[];
+    ] = dataBlock as (string)[];
+    const orderId = Number(orderIdChain.replace(/,/g,""))
+    const sellOrderId = Number(sellOrderIdChain.replace(/,/g,""))
+    const units = Number(unitsChain.replace(/,/g,""))
+    const projectId = Number(projectIdChain.replace(/,/g,""))
+    const feesPaid = Number(feesPaidChain.replace(/,/g,""))
+    const groupId = Number(groupIdChain.replace(/,/g,""))
 
     console.log(orderId,sellOrderId, units, pricePerUnit, seller, buyer);
-    const convertedPricePerunit = parseFloat((hexToString(pricePerUnit as string) ).replace(/,/g, "").slice(0,-18));
+    const convertedPricePerunit = parseFloat((pricePerUnit as string ).replace(/,/g, "").slice(0,-18));
 
     // Seller and Buyer
     await prisma.$transaction([
@@ -41,20 +47,20 @@ export async function createBuyOrder(event: Event, createdAt: Date) {
                 //   decrement: units as number,
                 // },
                 quantity: {
-                  decrement: (units as number)
+                  decrement: units
                 },
                 totalValue: {
-                  decrement: ( convertedPricePerunit as number) * (units as number),
+                  decrement: ( convertedPricePerunit as number) * units,
                 },
                 sellorders: {
                   update: {
                     where: {
-                      orderId: sellOrderId as number,
+                      orderId: sellOrderId,
                     },
                     data: {
                       // isSold: sellOrder?.unitsRemain == units ? true : false,
                       unitsRemain: {
-                        decrement: units as number,
+                        decrement: units,
                       },
                     },
                   },
@@ -65,14 +71,14 @@ export async function createBuyOrder(event: Event, createdAt: Date) {
           creditTransactions: {
             create: {
               type: CreditTransactionType.SALE,
-              projectId: projectId as number,
+              projectId: projectId,
               description:
                 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Ut a ullamcorper dignissim euismod amet, ridiculus.',
-              credits: units as number,
+              credits: units,
               creditPrice: convertedPricePerunit as number,
               from: seller as string,
               to: buyer as string,
-              fee: feesPaid as number,
+              fee: feesPaid,
               createdAt: createdAt.toISOString()
             },
           },
@@ -88,14 +94,14 @@ export async function createBuyOrder(event: Event, createdAt: Date) {
               where: { addressProjectId: `${buyer}_${projectId}` },
               update: {
                 creditsOwned: {
-                  increment: units as number,
+                  increment: units,
                 },
                 totalValue: {
-                  increment: ( convertedPricePerunit as number) * (units as number),
+                  increment: ( convertedPricePerunit as number) * units,
                 },
                 creditPrice: convertedPricePerunit as number,
                 quantity: {
-                  increment: (units as number)
+                  increment: units
                 },
                 creditsOwnedPerGroup: {
                   upsert: {
@@ -104,49 +110,49 @@ export async function createBuyOrder(event: Event, createdAt: Date) {
                     },
                     update: {
                       creditsOwned: {
-                        increment: units as number,
+                        increment: units,
                       },
                     },
                     create: {
-                      groupId: groupId as number,
+                      groupId: groupId,
                       addressGroupId: `${buyer}_${groupId}`,
-                      creditsOwned: units as number,
+                      creditsOwned: units,
                     },
                   },
                 },
                 buyOrders: {
                   create: {
-                    creditsOwned: units as number,
+                    creditsOwned: units,
                     retiredCredits: 0,
                     creditPrice: convertedPricePerunit as number,
-                    orderId: orderId as number,
-                    groupId: groupId as number,
+                    orderId: orderId,
+                    groupId: groupId,
                     createdAt: createdAt.toISOString()
                   },
                 },
               },
               create: {
-                projectId: projectId as number,
-                creditsOwned: units as number,
+                projectId: projectId,
+                creditsOwned: units,
                 retiredCredits: 0,
-                totalValue: ( convertedPricePerunit as number) * (units as number),
+                totalValue: ( convertedPricePerunit as number) * units,
                 addressProjectId: `${buyer}_${projectId}`,
                 creditPrice: convertedPricePerunit as number ,
-                quantity: units as number,
+                quantity: units,
                 creditsOwnedPerGroup: {
                   create: {
-                    groupId: groupId as number,
+                    groupId: groupId,
                     addressGroupId: `${buyer}_${groupId}_${projectId}`,
-                    creditsOwned: units as number,
+                    creditsOwned: units,
                   },
                 },
                 buyOrders: {
                   create: {
-                    creditsOwned: units as number,
+                    creditsOwned: units,
                     retiredCredits: 0,
                     creditPrice: convertedPricePerunit as number,
-                    orderId: orderId as number,
-                    groupId: groupId as number,
+                    orderId: orderId,
+                    groupId: groupId,
                     createdAt: createdAt.toISOString()
                   },
                 },
@@ -157,14 +163,14 @@ export async function createBuyOrder(event: Event, createdAt: Date) {
           creditTransactions: {
             create: {
               type: CreditTransactionType.PURCHASE,
-              projectId: projectId as number,
+              projectId: projectId,
               description:
                 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Ut a ullamcorper dignissim euismod amet, ridiculus.',
-              credits: units as number,
+              credits: units,
               creditPrice: convertedPricePerunit as number,
               from: seller as string,
               to: buyer as string,
-              fee: feesPaid as number,
+              fee: feesPaid,
               createdAt: createdAt.toISOString()
             },
           },
@@ -173,7 +179,7 @@ export async function createBuyOrder(event: Event, createdAt: Date) {
     ]);
 
     await prisma.buyOrderReserved.deleteMany({
-      where: {buyorderId: orderId as number},
+      where: {buyorderId: orderId},
     })
    
   } catch (e) {

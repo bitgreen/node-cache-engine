@@ -7,8 +7,15 @@ export async function createSellOrder(event: Event, createdAt: Date) {
   //[orderId, assetId, units, pricePerUnit, owner]
   try {
     let data = event.data.toHuman();
-    let [orderId, assetId, projectId, groupId, units, pricePerUnit, owner] =
+    let [orderIdChain, assetIdChain, projectIdChain, groupIdChain, unitsChain, pricePerUnit, owner] =
       data as (string)[];
+    const convertedPricePerunit = parseFloat(pricePerUnit.replace(/,/g, "").slice(0,-18));
+    console.log("convertedPricePerunit",convertedPricePerunit)
+    const orderId = Number(orderIdChain.replace(/,/g,""))
+    const assetId = Number(assetIdChain.replace(/,/g,""))
+    const projectId = Number(projectIdChain.replace(/,/g,""))
+    const groupId = Number(groupIdChain.replace(/,/g,""))
+    const units = Number(unitsChain.replace(/,/g,""))
     console.log(
       orderId,
       assetId,
@@ -18,8 +25,6 @@ export async function createSellOrder(event: Event, createdAt: Date) {
       pricePerUnit,
       owner
     );
-    const convertedPricePerunit = parseFloat(pricePerUnit.replace(/,/g, "").slice(0,-18));
-    console.log("convertedPricePerunit",convertedPricePerunit)
     await prisma.profil.update({
       where: {
         address: owner as string,
@@ -33,22 +38,22 @@ export async function createSellOrder(event: Event, createdAt: Date) {
             data: {
               creditPrice:  convertedPricePerunit,
               quantity: {
-                increment: Number(units),
+                increment: units,
               },
               creditsOwned: {
-                decrement: Number(units),
+                decrement: units,
               },
               totalValue: {
-                increment: (Number(convertedPricePerunit)) * (Number(units)),
+                increment: (Number(convertedPricePerunit)) * units,
               },
               sellorders: {
                 create: {
-                  assetId: Number(assetId),
-                  groupId: Number(groupId),
-                  units: Number(units),
-                  unitsRemain: Number(units),
-                  orderId: Number(orderId),
-                  pricePerUnit: Number(convertedPricePerunit),
+                  assetId: assetId,
+                  groupId: groupId,
+                  units: units,
+                  unitsRemain: units,
+                  orderId: orderId,
+                  pricePerUnit:convertedPricePerunit,
                   owner: owner as string,
                   createdAt: createdAt.toISOString()
                 },
@@ -60,7 +65,7 @@ export async function createSellOrder(event: Event, createdAt: Date) {
                   },
                   data: {
                     creditsOwned: {
-                      decrement: Number(units),
+                      decrement: units,
                     },
                   },
                 },
