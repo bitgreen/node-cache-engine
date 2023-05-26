@@ -37,7 +37,12 @@ router.get('/full-carts', authMiddle, async (req: Request, res: Response) => {
         cartItems: { include: { batchEntities: true } },
       },
     });
-    const projectIds = profil?.cartItems.map((item) => item.projectId);
+
+    if (profil === null) {
+      return res.status(200).json([]);
+    }
+
+    const projectIds = profil.cartItems.map((item) => item.projectId);
     const projects = await prisma.project.findMany({
       where: {
         id: { in: projectIds },
@@ -47,13 +52,13 @@ router.get('/full-carts', authMiddle, async (req: Request, res: Response) => {
         batchGroups: true,
       },
     });
-    const cartProjects = profil?.cartItems.map((item) => {
+    const cartProjects = profil.cartItems.map((item) => {
       const pro = projects.find((el) => el.id === item.projectId);
       return { ...item, project: pro };
     });
     return res.status(200).json(cartProjects);
-  } catch (e) {
-    return res.status(500).json(e);
+  } catch (error) {
+    return res.status(500).json(error);
   }
 });
 
