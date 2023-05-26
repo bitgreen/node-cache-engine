@@ -230,6 +230,7 @@ model KYC {
   Address       String?
   Country       String?
   Profil        Profil?            @relation(fields: [profilAddress], references: [address], onDelete: Cascade)
+  FractalId     String?
 }
 
 model Star {
