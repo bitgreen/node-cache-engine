@@ -1,9 +1,9 @@
-import { getAccessToken, getUserInformation } from '@/utils/fractal';
 import { VerificationStatus } from '@prisma/client';
 import * as crypto from 'crypto';
 import express, { Request, Response } from 'express';
 import { prisma } from '../../../services/prisma';
 import { submitExtrinsic } from '../../../utils/chain';
+import { getAccessToken, getUserInformation } from '../../../utils/fractal';
 import { authKYC } from '../../authentification/auth-middleware';
 
 const router = express.Router();
@@ -66,19 +66,9 @@ router.post('/webhook/kyc-approval', async (req: Request, res: Response) => {
         .json({ status: false, message: 'Profile not found' });
 
     // save on blockchain
+    // no need to do this in db since this is done by blockchain event listener later
     await submitExtrinsic('kyc', 'addMember', [profile.address]);
 
-    // save in db
-    await prisma.profil.update({
-      where: { address: profile.address },
-      data: {
-        KYC: {
-          update: {
-            status: VerificationStatus.VERIFIED,
-          },
-        },
-      },
-    });
     return res.status(200).json({ success: true });
   } catch (err: any) {
     return res.status(500).json({
@@ -125,24 +115,13 @@ router.post('/webhook/kyc-rejected', async (req: Request, res: Response) => {
       },
     });
 
-    // @armin: do we need to update this on blockchain as well?
-
+    // save on blockchain
+    // no need to do this in db since this is done by blockchain event listener later
     if (!profile)
       return res
         .status(400)
         .json({ success: false, message: 'Profile not found' });
 
-    // save in db
-    await prisma.profil.update({
-      where: { address: profile.address },
-      data: {
-        KYC: {
-          update: {
-            status: VerificationStatus.REJECTED,
-          },
-        },
-      },
-    });
     return res.status(200).json({ success: true });
   } catch (err: any) {
     return res.status(500).json({
