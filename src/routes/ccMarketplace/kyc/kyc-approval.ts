@@ -1,86 +1,191 @@
-import express, { Request, Response } from 'express';
-import { authKYC } from '../../authentification/auth-middleware';
-import { submitExtrinsic } from '../../../utils/chain';
-import { prisma } from '../../../services/prisma';
+import { getAccessToken, getUserInformation } from '@/utils/fractal';
 import { VerificationStatus } from '@prisma/client';
-import * as crypto from "crypto";
+import * as crypto from 'crypto';
+import express, { Request, Response } from 'express';
+import { prisma } from '../../../services/prisma';
+import { submitExtrinsic } from '../../../utils/chain';
+import { authKYC } from '../../authentification/auth-middleware';
+
 const router = express.Router();
 
 router.post('/kyc-approval', authKYC, async (req: Request, res: Response) => {
   try {
-    //const { address } = req.body;
     const { address } = req.body;
     const response = await submitExtrinsic('kyc', 'addMember', [address]);
     return res.status(200).json(response);
-  } catch (err) {
-    return res.status(500).send();
+  } catch (err: any) {
+    return res.status(500).json({
+      success: false,
+      message: err.message,
+    });
   }
 });
+
+// this webhook is called by fractal when a user is approved
+// the body contains the user_id of the user that was approved, which matches with the FractalId in the KYC table
+// we use this to find the profile entry in the DB and update the KYC status to VERIFIED
 router.post('/webhook/kyc-approval', async (req: Request, res: Response) => {
   try {
-    //const { address } = req.body;
-    const { type, data,wallet_substrate_address } = req.body
-    console.log("body",req.body)
-    const signature = 'sha1=' + crypto.createHmac('sha1', process.env.FRACTAL_WEBHOOK_SECRET ?? "")
+    const { type, data } = req.body;
+    const signature =
+      'sha1=' +
+      crypto
+        .createHmac(
+          'sha1',
+          process.env.FRACTAL_WEBHOOK_SECRET_VERIFICATION_APPROVED ?? ''
+        )
         .update(Buffer.from(JSON.stringify(req.body)))
-        .digest('hex')
+        .digest('hex');
 
-    if(!crypto.timingSafeEqual(Buffer.from(req.headers['x-fractal-signature'] as string), Buffer.from(signature))) {
-        return res.status(400).send({ status: false });
+    if (
+      !crypto.timingSafeEqual(
+        Buffer.from(req.headers['x-fractal-signature'] as string),
+        Buffer.from(signature)
+      )
+    ) {
+      return res.status(400).send({ status: false });
     }
-    // const { wallet_substrate_address } = req.body;
-    if(type != 'verification_approved') return res.status(400).send({ status: false });
+    if (type !== 'verification_approved') {
+      return res.status(400).send({ status: false });
+    }
 
-    const response = await submitExtrinsic('kyc', 'addMember', [wallet_substrate_address]);
-    // await prisma.profil.update({
-    //   where: {address: wallet_substrate_address}, 
-    //   data: {
-    //     KYC: {
-    //       create: {
-    //         status: VerificationStatus.VERIFIED
-    //       }
-          
-    //     }
+    const { user_id } = data;
 
-    //   }
-    // })
-    return res.status(200).send({ status: true });
-  } catch (err) {
-    return res.status(500).send();
+    // find profile entry in DB
+    const profile = await prisma.profil.findFirst({
+      where: {
+        KYC: {
+          FractalId: user_id,
+        },
+      },
+    });
+
+    if (!profile)
+      return res
+        .status(400)
+        .json({ status: false, message: 'Profile not found' });
+
+    // save on blockchain
+    await submitExtrinsic('kyc', 'addMember', [profile.address]);
+
+    // save in db
+    await prisma.profil.update({
+      where: { address: profile.address },
+      data: {
+        KYC: {
+          update: {
+            status: VerificationStatus.VERIFIED,
+          },
+        },
+      },
+    });
+    return res.status(200).json({ success: true });
+  } catch (err: any) {
+    return res.status(500).json({
+      success: false,
+      message: err.message,
+    });
   }
 });
 
+// this webhook is called by fractal when a user is rejected
+// the body contains the user_id of the user that was rejected, which matches with the FractalId in the KYC table
+// we use this to find the profile entry in the DB and update the KYC status to REJECTED
 router.post('/webhook/kyc-rejected', async (req: Request, res: Response) => {
   try {
-    console.log("body",req.body)
-    //const { address } = req.body;
-    const { type, data,wallet_substrate_address } = req.body
+    const { type, data } = req.body;
 
-    const signature = 'sha1=' + crypto.createHmac('sha1', process.env.FRACTAL_WEBHOOK_SECRET ?? "")
+    const signature =
+      'sha1=' +
+      crypto
+        .createHmac('sha1', process.env.FRACTAL_WEBHOOK_SECRET ?? '')
         .update(Buffer.from(JSON.stringify(req.body)))
-        .digest('hex')
+        .digest('hex');
 
-    if(!crypto.timingSafeEqual(Buffer.from(req.headers['x-fractal-signature'] as string), Buffer.from(signature))) {
-        return res.status(400).send({ status: false });
+    if (
+      !crypto.timingSafeEqual(
+        Buffer.from(req.headers['x-fractal-signature'] as string),
+        Buffer.from(signature)
+      )
+    ) {
+      return res.status(400).send({ success: false });
     }
-    // const { wallet_substrate_address } = req.body;
-    if(type != 'verification_rejected') return res.status(400).send({ status: false });
+    if (type != 'verification_rejected') {
+      return res.status(400).send({ success: false });
+    }
 
+    const { user_id } = data;
+
+    // find profile entry in DB
+    const profile = await prisma.profil.findFirst({
+      where: {
+        KYC: {
+          FractalId: user_id,
+        },
+      },
+    });
+
+    // @armin: do we need to update this on blockchain as well?
+
+    if (!profile)
+      return res
+        .status(400)
+        .json({ success: false, message: 'Profile not found' });
+
+    // save in db
     await prisma.profil.update({
-      where: {address: wallet_substrate_address}, 
+      where: { address: profile.address },
+      data: {
+        KYC: {
+          update: {
+            status: VerificationStatus.REJECTED,
+          },
+        },
+      },
+    });
+    return res.status(200).json({ success: true });
+  } catch (err: any) {
+    return res.status(500).json({
+      success: false,
+      message: err.message,
+    });
+  }
+});
+
+// this endpoint gets a fractal-generated code from the frontend, uses it to get user information from the fractal api, and then saves it to the database
+router.post('/kyc-save-user', async (req: Request, res: Response) => {
+  try {
+    // step 1: get access token from given code
+    const { code } = req.body;
+    const { access_token } = await getAccessToken(code);
+
+    // step 2: get user information from fractal api
+    const user = await getUserInformation(access_token);
+
+    // step 3: save user information to database
+    await prisma.profil.update({
+      where: {
+        address: user.wallets[0].address, // we only ask for one wallet address in fractal
+      },
       data: {
         KYC: {
           create: {
-            status: VerificationStatus.REJECTED
-          }
-          
-        }
+            FractalId: user.uid,
+            status: VerificationStatus.PENDING,
+            FirstName: user.person.full_name.split(' ').slice(0, -1).join(' '),
+            Country: user.person.residential_address_country
+              .split(' ')
+              .slice(-1)
+              .join(' '),
+          },
+        },
+      },
+    });
 
-      }
-    })
-    return res.status(200).send();
-  } catch (err) {
-    return res.status(500).send();
+    return res.status(200).json({ success: true, user });
+  } catch (err: any) {
+    console.log('error', err);
+    return res.status(500).json({ success: false, error: err.message });
   }
 });
 
