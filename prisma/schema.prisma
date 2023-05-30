@@ -165,6 +165,7 @@ model BuyOrderReserved {
   creditPrice Float
   adress      String
   buyorderId  Int
+  projectId   Int
   sellorderId Int
   createdAt   DateTime @db.Timestamp(6)
 }
