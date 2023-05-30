@@ -1,21 +1,20 @@
 // Bitgreen API Server
 
 /* import packages */
-import express, { Express, Request, Response } from 'express';
-import cors, { CorsOptions } from 'cors';
-import { PrismaClient } from '@prisma/client';
-import * as dotenv from 'dotenv';
 import cookieParser from 'cookie-parser';
+import cors, { CorsOptions } from 'cors';
+import * as dotenv from 'dotenv';
+import express, { Express, Request, Response } from 'express';
+import authentification from './routes/authentification/authentification'; //./routes/authentification/authentification.js
 import carbonCredit from './routes/carbon-credit'; //./routes/carbon-credit.js
-import transaction from './routes/transaction';
-import profile from './routes/ccMarketplace/profile/profile';
 import ccProjects from './routes/ccMarketplace/cc-projects';
-import cart from './routes/ccMarketplace/profile/cart';
 import investments from './routes/ccMarketplace/dex/investments';
 import sellOrder from './routes/ccMarketplace/dex/sell-order';
-import kyc from './routes/ccMarketplace/kyc/kyc-approval';
 import ipfs from './routes/ccMarketplace/ipfs';
-import authentification from './routes/authentification/authentification'; //./routes/authentification/authentification.js
+import kyc from './routes/ccMarketplace/kyc/kyc-approval';
+import cart from './routes/ccMarketplace/profile/cart';
+import profile from './routes/ccMarketplace/profile/profile';
+import transaction from './routes/transaction';
 
 /* config */
 dotenv.config();
@@ -39,6 +38,16 @@ const mainLoop = async () => {
   app.use(cookieParser());
 
   app.use(cors({ credentials: true, origin: '*' }));
+
+  /* 
+  if you want to disable cors issues on localhost, use this:
+  app.use(
+    cors({
+      origin: 'http://localhost:3000',
+      credentials: true,
+    })
+  ); */
+
   app.get('/', function (req: Request, res: Response) {
     res.send('Hello from Bitgreen!');
   });

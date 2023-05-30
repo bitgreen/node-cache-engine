@@ -165,7 +165,6 @@ model BuyOrderReserved {
   creditPrice Float
   adress      String
   buyorderId  Int
-  projectId   Int
   sellorderId Int
   createdAt   DateTime @db.Timestamp(6)
 }
@@ -231,6 +230,7 @@ model KYC {
   Address       String?
   Country       String?
   Profil        Profil?            @relation(fields: [profilAddress], references: [address], onDelete: Cascade)
+  FractalId     String?
 }
 
 model Star {

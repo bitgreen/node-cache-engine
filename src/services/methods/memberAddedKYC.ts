@@ -1,6 +1,6 @@
-import { prisma } from '../prisma';
 import { Event } from '@polkadot/types/interfaces';
 import { VerificationStatus } from '@prisma/client';
+import { prisma } from '../prisma';
 
 export async function memberAddedKYC(event: Event, block_date: Date) {
   try {
