@@ -63,7 +63,7 @@ router.put('/profile', async (req: Request, res: Response) => {
                 )
               : '',
             email: profile.email
-              ? validator.escape(validator.trim(`${profile.lastName}`))
+              ? validator.escape(validator.trim(`${profile.email}`))
               : '',
             userType: profile.userType ? profile.userType : UserType.Individual,
             // avatar: profile.avatar, // TODO: temp disabled

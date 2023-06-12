@@ -2,9 +2,7 @@ import { hexToString } from '@polkadot/util';
 import { Codec } from '@polkadot/types-codec/types';
 import { prisma } from '../prisma';
 import { Event } from '@polkadot/types/interfaces';
-import {
-  CreditTransactionType,
-} from '@prisma/client';
+import { CreditTransactionType } from '@prisma/client';
 
 export async function createBuyOrder(event: Event, createdAt: Date) {
   try {
@@ -19,16 +17,18 @@ export async function createBuyOrder(event: Event, createdAt: Date) {
       feesPaidChain,
       seller,
       buyer,
-    ] = dataBlock as (string)[];
-    const orderId = Number(orderIdChain.replace(/,/g,""))
-    const sellOrderId = Number(sellOrderIdChain.replace(/,/g,""))
-    const units = Number(unitsChain.replace(/,/g,""))
-    const projectId = Number(projectIdChain.replace(/,/g,""))
-    const feesPaid = Number(feesPaidChain.replace(/,/g,""))
-    const groupId = Number(groupIdChain.replace(/,/g,""))
+    ] = dataBlock as string[];
+    const orderId = Number(orderIdChain.replace(/,/g, ''));
+    const sellOrderId = Number(sellOrderIdChain.replace(/,/g, ''));
+    const units = Number(unitsChain.replace(/,/g, ''));
+    const projectId = Number(projectIdChain.replace(/,/g, ''));
+    const feesPaid = Number(feesPaidChain.replace(/,/g, ''));
+    const groupId = Number(groupIdChain.replace(/,/g, ''));
 
-    console.log(orderId,sellOrderId, units, pricePerUnit, seller, buyer);
-    const convertedPricePerunit = parseFloat((pricePerUnit as string ).replace(/,/g, "").slice(0,-18));
+    console.log(orderId, sellOrderId, units, pricePerUnit, seller, buyer);
+    const convertedPricePerunit = parseFloat(
+      (pricePerUnit as string).replace(/,/g, '').slice(0, -18)
+    );
 
     // Seller and Buyer
     await prisma.$transaction([
@@ -47,10 +47,10 @@ export async function createBuyOrder(event: Event, createdAt: Date) {
                 //   decrement: units as number,
                 // },
                 quantity: {
-                  decrement: units
+                  decrement: units,
                 },
                 totalValue: {
-                  decrement: ( convertedPricePerunit as number) * units,
+                  decrement: (convertedPricePerunit as number) * units,
                 },
                 sellorders: {
                   update: {
@@ -79,7 +79,7 @@ export async function createBuyOrder(event: Event, createdAt: Date) {
               from: seller as string,
               to: buyer as string,
               fee: feesPaid,
-              createdAt: createdAt.toISOString()
+              createdAt: createdAt.toISOString(),
             },
           },
         },
@@ -97,11 +97,11 @@ export async function createBuyOrder(event: Event, createdAt: Date) {
                   increment: units,
                 },
                 totalValue: {
-                  increment: ( convertedPricePerunit as number) * units,
+                  increment: (convertedPricePerunit as number) * units,
                 },
                 creditPrice: convertedPricePerunit as number,
                 quantity: {
-                  increment: units
+                  increment: units,
                 },
                 creditsOwnedPerGroup: {
                   upsert: {
@@ -127,7 +127,7 @@ export async function createBuyOrder(event: Event, createdAt: Date) {
                     creditPrice: convertedPricePerunit as number,
                     orderId: orderId,
                     groupId: groupId,
-                    createdAt: createdAt.toISOString()
+                    createdAt: createdAt.toISOString(),
                   },
                 },
               },
@@ -135,9 +135,9 @@ export async function createBuyOrder(event: Event, createdAt: Date) {
                 projectId: projectId,
                 creditsOwned: units,
                 retiredCredits: 0,
-                totalValue: ( convertedPricePerunit as number) * units,
+                totalValue: (convertedPricePerunit as number) * units,
                 addressProjectId: `${buyer}_${projectId}`,
-                creditPrice: convertedPricePerunit as number ,
+                creditPrice: convertedPricePerunit as number,
                 quantity: units,
                 creditsOwnedPerGroup: {
                   create: {
@@ -153,7 +153,7 @@ export async function createBuyOrder(event: Event, createdAt: Date) {
                     creditPrice: convertedPricePerunit as number,
                     orderId: orderId,
                     groupId: groupId,
-                    createdAt: createdAt.toISOString()
+                    createdAt: createdAt.toISOString(),
                   },
                 },
                 sellorders: undefined,
@@ -171,20 +171,18 @@ export async function createBuyOrder(event: Event, createdAt: Date) {
               from: seller as string,
               to: buyer as string,
               fee: feesPaid,
-              createdAt: createdAt.toISOString()
+              createdAt: createdAt.toISOString(),
             },
           },
         },
       }),
     ]);
 
-    await prisma.buyOrderReserved.deleteMany({
-      where: {buyorderId: orderId},
-    })
-   
+    // await prisma.buyOrderReserved.deleteMany({
+    //   where: {buyorderId: orderId},
+    // })
   } catch (e) {
     // @ts-ignore
     console.log(`Error occurred (create buy order): ${e.message}`);
-
   }
 }

@@ -20,6 +20,18 @@ router.post('/kyc-approval', authKYC, async (req: Request, res: Response) => {
     });
   }
 });
+router.post('/kyc-remove', authKYC, async (req: Request, res: Response) => {
+  try {
+    const { address } = req.body;
+    const response = await submitExtrinsic('kyc', 'removeMember', [address]);
+    return res.status(200).json(response);
+  } catch (err: any) {
+    return res.status(500).json({
+      success: false,
+      message: err.message,
+    });
+  }
+});
 
 // this webhook is called by fractal when a user is approved
 // the body contains the user_id of the user that was approved, which matches with the FractalId in the KYC table
