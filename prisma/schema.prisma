@@ -159,6 +159,17 @@ model BuyOrder {
   // investmentIdForRetire String?
 }
 
+model BuyOrderReserved {
+  id          Int      @id @default(autoincrement())
+  quantity    Int
+  creditPrice Float
+  adress      String
+  buyorderId  Int
+  projectId   Int
+  sellorderId Int
+  createdAt   DateTime @db.Timestamp(6)
+}
+
 model SellOrder {
   orderId      Int         @id
   assetId      Int
@@ -220,6 +231,7 @@ model KYC {
   Address       String?
   Country       String?
   Profil        Profil?            @relation(fields: [profilAddress], references: [address], onDelete: Cascade)
+  FractalId     String?
 }
 
 model Star {
@@ -234,6 +246,7 @@ enum VerificationStatus {
   NOT_VERIFIED
   PENDING
   VERIFIED
+  REJECTED
 }
 
 enum SdgType {
@@ -349,6 +362,7 @@ enum CreditTransactionType {
   PURCHASE
   SALE
   RETIRE
+  ISSUED
 }
 
 model Transaction {

@@ -29,10 +29,13 @@ router.get('/project', async (req: Request, res: Response) => {
         where: filters,
       }),
     ]);
-    const minCreditPrice = (req.query.minCreditPrice as string) ?? undefined;
+    let minCreditPrice = (req.query.minCreditPrice as string) ?? undefined;
     const maxCreditPrice = (req.query.maxCreditPrice as string) ?? undefined;
     const minCreditQuantity = (req.query.minCreditQuantity as string) ?? undefined;
+    const sellChecked = (req.query.sellChecked as string) ?? "true";
+
     if (minCreditPrice && maxCreditPrice) {
+      // if (sellChecked == "true" && Number(minCreditPrice) == 0)  minCreditPrice = "0.001"
       const invs = await prisma.investment.findMany({
         where: {
           AND: [
@@ -66,10 +69,10 @@ router.get('/project', async (req: Request, res: Response) => {
         include: { sellorders: true },
       });
       const minCreditQuantityLimit = Number(minCreditQuantity) ? Number(minCreditQuantity) : 0;
-      projects = filterAndAddProjectPrice(projects,invs,minCreditQuantityLimit)
+      projects = filterAndAddProjectPrice(projects,invs,minCreditQuantityLimit,Number(minCreditPrice), sellChecked == "true" ? true : false)
     }
     const projectsWithMinMaxCreditPrices: Project = addProjectTokens(projects);
-    console.log("projectsWithMinMaxCreditPrices",projectsWithMinMaxCreditPrices)
+    // console.log("projectsWithMinMaxCreditPrices",projectsWithMinMaxCreditPrices)
     return res.json({
       projects: projectsWithMinMaxCreditPrices,
       nextId: projects.length === limit ? projects[limit - 1].id : undefined,
@@ -324,7 +327,7 @@ router.get('/project-orginator/:address', async (req: Request, res: Response) =>
       },
       include: { sellorders: true },
     });
-    const projectsFiltered = filterAndAddProjectPrice(projects,invs,0)
+    const projectsFiltered = filterAndAddProjectPrice(projects,invs,0,0,false)
 
     res.status(200).json(projectsFiltered);
   } catch (e) {

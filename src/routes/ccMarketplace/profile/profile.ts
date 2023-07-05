@@ -3,7 +3,7 @@ import express, { Request, Response } from 'express';
 import { authMiddle } from '../../authentification/auth-middleware';
 import validator from 'validator';
 import { authenticatedAddress } from '../../../services/authentification';
-import { UserType } from '@prisma/client';
+import { UserType, VerificationStatus } from '@prisma/client';
 
 const router = express.Router();
 
@@ -14,6 +14,7 @@ router.get('/profile', authMiddle, async (req: Request, res: Response) => {
       where: {
         address: req.session?.address,
       },
+      include: { KYC: true },
     });
     return res.status(200).json(profil);
   } catch (e) {
@@ -42,6 +43,7 @@ router.put('/profile', async (req: Request, res: Response) => {
   console.log('put /profile');
   try {
     const { profile, isLogin } = req.body;
+    console.log('profile', profile, isLogin);
     const updateParams =
       isLogin == 'true'
         ? {}
@@ -61,7 +63,7 @@ router.put('/profile', async (req: Request, res: Response) => {
                 )
               : '',
             email: profile.email
-              ? validator.escape(validator.trim(`${profile.lastName}`))
+              ? validator.escape(validator.trim(`${profile.email}`))
               : '',
             userType: profile.userType ? profile.userType : UserType.Individual,
             // avatar: profile.avatar, // TODO: temp disabled
@@ -82,6 +84,11 @@ router.put('/profile', async (req: Request, res: Response) => {
       update: updateParams,
       create: {
         address: profile.address,
+        // KYC: {
+        //   create: {
+        //     status: VerificationStatus.NOT_VERIFIED,
+        //   },
+        // },
         firstName: profile.firstName
           ? validator.escape(validator.trim(`${profile.firstName}`))
           : '',
@@ -130,6 +137,22 @@ router.get('/profile-info/:address', async (req: Request, res: Response) => {
     orginatorName: profil.orginatorName,
     orginatorDescription: profil.orginatorDescription,
   });
+});
+
+router.post('/save-email', authMiddle, async (req: Request, res: Response) => {
+  try {
+    const { email } = req.body;
+    console.log('EMAIL', email);
+    await prisma.profil.update({
+      where: { address: req.session?.address },
+      data: {
+        email: email,
+      },
+    });
+    return res.status(200);
+  } catch (e) {
+    res.status(500);
+  }
 });
 
 export default router;

@@ -17,10 +17,16 @@ import { createSellOrder } from './methods/createSellOrder';
 import { createBuyOrder } from './methods/createBuyOrder';
 import { retireTokens } from './methods/retireTokens';
 import { updateBlock } from './methods/updateBlock';
-import { createAssetTransaction, createIssuedAssetTransaction, createTokenTransaction } from './methods/createAssetsAndTokens';
+import {
+  createAssetTransaction,
+  createIssuedAssetTransaction,
+  createTokenTransaction,
+} from './methods/createAssetsAndTokens';
 import { sellOrderCancelled } from './methods/sellOrderCancelled';
 import { updateProject } from './methods/updateProject';
 import { updateBatchGroupInProject } from './methods/addBatchgroup';
+import { memberAddedKYC } from './methods/memberAddedKYC';
+import { reserveBuyOrder } from './methods/reserveBuyOrder';
 
 export async function processBlock(
   api: ApiPromise,
@@ -30,13 +36,18 @@ export async function processBlock(
   const { signedBlock, blockEvents } = await blockExtrinsic(api, blockNumber);
   if (!signedBlock || !blockEvents) return;
 
-  let blockDate: Date
+  let blockDate: Date;
 
-  const extrinsics = signedBlock.block.extrinsics.toHuman()
+  const extrinsics = signedBlock.block.extrinsics.toHuman();
   // @ts-ignore
-  for(const extrinsic of extrinsics) {
-    if(extrinsic.method.method === 'set' && extrinsic.method.section === 'timestamp') {
-      blockDate = new Date(parseInt(extrinsic.method.args.now.replaceAll(/,/g, '')))
+  for (const extrinsic of extrinsics) {
+    if (
+      extrinsic.method.method === 'set' &&
+      extrinsic.method.section === 'timestamp'
+    ) {
+      blockDate = new Date(
+        parseInt(extrinsic.method.args.now.replaceAll(/,/g, ''))
+      );
     }
   }
 
@@ -105,7 +116,12 @@ export async function processBlock(
         }
         if (event.section === 'balances') {
           if (event.method === BlockEvent.Transfer) {
-            await transaction(event, blockNumber as number, blockDate, hash + i);
+            await transaction(
+              event,
+              blockNumber as number,
+              blockDate,
+              hash + i
+            );
           }
         }
         if (event.section === 'dex') {
@@ -118,32 +134,52 @@ export async function processBlock(
             await sellOrderCancelled(event, blockDate);
           }
           if (event.method === BlockEvent.BuyOrderFilled) {
-            console.log('buy order created');
+            console.log('buy order filled');
             await createBuyOrder(event, blockDate);
           }
+          // if (event.method === BlockEvent.BuyOrderCreated) {
+          //   console.log('buy order created');
+          //   await reserveBuyOrder(event, blockDate);
+          // }
         }
         if (event.section === 'assets') {
           if (event.method === BlockEvent.TransferAssets) {
             console.log('Asset called');
-            await createAssetTransaction(event, api, blockNumber as number, blockDate);
+            await createAssetTransaction(
+              event,
+              api,
+              blockNumber as number,
+              blockDate
+            );
           }
           if (event.method === BlockEvent.Issued) {
             console.log('Issued asset called');
-            await createIssuedAssetTransaction(event, api, blockNumber as number, blockDate);
+            await createIssuedAssetTransaction(
+              event,
+              api,
+              blockNumber as number,
+              blockDate
+            );
           }
         }
         if (event.section === 'tokens') {
           // TODO: Consider adding tokens.balanceSet
           if (event.method === BlockEvent.TransferTokens) {
             console.log('tokens called');
-            await createTokenTransaction(event, api, blockNumber as number, blockDate);
+            await createTokenTransaction(
+              event,
+              api,
+              blockNumber as number,
+              blockDate
+            );
           }
         }
         if (event.section === 'kyc') {
           if (event.method === BlockEvent.MemberAdded) {
             console.log('member added kyc');
+            memberAddedKYC(event, blockDate);
           }
-        } 
+        }
       });
   });
 

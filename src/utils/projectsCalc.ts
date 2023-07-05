@@ -29,15 +29,24 @@ function calculateMinMaxProjectTokens(project: Project): [number, number] {
 export function filterAndAddProjectPrice(
   projects: any[],
   invs: Investment[],
-  minCreditQuantity: number
+  minCreditQuantity: number,
+  inputMin: number,
+  isChecked: boolean,
 ) {
  
   const newProjects: Project[]= [];
   for (const project of projects) {
     const investment = invs.filter((i) => i.projectId === project.id);
+    console.log("investment",investment)
     const sellOrders: SellOrder[] = []
     investment.forEach((i) => i.sellorders.forEach((s) => sellOrders.push(s)))
     const minQ = sellOrders.reduce((acc, val) => acc+ val.unitsRemain ,0 )
+    console.log("isChecked", isChecked)
+    if (inputMin == 0 && !isChecked && sellOrders.length === 0) {
+      newProjects.push({ ...project, minPrice: 0, maxPrice: 0 });
+      continue
+    }
+    if (!sellOrders || sellOrders.length === 0) continue;
     if (minQ < minCreditQuantity) continue;
     const [min, max] = investment ? calculateMinMaxProjectPrice(sellOrders) : [0,0]
 

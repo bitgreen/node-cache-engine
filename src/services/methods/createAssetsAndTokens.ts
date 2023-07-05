@@ -3,6 +3,7 @@ import { Event } from '@polkadot/types/interfaces';
 import { ApiPromise } from '@polkadot/api';
 import { BalanceData } from '@/types/types';
 import { hexToBigInt } from '@polkadot/util';
+import { CreditTransactionType } from '@prisma/client';
 
 interface MetaData {
   deposit: string;
@@ -53,6 +54,7 @@ export async function createIssuedAssetTransaction(
     let eventData = event.data.toJSON();
     let [assetId, owner, totalSupply] = eventData as (Number | string)[];
     const metaData = await getMetadata(api, assetId as number);
+
     await prisma.assetTransaction.create({
       data: {
         sender: '', // our sudo standard account?

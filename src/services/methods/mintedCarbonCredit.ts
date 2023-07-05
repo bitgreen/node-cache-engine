@@ -3,6 +3,7 @@ import { Codec } from '@polkadot/types-codec/types';
 import { prisma } from '../prisma';
 import { Extrinsic, Event } from '@polkadot/types/interfaces';
 import { queryBalances } from './createAssetsAndTokens';
+import { CreditTransactionType } from '@prisma/client';
 
 export async function ccMinted(
   event: Event,
@@ -24,14 +25,14 @@ export async function ccMinted(
       },
     });
     if (!projectArgs) return;
-    console.log(
-      'TEST',
-      projectArgs?.batchGroups.find((bg) => bg.groupId == groupId)
-    );
-    console.log(
-      'TEST2',
-      projectArgs?.batchGroups.find((bg) => bg.groupId == groupId)?.id
-    );
+    // console.log(
+    //   'TEST',
+    //   projectArgs?.batchGroups.find((bg) => bg.groupId == groupId)
+    // );
+    // console.log(
+    //   'TEST2',
+    //   projectArgs?.batchGroups.find((bg) => bg.groupId == groupId)?.id
+    // );
     await prisma.$transaction([
       prisma.project.update({
         where: {
@@ -92,6 +93,25 @@ export async function ccMinted(
                   increment: amount as number,
                 }
               },
+            },
+          },
+        },
+      }),
+      prisma.profil.update({
+        where: { address: recipient as string },
+        data: {
+          creditTransactions: {
+            create: {
+              type: CreditTransactionType.ISSUED,
+              projectId: projectId as number,
+              description:
+                'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Ut a ullamcorper dignissim euismod amet, ridiculus.',
+              credits: amount as number,
+              creditPrice: 0,
+              from: "Bitgreen",
+              to: recipient as string,
+              fee: 0,
+              createdAt: updatedAt.toISOString(),
             },
           },
         },
