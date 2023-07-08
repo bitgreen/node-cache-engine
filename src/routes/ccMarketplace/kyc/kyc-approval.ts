@@ -3,35 +3,42 @@ import * as crypto from 'crypto';
 import express, { Request, Response } from 'express';
 import { prisma } from '../../../services/prisma';
 import { submitExtrinsic } from '../../../utils/chain';
-import { getAccessToken, getUserInformation } from '../../../utils/fractal';
+import {getAccessToken, getUserInformation, loginTemplate} from '../../../utils/fractal';
 import { authKYC } from '../../authentification/auth-middleware';
 
 const router = express.Router();
 
-router.post('/kyc-approval', authKYC, async (req: Request, res: Response) => {
-  try {
-    const { address } = req.body;
-    const response = await submitExtrinsic('kyc', 'addMember', [address]);
-    return res.status(200).json(response);
-  } catch (err: any) {
-    return res.status(500).json({
-      success: false,
-      message: err.message,
-    });
+router.get('/kyc/start', async (req: Request, res: Response) => {
+  let scope = process.env.FRACTAL_BASIC_SCOPE;
+  const { address, state, type } = req.query;
+
+  if(type === 'advanced') {
+    scope = process.env.FRACTAL_ADVANCED_SCOPE;
   }
-});
-router.post('/kyc-remove', authKYC, async (req: Request, res: Response) => {
-  try {
-    const { address } = req.body;
-    const response = await submitExtrinsic('kyc', 'removeMember', [address]);
-    return res.status(200).json(response);
-  } catch (err: any) {
-    return res.status(500).json({
-      success: false,
-      message: err.message,
-    });
+
+  res.status(200).json({
+    url: loginTemplate.expand({
+      client_id: process.env.FRACTAL_CLIENT_ID,
+      redirect_uri: process.env.FRACTAL_REDIRECT_URL,
+      response_type: "code",
+      scope: scope,
+      state: state,
+      ensure_wallet: address
+    })
+  });
+})
+
+router.get('/kyc/callback', async (req: Request, res: Response) => {
+  const { code, state } = req.query
+
+  // const token = await getAccessToken(code as string)
+
+  if(state === 'carbon') {
+    return res.redirect(`https://carbon.bitgreen.org/onboarding/callback?code=${code}`);
+  } else {
+    return res.redirect(`https://bitgreen.org`);
   }
-});
+})
 
 // this webhook is called by fractal when a user is approved
 // the body contains the user_id of the user that was approved, which matches with the FractalId in the KYC table
@@ -63,23 +70,25 @@ router.post('/webhook/kyc-approval', async (req: Request, res: Response) => {
 
     const { user_id } = data;
 
-    // find profile entry in DB
-    const profile = await prisma.profil.findFirst({
-      where: {
-        KYC: {
-          FractalId: user_id,
-        },
-      },
-    });
+    console.log(data)
 
-    if (!profile)
-      return res
-        .status(400)
-        .json({ status: false, message: 'Profile not found' });
+    // // find profile entry in DB
+    // const profile = await prisma.profil.findFirst({
+    //   where: {
+    //     KYC: {
+    //       FractalId: user_id,
+    //     },
+    //   },
+    // });
+    //
+    // if (!profile)
+    //   return res
+    //     .status(400)
+    //     .json({ status: false, message: 'Profile not found' });
 
     // save on blockchain
     // no need to do this in db since this is done by blockchain event listener later
-    await submitExtrinsic('kyc', 'addMember', [profile.address]);
+    // await submitExtrinsic('kyc', 'addMember', [profile.address]);
 
     return res.status(200).json({ success: true });
   } catch (err: any) {
