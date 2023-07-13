@@ -39,7 +39,7 @@ router.get('/kyc/callback', async (req: Request, res: Response) => {
 
     console.log(user.wallets)
 
-    // await prisma.KYC.create({
+    // await prisma.kYC.create({
     //   where: {
     //     profilAddress: user.wallets[0].address, // we only ask for one wallet address in fractal
     //   },
@@ -108,7 +108,7 @@ router.post('/webhook/kyc-approval', async (req: Request, res: Response) => {
     console.log('data')
     console.log(data)
 
-    const all_kyc = await prisma.KYC.findMany({
+    const all_kyc = await prisma.kYC.findMany({
       where: {
         FractalId: user_id
       },
