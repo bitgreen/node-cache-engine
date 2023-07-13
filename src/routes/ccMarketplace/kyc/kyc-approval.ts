@@ -29,14 +29,49 @@ router.get('/kyc/start', async (req: Request, res: Response) => {
 })
 
 router.get('/kyc/callback', async (req: Request, res: Response) => {
-  const { code, state } = req.query
+  try {
+    // step 1: get access token from given code
+    const { code, state } = req.query
+    const { access_token } = await getAccessToken(code as string);
 
-  // const token = await getAccessToken(code as string)
+    // step 2: get user information from fractal api
+    const user = await getUserInformation(access_token);
 
-  if(state === 'carbon') {
-    return res.redirect(`https://carbon.bitgreen.org/onboarding/callback?code=${code}`);
-  } else {
-    return res.redirect(`https://bitgreen.org`);
+    console.log(user.wallets)
+
+    // await prisma.KYC.create({
+    //   where: {
+    //     profilAddress: user.wallets[0].address, // we only ask for one wallet address in fractal
+    //   },
+    //   create: {
+    //     profilAddress: user.wallets[0].address
+    //     FractalId: user.uid,
+    //     status: VerificationStatus.PENDING,
+    //     FirstName: user.person.full_name.split(' ').slice(0, -1).join(' '),
+    //     Country: user.person.residential_address_country
+    //         .split(' ')
+    //         .slice(-1)
+    //         .join(' '),
+    //   },
+    //   update: {
+    //     profilAddress: user.wallets[0].address
+    //     status: VerificationStatus.PENDING,
+    //     FirstName: user.person.full_name.split(' ').slice(0, -1).join(' '),
+    //     Country: user.person.residential_address_country
+    //         .split(' ')
+    //         .slice(-1)
+    //         .join(' '),
+    //   }
+    // });
+
+    if(state === 'carbon') {
+      return res.redirect(`https://carbon.bitgreen.org/onboarding/callback?code=${code}`);
+    } else {
+      return res.redirect(`https://bitgreen.org`);
+    }
+  } catch (err: any) {
+    console.log('error', err);
+    return res.status(500).json({ success: false, error: err.message });
   }
 })
 
@@ -70,25 +105,28 @@ router.post('/webhook/kyc-approval', async (req: Request, res: Response) => {
 
     const { user_id } = data;
 
+    console.log('data')
     console.log(data)
 
-    // // find profile entry in DB
-    // const profile = await prisma.profil.findFirst({
-    //   where: {
-    //     KYC: {
-    //       FractalId: user_id,
-    //     },
-    //   },
-    // });
-    //
-    // if (!profile)
-    //   return res
-    //     .status(400)
-    //     .json({ status: false, message: 'Profile not found' });
+    const all_kyc = await prisma.KYC.findMany({
+      where: {
+        FractalId: user_id
+      },
+    });
 
-    // save on blockchain
-    // no need to do this in db since this is done by blockchain event listener later
-    // await submitExtrinsic('kyc', 'addMember', [profile.address]);
+    if (!all_kyc.length)
+      return res
+          .status(400)
+          .json({ status: false, message: 'KYC profile not found.' });
+
+    all_kyc.map((kyc) => {
+      console.log('kyc')
+      console.log(kyc)
+
+      // save on blockchain
+      // no need to do this in db since this is done by blockchain event listener later
+      // await submitExtrinsic('kyc', 'addMember', [kyc.profilAddress]);
+    })
 
     return res.status(200).json({ success: true });
   } catch (err: any) {
