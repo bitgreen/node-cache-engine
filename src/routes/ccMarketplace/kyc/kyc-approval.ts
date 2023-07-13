@@ -37,33 +37,25 @@ router.get('/kyc/callback', async (req: Request, res: Response) => {
     // step 2: get user information from fractal api
     const user = await getUserInformation(access_token);
 
-    console.log(user.wallets)
+    // step 3: save data to db
+    user.wallets.map(async (wallet) => {
+      if(wallet?.currency === 'substrate') {
+        await prisma.kYC.create({
+          data: {
+            profilAddress: wallet.address,
+            FractalId: user.uid,
+            status: VerificationStatus.PENDING,
+            FirstName: user.person.full_name.split(' ').slice(0, -1).join(' '),
+            Country: user.person.residential_address_country
+                .split(' ')
+                .slice(-1)
+                .join(' '),
+          }
+        });
+      }
+    })
 
-    // await prisma.kYC.create({
-    //   where: {
-    //     profilAddress: user.wallets[0].address, // we only ask for one wallet address in fractal
-    //   },
-    //   create: {
-    //     profilAddress: user.wallets[0].address
-    //     FractalId: user.uid,
-    //     status: VerificationStatus.PENDING,
-    //     FirstName: user.person.full_name.split(' ').slice(0, -1).join(' '),
-    //     Country: user.person.residential_address_country
-    //         .split(' ')
-    //         .slice(-1)
-    //         .join(' '),
-    //   },
-    //   update: {
-    //     profilAddress: user.wallets[0].address
-    //     status: VerificationStatus.PENDING,
-    //     FirstName: user.person.full_name.split(' ').slice(0, -1).join(' '),
-    //     Country: user.person.residential_address_country
-    //         .split(' ')
-    //         .slice(-1)
-    //         .join(' '),
-    //   }
-    // });
-
+    // step 4: redirect to thank you page
     if(state === 'carbon') {
       return res.redirect(`https://carbon.bitgreen.org/onboarding/callback?code=${code}`);
     } else {

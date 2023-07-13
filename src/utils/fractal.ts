@@ -19,6 +19,7 @@ interface FractalUser {
   };
   wallets: {
     address: string;
+    currency: string;
     created_at: string;
     updated_at: string;
   }[];
