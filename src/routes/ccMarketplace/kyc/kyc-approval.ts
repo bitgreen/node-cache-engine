@@ -40,8 +40,11 @@ router.get('/kyc/callback', async (req: Request, res: Response) => {
     // step 3: save data to db
     user.wallets.map(async (wallet) => {
       if(wallet?.currency === 'substrate') {
-        await prisma.kYC.create({
-          data: {
+        await prisma.kYC.upsert({
+          where: {
+            profilAddress: wallet.address,
+          },
+          create: {
             profilAddress: wallet.address,
             FractalId: user.uid,
             status: VerificationStatus.PENDING,
@@ -50,6 +53,9 @@ router.get('/kyc/callback', async (req: Request, res: Response) => {
                 .split(' ')
                 .slice(-1)
                 .join(' '),
+          },
+          update: {
+
           }
         });
       }
@@ -57,7 +63,7 @@ router.get('/kyc/callback', async (req: Request, res: Response) => {
 
     // step 4: redirect to thank you page
     if(state === 'carbon') {
-      return res.redirect(`https://carbon.bitgreen.org/onboarding/callback?code=${code}`);
+      return res.redirect(`https://carbon.bitgreen.org/onboarding/callback`);
     } else {
       return res.redirect(`https://bitgreen.org`);
     }
@@ -95,10 +101,7 @@ router.post('/webhook/kyc-approval', async (req: Request, res: Response) => {
       return res.status(400).send({ status: false });
     }
 
-    const { user_id } = data;
-
-    console.log('data')
-    console.log(data)
+    const { user_id, level } = data;
 
     const all_kyc = await prisma.kYC.findMany({
       where: {
@@ -111,13 +114,10 @@ router.post('/webhook/kyc-approval', async (req: Request, res: Response) => {
           .status(400)
           .json({ status: false, message: 'KYC profile not found.' });
 
-    all_kyc.map((kyc) => {
-      console.log('kyc')
-      console.log(kyc)
-
+    all_kyc.map(async (kyc) => {
       // save on blockchain
       // no need to do this in db since this is done by blockchain event listener later
-      // await submitExtrinsic('kyc', 'addMember', [kyc.profilAddress]);
+      await submitExtrinsic('kyc', 'addMember', [kyc.profilAddress]);
     })
 
     return res.status(200).json({ success: true });
@@ -179,43 +179,6 @@ router.post('/webhook/kyc-rejected', async (req: Request, res: Response) => {
       success: false,
       message: err.message,
     });
-  }
-});
-
-// this endpoint gets a fractal-generated code from the frontend, uses it to get user information from the fractal api, and then saves it to the database
-router.post('/kyc-save-user', async (req: Request, res: Response) => {
-  try {
-    // step 1: get access token from given code
-    const { code } = req.body;
-    const { access_token } = await getAccessToken(code);
-
-    // step 2: get user information from fractal api
-    const user = await getUserInformation(access_token);
-
-    // step 3: save user information to database
-    await prisma.profil.update({
-      where: {
-        address: user.wallets[0].address, // we only ask for one wallet address in fractal
-      },
-      data: {
-        KYC: {
-          create: {
-            FractalId: user.uid,
-            status: VerificationStatus.PENDING,
-            FirstName: user.person.full_name.split(' ').slice(0, -1).join(' '),
-            Country: user.person.residential_address_country
-              .split(' ')
-              .slice(-1)
-              .join(' '),
-          },
-        },
-      },
-    });
-
-    return res.status(200).json({ success: true, user });
-  } catch (err: any) {
-    console.log('error', err);
-    return res.status(500).json({ success: false, error: err.message });
   }
 });
 
