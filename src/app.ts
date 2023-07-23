@@ -14,6 +14,7 @@ import ipfs from './routes/ccMarketplace/ipfs';
 import kyc from './routes/ccMarketplace/kyc/kyc-approval';
 import cart from './routes/ccMarketplace/profile/cart';
 import profile from './routes/ccMarketplace/profile/profile';
+import creditTransaction from './routes/ccMarketplace/dex/credit-transaction';
 import transaction from './routes/transaction';
 
 /* config */
@@ -62,6 +63,7 @@ const mainLoop = async () => {
   app.use('', investments);
   app.use('', sellOrder);
   app.use('', kyc);
+  app.use('', creditTransaction);
   // app.use("", require("./routes/test-routes"));
 
   /* serve api */

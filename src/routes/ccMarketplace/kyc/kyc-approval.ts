@@ -3,35 +3,81 @@ import * as crypto from 'crypto';
 import express, { Request, Response } from 'express';
 import { prisma } from '../../../services/prisma';
 import { submitExtrinsic } from '../../../utils/chain';
-import { getAccessToken, getUserInformation } from '../../../utils/fractal';
+import {getAccessToken, getUserInformation, loginTemplate} from '../../../utils/fractal';
 import { authKYC } from '../../authentification/auth-middleware';
 
 const router = express.Router();
 
-router.post('/kyc-approval', authKYC, async (req: Request, res: Response) => {
-  try {
-    const { address } = req.body;
-    const response = await submitExtrinsic('kyc', 'addMember', [address]);
-    return res.status(200).json(response);
-  } catch (err: any) {
-    return res.status(500).json({
-      success: false,
-      message: err.message,
-    });
+router.get('/kyc/start', async (req: Request, res: Response) => {
+  let scope = process.env.FRACTAL_BASIC_SCOPE;
+  const { address, state, type, response } = req.query;
+
+  if(type === 'advanced') {
+    scope = process.env.FRACTAL_ADVANCED_SCOPE;
   }
-});
-router.post('/kyc-remove', authKYC, async (req: Request, res: Response) => {
-  try {
-    const { address } = req.body;
-    const response = await submitExtrinsic('kyc', 'removeMember', [address]);
-    return res.status(200).json(response);
-  } catch (err: any) {
-    return res.status(500).json({
-      success: false,
-      message: err.message,
-    });
+
+  const loginUrl = loginTemplate.expand({
+    client_id: process.env.FRACTAL_CLIENT_ID,
+    redirect_uri: process.env.FRACTAL_REDIRECT_URL,
+    response_type: "code",
+    scope: scope,
+    state: state,
+    ensure_wallet: address
+  })
+
+  if(response === 'redirect') {
+    return res.redirect(loginUrl);
   }
-});
+
+  res.status(200).json({
+    url: loginUrl
+  });
+})
+
+router.get('/kyc/callback', async (req: Request, res: Response) => {
+  try {
+    // step 1: get access token from given code
+    const { code, state } = req.query
+    const { access_token } = await getAccessToken(code as string);
+
+    // step 2: get user information from fractal api
+    const user = await getUserInformation(access_token);
+
+    // step 3: save data to db
+    user.wallets.map(async (wallet) => {
+      if(wallet?.currency === 'substrate') {
+        await prisma.kYC.upsert({
+          where: {
+            profilAddress: wallet.address,
+          },
+          create: {
+            profilAddress: wallet.address,
+            FractalId: user.uid,
+            status: VerificationStatus.PENDING,
+            FirstName: user.person.full_name.split(' ').slice(0, -1).join(' '),
+            Country: user.person.residential_address_country
+                .split(' ')
+                .slice(-1)
+                .join(' '),
+          },
+          update: {
+
+          }
+        });
+      }
+    })
+
+    // step 4: redirect to thank you page
+    if(state === 'carbon') {
+      return res.redirect(`https://carbon.bitgreen.org/onboarding/callback`);
+    } else {
+      return res.redirect(`https://bitgreen.org`);
+    }
+  } catch (err: any) {
+    console.log('error', err);
+    return res.status(500).json({ success: false, error: err.message });
+  }
+})
 
 // this webhook is called by fractal when a user is approved
 // the body contains the user_id of the user that was approved, which matches with the FractalId in the KYC table
@@ -61,25 +107,24 @@ router.post('/webhook/kyc-approval', async (req: Request, res: Response) => {
       return res.status(400).send({ status: false });
     }
 
-    const { user_id } = data;
+    const { user_id, level } = data;
 
-    // find profile entry in DB
-    const profile = await prisma.profil.findFirst({
+    const all_kyc = await prisma.kYC.findMany({
       where: {
-        KYC: {
-          FractalId: user_id,
-        },
+        FractalId: user_id
       },
     });
 
-    if (!profile)
+    if (!all_kyc.length)
       return res
-        .status(400)
-        .json({ status: false, message: 'Profile not found' });
+          .status(400)
+          .json({ status: false, message: 'KYC profile not found.' });
 
-    // save on blockchain
-    // no need to do this in db since this is done by blockchain event listener later
-    await submitExtrinsic('kyc', 'addMember', [profile.address]);
+    all_kyc.map(async (kyc) => {
+      // save on blockchain
+      // no need to do this in db since this is done by blockchain event listener later
+      await submitExtrinsic('kyc', 'addMember', [kyc.profilAddress]);
+    })
 
     return res.status(200).json({ success: true });
   } catch (err: any) {
@@ -140,43 +185,6 @@ router.post('/webhook/kyc-rejected', async (req: Request, res: Response) => {
       success: false,
       message: err.message,
     });
-  }
-});
-
-// this endpoint gets a fractal-generated code from the frontend, uses it to get user information from the fractal api, and then saves it to the database
-router.post('/kyc-save-user', async (req: Request, res: Response) => {
-  try {
-    // step 1: get access token from given code
-    const { code } = req.body;
-    const { access_token } = await getAccessToken(code);
-
-    // step 2: get user information from fractal api
-    const user = await getUserInformation(access_token);
-
-    // step 3: save user information to database
-    await prisma.profil.update({
-      where: {
-        address: user.wallets[0].address, // we only ask for one wallet address in fractal
-      },
-      data: {
-        KYC: {
-          create: {
-            FractalId: user.uid,
-            status: VerificationStatus.PENDING,
-            FirstName: user.person.full_name.split(' ').slice(0, -1).join(' '),
-            Country: user.person.residential_address_country
-              .split(' ')
-              .slice(-1)
-              .join(' '),
-          },
-        },
-      },
-    });
-
-    return res.status(200).json({ success: true, user });
-  } catch (err: any) {
-    console.log('error', err);
-    return res.status(500).json({ success: false, error: err.message });
   }
 });
 

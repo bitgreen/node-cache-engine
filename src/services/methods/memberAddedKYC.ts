@@ -7,14 +7,10 @@ export async function memberAddedKYC(event: Event, block_date: Date) {
     let dataEvent = event.data.toJSON();
     console.log('dataEvent', dataEvent);
     let [memberAccount] = dataEvent as string[];
-    await prisma.profil.update({
-      where: { address: memberAccount },
+    await prisma.kYC.update({
+      where: { profilAddress: memberAccount },
       data: {
-        KYC: {
-          update: {
-            status: VerificationStatus.VERIFIED,
-          },
-        },
+        status: VerificationStatus.VERIFIED,
       },
     });
   } catch (e) {

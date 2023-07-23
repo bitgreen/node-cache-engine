@@ -19,6 +19,7 @@ interface FractalUser {
   };
   wallets: {
     address: string;
+    currency: string;
     created_at: string;
     updated_at: string;
   }[];
@@ -33,8 +34,12 @@ interface FractalToken {
   created_at: number;
 }
 
+export const loginTemplate = uritemplate.parse(
+    `${process.env.FRACTAL_FRONTEND_SERVER}/authorize{?client_id,redirect_uri,response_type,scope,state,ensure_wallet}`,
+);
+
 const tokenTemplate = uritemplate.parse(
-  `https://auth.fractal.id/oauth/token{?client_id,client_secret,code,grant_type,redirect_uri}`
+  `${process.env.FRACTAL_AUTH_SERVER}/oauth/token{?client_id,client_secret,code,grant_type,redirect_uri}`
 );
 
 // if you have a fractal access token, you can use this function to get user information
