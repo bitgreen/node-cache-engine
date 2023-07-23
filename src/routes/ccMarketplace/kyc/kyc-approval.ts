@@ -10,21 +10,27 @@ const router = express.Router();
 
 router.get('/kyc/start', async (req: Request, res: Response) => {
   let scope = process.env.FRACTAL_BASIC_SCOPE;
-  const { address, state, type } = req.query;
+  const { address, state, type, response } = req.query;
 
   if(type === 'advanced') {
     scope = process.env.FRACTAL_ADVANCED_SCOPE;
   }
 
+  const loginUrl = loginTemplate.expand({
+    client_id: process.env.FRACTAL_CLIENT_ID,
+    redirect_uri: process.env.FRACTAL_REDIRECT_URL,
+    response_type: "code",
+    scope: scope,
+    state: state,
+    ensure_wallet: address
+  })
+
+  if(response === 'redirect') {
+    return res.redirect(loginUrl);
+  }
+
   res.status(200).json({
-    url: loginTemplate.expand({
-      client_id: process.env.FRACTAL_CLIENT_ID,
-      redirect_uri: process.env.FRACTAL_REDIRECT_URL,
-      response_type: "code",
-      scope: scope,
-      state: state,
-      ensure_wallet: address
-    })
+    url: loginUrl
   });
 })
 
