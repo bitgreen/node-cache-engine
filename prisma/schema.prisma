@@ -102,7 +102,7 @@ model Profil {
   orginatorName        String? @default("")
   orginatorDescription String? @default("")
 
-  email           String?            @unique
+  email           String?
   emailStatus     VerificationStatus @default(NOT_VERIFIED)
   emailVerifiedAt DateTime?
 

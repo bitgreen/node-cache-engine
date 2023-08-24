@@ -13,6 +13,50 @@ const loadAccount = async () => {
   return keyring.addFromUri(mnemonic, { name: '' }, 'sr25519');
 };
 
+export async function queryChain(
+    pallet: string,
+    call: string,
+    params: Array<string | number>
+): Promise<any> {
+  const polkadotApi = await initApi();
+
+  let response = {};
+
+  return new Promise(async (resolve) => {
+    if (!polkadotApi.query[pallet]) {
+      response = {
+        success: false,
+        status: 'failed',
+        error: 'Pallet not found.',
+      };
+      return resolve(response);
+    }
+    if (!polkadotApi.query[pallet][call]) {
+      response = {
+        success: false,
+        status: 'failed',
+        error: 'Pallet call not found.',
+      };
+      return resolve(response);
+    }
+    polkadotApi.query[pallet][call](...params)
+        .then((result) => {
+          // console.log(result.forEach())
+          resolve({
+            success: true,
+            data: result.toHuman()
+          });
+        })
+        .catch((err) => {
+          resolve({
+            success: false,
+            status: 'failed',
+            error: err.message,
+          });
+        });
+  });
+}
+
 export async function submitExtrinsic(
   pallet: string,
   call: string,

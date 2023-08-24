@@ -89,6 +89,9 @@ router.put('/profile', async (req: Request, res: Response) => {
         //     status: VerificationStatus.NOT_VERIFIED,
         //   },
         // },
+        email: profile.email
+            ? validator.escape(validator.trim(`${profile.email}`))
+            : '',
         firstName: profile.firstName
           ? validator.escape(validator.trim(`${profile.firstName}`))
           : '',

@@ -5,8 +5,10 @@ import {
   cryptoWaitReady,
   decodeAddress,
   signatureVerify,
+  keccakAsHex
 } from '@polkadot/util-crypto';
 import { serialize } from 'cookie';
+import {queryChain} from "../utils/chain";
 
 export async function authenticatedAddress(req: Request) {
   const session = req.cookies.session ? JSON.parse(req.cookies.session) : '';
@@ -20,7 +22,7 @@ export async function authenticate(session: WalletSession) {
   if (!isWalletSession(session)) return undefined;
   const currentTimestamp = new Date().getTime();
 
-  // Extract timestamp and domain from a message.
+  // Extract timestamp and data from a message.
   const message = session.message.split('#');
   const timestamp = parseInt(message[0]);
   // Signature expiration time.
@@ -28,14 +30,35 @@ export async function authenticate(session: WalletSession) {
   try {
     // Some interfaces, such as using sr25519 are only available via WASM.
     await cryptoWaitReady();
+
+    const signer = session?.proxyaddress || session.address
+
+    if(session?.proxyaddress) {
+      const email = message[1];
+
+      // query chain to get proxy address
+      const proxy = await queryChain('generalStorage', 'storedData', [
+        '5EhJWJYo3V7nozjNDrA4G6s4XqAFaPXpVYjFhVL9qVF5QxSw',
+        keccakAsHex(email)
+      ])
+
+      const proxyData = proxy.data.split('#')
+      if(session.address != proxyData[0] || session.proxyaddress != proxyData[1]) {
+        return undefined
+      }
+    }
+
     if (
       signatureVerify(
         stringToU8a(session.message),
         hexToU8a(session.signature),
-        u8aToHex(decodeAddress(session.address))
+        u8aToHex(decodeAddress(signer))
       ).isValid
-    )
+    ) {
       return session.address;
+    }
+
+    return undefined
   } catch (error) {
     return undefined;
   }

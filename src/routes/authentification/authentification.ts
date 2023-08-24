@@ -23,6 +23,7 @@ router.post('/auth', async (req: Request, res: Response) => {
       message: req.body.message,
       signature: req.body.signature,
       address: req.body.address,
+      proxyaddress: req.body.proxyaddress
     }),
     {
       httpOnly: true, //false

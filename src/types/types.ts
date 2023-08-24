@@ -24,6 +24,7 @@ export interface WalletSession {
   message: string;
   signature: string;
   address: string;
+  proxyaddress?: string;
 }
 
 export interface Account {
