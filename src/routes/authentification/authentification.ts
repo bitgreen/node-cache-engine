@@ -6,7 +6,7 @@ const router = express.Router();
 router.get('/auth', authMiddle, async (req: Request, res: Response) => {
   return res
     .status(200)
-    .json({ authenticated: true, address: req.session?.address });
+    .json({ authenticated: true, address: req.session?.address, isProxy: !!req.session?.proxyaddress });
 });
 
 router.post('/auth', async (req: Request, res: Response) => {
