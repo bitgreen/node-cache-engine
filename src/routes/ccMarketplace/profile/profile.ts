@@ -26,13 +26,6 @@ router.get('/profile', authMiddle, async (req: Request, res: Response) => {
       }
     }
 
-    console.log({
-      ...profil,
-      KYC: {
-        "status": kycStatus,
-      }
-    })
-
     return res.status(200).json({
       ...profil,
       KYC: {
