@@ -4,6 +4,7 @@ import { authMiddle } from '../../authentification/auth-middleware';
 import validator from 'validator';
 import { authenticatedAddress } from '../../../services/authentification';
 import { UserType, VerificationStatus } from '@prisma/client';
+import {queryChain} from "../../../utils/chain";
 
 const router = express.Router();
 
@@ -14,10 +15,32 @@ router.get('/profile', authMiddle, async (req: Request, res: Response) => {
       where: {
         address: req.session?.address,
       },
-      include: { KYC: true },
+      // include: { KYC: true },
     });
-    return res.status(200).json(profil);
+
+    let kycStatus = "UNVERIFIED"
+    if(req.session?.address) {
+      const kycData = await queryChain('kyc', 'authorizedAccounts', [])
+      for(const address of kycData.data) {
+        if(address.toString() === req.session?.address) kycStatus = "VERIFIED"
+      }
+    }
+
+    console.log({
+      ...profil,
+      KYC: {
+        "status": kycStatus,
+      }
+    })
+
+    return res.status(200).json({
+      ...profil,
+      KYC: {
+        "status": kycStatus,
+      }
+    });
   } catch (e) {
+    console.log(e)
     return res.status(500).json(e);
   }
 });
