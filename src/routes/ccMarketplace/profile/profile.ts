@@ -20,7 +20,7 @@ router.get('/profile', authMiddle, async (req: Request, res: Response) => {
 
     let kycStatus = "UNVERIFIED"
     if(req.session?.address) {
-      const kycData = await queryChain('kyc', 'authorizedAccounts', [])
+      const kycData = await queryChain('kyc', 'members', [])
       for(const address of kycData.data) {
         if(address.toString() === req.session?.address) kycStatus = "VERIFIED"
       }
