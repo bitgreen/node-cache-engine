@@ -183,8 +183,12 @@ router.get(
         prisma.tokenTransaction.findMany({
           where: {
             OR: [
-              { recipient: account as string },
-              { sender: account as string },
+              {
+                recipient: { equals: account as string, mode: "insensitive" }
+              },
+              {
+                sender: { equals: account as string, mode: "insensitive" }
+              }
             ],
           },
           select: {
@@ -194,8 +198,12 @@ router.get(
         prisma.assetTransaction.findMany({
           where: {
             OR: [
-              { recipient: account as string },
-              { sender: account as string },
+              {
+                recipient: { equals: account as string, mode: "insensitive" }
+              },
+              {
+                sender: { equals: account as string, mode: "insensitive" }
+              }
             ],
           },
           select: {
