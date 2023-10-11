@@ -17,7 +17,8 @@ export async function createAssetTransaction(
   event: Event,
   api: ApiPromise,
   blockNumber: number,
-  createdAt: Date
+  createdAt: Date,
+  hash: string
 ) {
   try {
     let eventData = event.data.toJSON();
@@ -25,6 +26,7 @@ export async function createAssetTransaction(
     const metaData = await getMetadata(api, assetId as number);
     await prisma.assetTransaction.create({
       data: {
+        hash: hash as string,
         sender: from as string,
         recipient: to as string,
         blockNumber: blockNumber,
@@ -48,7 +50,8 @@ export async function createIssuedAssetTransaction(
   event: Event,
   api: ApiPromise,
   blockNumber: number,
-  createdAt: Date
+  createdAt: Date,
+  hash: string
 ) {
   try {
     let eventData = event.data.toJSON();
@@ -57,6 +60,7 @@ export async function createIssuedAssetTransaction(
 
     await prisma.assetTransaction.create({
       data: {
+        hash: hash,
         sender: '', // our sudo standard account?
         recipient: owner as string,
         blockNumber: blockNumber,
@@ -80,7 +84,8 @@ export async function createTokenTransaction(
   event: Event,
   api: ApiPromise,
   blockNumber: number,
-  createdAt: Date
+  createdAt: Date,
+  hash: string
 ) {
   try {
     let eventData = event.data.toJSON();
@@ -89,6 +94,7 @@ export async function createTokenTransaction(
     await prisma.$transaction([
       prisma.tokenTransaction.create({
         data: {
+          hash: hash as string,
           sender: from as string,
           recipient: to as string,
           blockNumber: blockNumber,

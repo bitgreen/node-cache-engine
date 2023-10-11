@@ -48,44 +48,45 @@ async function main() {
     }
   );
 
-  // // Get current block
-  // const currentBlock = block.block.header.number.toNumber()
-  // // Get all blocks up to current block
-  // const allBlocks = Array.from({ length: currentBlock }, (_, i) => i + 1);
+  // Get current block
+  const currentBlock = block.block.header.number.toNumber()
+  // Get all blocks up to current block
+  const allBlocks = Array.from({ length: currentBlock }, (_, i) => i + 1);
 
-  // // Get fetched blocks
-  // const dbBlocks = await prisma.block.findMany({
-  //   select: {
-  //     number: true,
-  //   },
-  // });
-  // const fetchedBlocks = dbBlocks.map((row) => row.number);
+  // Get fetched blocks
+  const dbBlocks = await prisma.block.findMany({
+    select: {
+      number: true,
+    },
+  });
+  const fetchedBlocks = dbBlocks.map((row) => row.number);
 
-  // // Determine missing blocks
-  // const missingBlocks = allBlocks.filter((id) => !fetchedBlocks.includes(id));
+  // Determine missing blocks
+  const fetchedBlocksSet = new Set(fetchedBlocks);
+  const missingBlocks = allBlocks.filter(id => !fetchedBlocksSet.has(id));
 
-  // let chunk = []
+  let chunk = []
 
-  // // Process each missing block, in chunks of 100, 1s delay per chunk
-  // for(const blockNumber of missingBlocks) {
-  //   chunk.push(blockNumber);
-  //   if (chunk.length === 100) {
-  //     chunk.map(async (blockNumber) => {
-  //       await processBlock(api, blockNumber)
-  //     })
+  // Process each missing block, in chunks of 100, 1s delay per chunk
+  for(const blockNumber of missingBlocks) {
+    chunk.push(blockNumber);
+    if (chunk.length === 200) {
+      chunk.map(async (blockNumber) => {
+        processBlock(api, blockNumber)
+      })
 
-  //     await sleep(1000)
+      await sleep(1000)
 
-  //     chunk = [];
-  //   }
-  // }
+      chunk = [];
+    }
+  }
 
-  // // Process last chunk
-  // if (chunk.length > 0) {
-  //   chunk.map(async (blockNumber) => {
-  //     await processBlock(api, blockNumber)
-  //   })
-  // }
+  // Process last chunk
+  if (chunk.length > 0) {
+    chunk.map(async (blockNumber) => {
+      await processBlock(api, blockNumber)
+    })
+  }
 }
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));

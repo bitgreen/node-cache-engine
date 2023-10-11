@@ -150,13 +150,30 @@ model BuyOrder {
   creditsOwned   Int
   retiredCredits Int
   creditPrice    Float
-  orderId        Int
+  orderId        Int         @unique
   groupId        Int //notwendig, da man sonst die einzelnen Käufe nicht den Gruppen zuordnen kann
   createdAt      DateTime    @db.Timestamp(6)
   Investment     Investment? @relation(fields: [investmentId], references: [id], onDelete: Cascade, name: "investment")
   investmentId   String?
   // InvestmentForRetire   Investment? @relation(fields: [investmentIdForRetire], references: [id], onDelete: Cascade, name: "investmentForRetire")
   // investmentIdForRetire String?
+  trades         Trade[]     @relation("BuyOrderToTrade")
+}
+
+model Trade {
+  id          Int      @id @default(autoincrement())
+  blockNumber Int      @default(0)
+  projectId   Int
+  units       Int
+  creditPrice String
+  buyOrderId  Int
+  sellOrderId Int
+  groupId     Int
+  createdAt   DateTime @db.Timestamp(6)
+  hash        String   @unique @db.VarChar(68)
+
+  sellOrder   SellOrder  @relation(fields: [sellOrderId], references: [orderId], onDelete: Cascade, name: "SellOrderToTrade")
+  buyOrder    BuyOrder   @relation(fields: [buyOrderId], references: [orderId], onDelete: Cascade, name: "BuyOrderToTrade")
 }
 
 model BuyOrderReserved {
@@ -184,6 +201,7 @@ model SellOrder {
   cancelledAt  DateTime?   @db.Timestamp(6)
   Investment   Investment? @relation(fields: [investmentId], references: [id], onDelete: Cascade)
   investmentId String?
+  trades       Trade[]     @relation("SellOrderToTrade")
 }
 
 model CreditTransaction {
@@ -323,6 +341,7 @@ model Asset {
 
 model AssetTransaction {
   id          Int        @id @default(autoincrement())
+  hash        String     @unique @db.VarChar(68)
   blockNumber Int        @default(0)
   sender      String     @default("") @db.VarChar(48)
   recipient   String     @default("") @db.VarChar(48)
@@ -342,6 +361,7 @@ model AssetInfo {
 
 model TokenTransaction {
   id          Int      @id @default(autoincrement())
+  hash        String   @unique @db.VarChar(68)
   blockNumber Int      @default(0)
   sender      String   @default("") @db.VarChar(48)
   recipient   String   @default("") @db.VarChar(48)

@@ -14,7 +14,7 @@ import { blockExtrinsic } from './methods/blockExtrinsic';
 import { transaction } from './methods/transaction';
 import { rejectProject } from './methods/rejectProject';
 import { createSellOrder } from './methods/createSellOrder';
-import { createBuyOrder } from './methods/createBuyOrder';
+import {createBuyOrder, createTrade} from './methods/createBuyOrder';
 import { retireTokens } from './methods/retireTokens';
 import { updateBlock } from './methods/updateBlock';
 import {
@@ -136,6 +136,7 @@ export async function processBlock(
           if (event.method === BlockEvent.BuyOrderFilled) {
             console.log('buy order filled');
             await createBuyOrder(event, blockDate);
+            await createTrade(event, blockDate, blockNumber as number, hash + i);
           }
           // if (event.method === BlockEvent.BuyOrderCreated) {
           //   console.log('buy order created');
@@ -149,7 +150,8 @@ export async function processBlock(
               event,
               api,
               blockNumber as number,
-              blockDate
+              blockDate,
+              hash + i
             );
           }
           if (event.method === BlockEvent.Issued) {
@@ -170,7 +172,8 @@ export async function processBlock(
               event,
               api,
               blockNumber as number,
-              blockDate
+              blockDate,
+              hash + i
             );
           }
         }

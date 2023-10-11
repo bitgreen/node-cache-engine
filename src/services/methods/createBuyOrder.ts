@@ -186,3 +186,47 @@ export async function createBuyOrder(event: Event, createdAt: Date) {
     console.log(`Error occurred (create buy order): ${e.message}`);
   }
 }
+
+export async function createTrade(event: Event, createdAt: Date, blockNumber: number, hash: string) {
+  try {
+    let dataBlock = event.data.toHuman();
+    let [
+      orderIdChain,
+      sellOrderIdChain,
+      unitsChain,
+      projectIdChain,
+      groupIdChain,
+      pricePerUnit,
+      feesPaidChain,
+      seller,
+      buyer,
+    ] = dataBlock as string[];
+    const orderId = Number(orderIdChain.replace(/,/g, ''));
+    const sellOrderId = Number(sellOrderIdChain.replace(/,/g, ''));
+    const units = Number(unitsChain.replace(/,/g, ''));
+    const projectId = Number(projectIdChain.replace(/,/g, ''));
+    const feesPaid = Number(feesPaidChain.replace(/,/g, ''));
+    const groupId = Number(groupIdChain.replace(/,/g, ''));
+
+    const creditPrice = (pricePerUnit as string).replace(/,/g, '')
+
+    await prisma.$transaction([
+      prisma.trade.create({
+        data: {
+          hash: hash as string,
+          buyOrderId: orderId,
+          sellOrderId: sellOrderId,
+          blockNumber: blockNumber,
+          projectId: projectId,
+          creditPrice: creditPrice,
+          units: units,
+          groupId: groupId,
+          createdAt: createdAt.toISOString()
+        },
+      }),
+    ]);
+  } catch (e) {
+    // @ts-ignore
+    console.log(`Error occurred (create trade): ${e.message}`);
+  }
+}
