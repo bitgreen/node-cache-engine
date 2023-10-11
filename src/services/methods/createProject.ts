@@ -28,7 +28,7 @@ export async function createProject(
     const projectArg = dataQuery.toJSON();
     let project = projectArg as unknown as Project;
 
-    if (!project || !projectId) return;
+    if (!project || (projectId.toString() === '')) return;
     let images: string[] = project.images?.map((image: string) =>
       convertHex(image as string)
     );
