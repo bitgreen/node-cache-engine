@@ -160,7 +160,8 @@ export async function processBlock(
               event,
               api,
               blockNumber as number,
-              blockDate
+              blockDate,
+              hash + i
             );
           }
         }
