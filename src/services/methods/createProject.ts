@@ -97,7 +97,7 @@ export async function createProject(
         batchGroups: {
           create: batchGroups,
         },
-        approved: project.approved,
+        approved: project?.approved?.toString() === 'Approved',
         createdAt: createdAt.toISOString(),
       },
     });
