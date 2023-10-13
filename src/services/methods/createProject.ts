@@ -62,7 +62,7 @@ export async function createProject(
     for (const [key, value] of Object.entries(project.batchGroups)) {
       batchGroups.push({
         ...value,
-        assetId: Date.now() + 1,
+        assetId: Date.now() + Math.floor(Math.random() * 1000000),
         groupId: Number(key),
         name: convertHex(value.name as string),
         batches: {
