@@ -161,16 +161,18 @@ model BuyOrder {
 }
 
 model Trade {
-  id          Int      @id @default(autoincrement())
-  blockNumber Int      @default(0)
+  id          Int        @id @default(autoincrement())
+  blockNumber Int        @default(0)
   projectId   Int
   units       Int
   creditPrice String
   buyOrderId  Int
   sellOrderId Int
   groupId     Int
-  createdAt   DateTime @db.Timestamp(6)
-  hash        String   @unique @db.VarChar(68)
+  createdAt   DateTime   @db.Timestamp(6)
+  hash        String     @unique @db.VarChar(68)
+  seller      String     @default("") @db.VarChar(48)
+  buyer       String     @default("") @db.VarChar(48)
 
   sellOrder   SellOrder  @relation(fields: [sellOrderId], references: [orderId], onDelete: Cascade, name: "SellOrderToTrade")
   buyOrder    BuyOrder   @relation(fields: [buyOrderId], references: [orderId], onDelete: Cascade, name: "BuyOrderToTrade")
@@ -211,8 +213,11 @@ model CreditTransaction {
   projectId     Int                   @default(0)
   credits       Int
   creditPrice   Float
-  from          String
-  to            String
+
+  owner         String
+  from          String?
+  to            String?
+
   createdAt     DateTime              @db.Timestamp(6)
   fee           Float
   Profil        Profil?               @relation(fields: [profilAddress], references: [address], onDelete: Cascade)

@@ -104,6 +104,8 @@ router.get(
   '/credit-transaction',
   authMiddle,
   async (req: Request, res: Response) => {
+    const address = (req.query.address as string) || '';
+
     console.log('Credit Transation');
     console.log('date0', req.query.date);
     const date =
@@ -112,20 +114,14 @@ router.get(
         : '1970-01-01';
     console.log('date', date);
     try {
-      const profil = await prisma.profil.findUnique({
+      const creditTransactions = await prisma.creditTransaction.findMany({
         where: {
-          address: req.session?.address,
-        },
-        include: {
-          creditTransactions: {
-            where: {
-              createdAt: { gte: new Date(date) },
-            },
-          },
+          owner: address,
+          createdAt: { gte: new Date(date) },
         },
       });
-      console.log(profil);
-      return res.status(200).json(profil?.creditTransactions);
+
+      return res.status(200).json(creditTransactions);
     } catch (e) {
       console.log('error', e);
       return res.status(500).json(undefined);

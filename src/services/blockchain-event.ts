@@ -127,7 +127,7 @@ export async function processBlock(
         if (event.section === 'dex') {
           if (event.method === BlockEvent.SellOrderCreated) {
             console.log('sell order created');
-            await createSellOrder(event, blockDate);
+            await createSellOrder(event, blockDate, blockNumber);
           }
           if (event.method === BlockEvent.SellOrderCancelled) {
             console.log('sell order cancelled');
@@ -135,7 +135,7 @@ export async function processBlock(
           }
           if (event.method === BlockEvent.BuyOrderFilled) {
             console.log('buy order filled');
-            await createBuyOrder(event, blockDate);
+            await createBuyOrder(event, blockDate, blockNumber);
             await createTrade(event, blockDate, blockNumber as number, hash + i);
           }
           // if (event.method === BlockEvent.BuyOrderCreated) {

@@ -33,90 +33,21 @@ export async function ccMinted(
     //   'TEST2',
     //   projectArgs?.batchGroups.find((bg) => bg.groupId == groupId)?.id
     // );
-    await prisma.$transaction([
-      prisma.project.update({
-        where: {
-          id: projectId as number,
-        },
-        data: {
-          batchGroups: {
-            update: {
-              where: {
-                id: projectArgs?.batchGroups.find((bg) => bg.groupId == groupId)
-                  ?.id,
-              },
-              data: {
-                minted: amount as number,
-                isMinted: true,
-              },
-            },
-          },
-          updatedAt: updatedAt.toISOString(),
-        },
-      }),
-      prisma.profil.update({
-        where: {
-          address: recipient as string,
-        },
-        data: {
-          investments: {
-            upsert: {
-              where: { addressProjectId: `${recipient}_${projectId}` },
-              create: {
-                projectId: projectArgs.id,
-                addressProjectId: `${recipient}_${projectId}`,
-                creditsOwnedPerGroup: {
-                  create: {
-                    groupId: groupId as number,
-                    addressGroupId: `${recipient}_${groupId}_${projectId}`,
-
-                    creditsOwned: amount as number,
-                  },
-                },
-                creditsOwned: amount as number,
-                retiredCredits: 0,
-                creditPrice: -1,
-                quantity: 0,
-                sellorders: undefined,
-                buyOrders: undefined,
-              },
-              update: {
-                creditsOwnedPerGroup: {
-                  create: {
-                    groupId: groupId as number,
-                    addressGroupId: `${recipient}_${groupId}_${projectId}`,
-
-                    creditsOwned: amount as number,
-                  },
-                },
-                creditsOwned: {
-                  increment: amount as number,
-                }
-              },
-            },
-          },
-        },
-      }),
-      prisma.profil.update({
-        where: { address: recipient as string },
-        data: {
-          creditTransactions: {
-            create: {
-              type: CreditTransactionType.ISSUED,
-              projectId: projectId as number,
-              description:
-                'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Ut a ullamcorper dignissim euismod amet, ridiculus.',
-              credits: amount as number,
-              creditPrice: 0,
-              from: "Bitgreen",
-              to: recipient as string,
-              fee: 0,
-              createdAt: updatedAt.toISOString(),
-            },
-          },
-        },
-      }),
-    ]);
+    await prisma.creditTransaction.create({
+      data: {
+        type: CreditTransactionType.ISSUED,
+        projectId: projectId as number,
+        description:
+            'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Ut a ullamcorper dignissim euismod amet, ridiculus.',
+        credits: amount as number,
+        creditPrice: 0,
+        owner: recipient as string,
+        from: '',
+        to: recipient as string,
+        fee: 0,
+        createdAt: updatedAt.toISOString(),
+      }
+    })
     // const [balanceBBB, balanceUSDT] = await queryBalances(
     //   api,
     //   recipient as string,
