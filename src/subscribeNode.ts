@@ -67,15 +67,13 @@ async function main() {
 
   let chunk = []
 
-  // Process each missing block, in chunks of 100, 1s delay per chunk
+  // Process each missing block, in chunks of 400
   for(const blockNumber of missingBlocks) {
     chunk.push(blockNumber);
-    if (chunk.length === 200) {
-      chunk.map(async (blockNumber) => {
-        processBlock(api, blockNumber)
-      })
-
-      await sleep(1000)
+    if (chunk.length === 400) {
+      await Promise.all(chunk.map(async (blockNumber) => {
+        await processBlock(api, blockNumber)
+      }))
 
       chunk = [];
     }
@@ -83,9 +81,9 @@ async function main() {
 
   // Process last chunk
   if (chunk.length > 0) {
-    chunk.map(async (blockNumber) => {
+    await Promise.all(chunk.map(async (blockNumber) => {
       await processBlock(api, blockNumber)
-    })
+    }))
   }
 }
 
