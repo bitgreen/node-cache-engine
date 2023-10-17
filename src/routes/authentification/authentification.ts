@@ -27,7 +27,7 @@ router.post('/auth', async (req: Request, res: Response) => {
     }),
     {
       httpOnly: true, //false
-      maxAge: 60 * 1000 * 60,
+      maxAge: 60 * 1000 * 60 * 8,
       //expire:  1 / 24,
       sameSite: 'strict',
       path: '/',
