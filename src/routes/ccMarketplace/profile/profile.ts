@@ -47,8 +47,9 @@ router.get('/check-profile/:address', async (req: Request, res: Response) => {
         address: address,
       },
     });
+    const isOnboarded = !!(profil?.firstName && profil?.lastName && profil?.email)
     if (!profil) return res.status(200).json({ success: false });
-    return res.status(200).json({ success: true });
+    return res.status(200).json({ success: true, isOnboarded: isOnboarded });
   } catch (e) {
     return res.status(500).json(e);
   }
