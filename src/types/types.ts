@@ -20,11 +20,21 @@ export enum BlockEvent {
 
 }
 
-export interface WalletSession {
+export interface AuthSession {
+  authType: AuthType,
+
   message: string;
   signature: string;
   address: string;
+
   proxyaddress?: string;
+  googleData?: any;
+}
+
+export enum AuthType {
+  BitgreenWallet = 'BitgreenWallet',
+  MetaMaskWallet = 'MetaMaskWallet',
+  Google = 'Google'
 }
 
 export interface Account {

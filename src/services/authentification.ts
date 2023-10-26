@@ -1,4 +1,4 @@
-import { WalletSession } from './../types/types';
+import { AuthSession } from './../types/types';
 import express, { Request, Response } from 'express';
 import { hexToU8a, stringToU8a, u8aToHex } from '@polkadot/util';
 import {
@@ -16,10 +16,10 @@ export async function authenticatedAddress(req: Request) {
   return address ? address : '';
 }
 
-export async function authenticate(session: WalletSession) {
+export async function authenticate(session: AuthSession) {
   if (!session) return undefined;
   // Make sure all fields are there.
-  if (!isWalletSession(session)) return undefined;
+  if (!isAuthSession(session)) return undefined;
   const currentTimestamp = new Date().getTime();
 
   // Extract timestamp and data from a message.
@@ -64,7 +64,7 @@ export async function authenticate(session: WalletSession) {
   }
 }
 
-export function isWalletSession(data: WalletSession): data is WalletSession {
+export function isAuthSession(data: AuthSession): data is AuthSession {
   return (
     typeof data.message === 'string' &&
     typeof data.signature === 'string' &&

@@ -1,4 +1,4 @@
-import { isWalletSession, setCookie } from '../../services/authentification';
+import { isAuthSession, setCookie } from '../../services/authentification';
 import express, { Express, Request, Response } from 'express';
 import { authMiddle } from './auth-middleware';
 const router = express.Router();
@@ -6,12 +6,12 @@ const router = express.Router();
 router.get('/auth', authMiddle, async (req: Request, res: Response) => {
   return res
     .status(200)
-    .json({ authenticated: true, address: req.session?.address, isProxy: !!req.session?.proxyaddress });
+    .json({ authenticated: true, authType: req.session?.authType, address: req.session?.address });
 });
 
 router.post('/auth', async (req: Request, res: Response) => {
-  console.log('mutate');
-  if (!isWalletSession(req.body)) {
+  // console.log('mutate');
+  if (!isAuthSession(req.body)) {
     return res
       .status(401)
       .json({ authenticated: false, error: 'Invalid request.' });
@@ -20,6 +20,7 @@ router.post('/auth', async (req: Request, res: Response) => {
     res,
     'session',
     JSON.stringify({
+      authType: req.body.authType,
       message: req.body.message,
       signature: req.body.signature,
       address: req.body.address,
@@ -34,7 +35,6 @@ router.post('/auth', async (req: Request, res: Response) => {
       secure: false, //process.env.NODE_ENV !== 'development',
     }
   );
-  console.log('Auth sucess');
   return res.status(200).json({ authenticated: true });
 });
 

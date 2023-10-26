@@ -1,11 +1,11 @@
 import { authenticate } from '../../services/authentification';
-import { WalletSession } from '@/types/types';
+import { AuthSession } from '@/types/types';
 import { Request, Response, NextFunction } from 'express';
 
 declare global {
   namespace Express {
     export interface Request {
-      session?: WalletSession;
+      session?: AuthSession;
     }
   }
 }
@@ -21,7 +21,7 @@ export async function authMiddle(
       .status(401)
       .json({ authenticated: false, error: 'Token verification failed.' });
   }
-  const session = JSON.parse(req.cookies.session) as WalletSession;
+  const session = JSON.parse(req.cookies.session) as AuthSession;
 
   if (!(await authenticate(session))) {
     return res
