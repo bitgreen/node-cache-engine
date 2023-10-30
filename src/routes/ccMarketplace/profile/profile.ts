@@ -18,7 +18,7 @@ router.get('/profile', authMiddle, async (req: Request, res: Response) => {
       // include: { KYC: true },
     });
 
-    let kycStatus = "UNVERIFIED"
+    let kycStatus = "NOT_VERIFIED"
     if(req.session?.address) {
       const kycData = await queryChain('kyc', 'members', [])
       for(const address of kycData.data) {
@@ -39,6 +39,7 @@ router.get('/profile', authMiddle, async (req: Request, res: Response) => {
 });
 
 router.get('/check-profile/:address', async (req: Request, res: Response) => {
+  return res.status(200).json({ success: false });
   console.log('/check-profile/:address');
   try {
     const address = req.params.address;

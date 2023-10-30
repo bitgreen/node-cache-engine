@@ -21,15 +21,22 @@ export async function authMiddle(
       .status(401)
       .json({ authenticated: false, error: 'Token verification failed.' });
   }
-  const session = JSON.parse(req.cookies.session) as AuthSession;
 
-  if (!(await authenticate(session))) {
+  try {
+    const session = JSON.parse(req.cookies.session) as AuthSession;
+
+    if (!(await authenticate(session))) {
+      return res
+          .status(401)
+          .json({ authenticated: false, error: 'Token verification failed.' });
+    }
+    req.session = session;
+    next();
+  } catch (e) {
     return res
-      .status(401)
-      .json({ authenticated: false, error: 'Token verification failed.' });
+        .status(401)
+        .json({ authenticated: false, error: 'Something went wrong' });
   }
-  req.session = session;
-  next();
 }
 
 export async function authKYC(req: Request, res: Response, next: NextFunction) {
