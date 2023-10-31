@@ -39,8 +39,6 @@ router.get('/profile', authMiddle, async (req: Request, res: Response) => {
 });
 
 router.get('/check-profile/:address', async (req: Request, res: Response) => {
-  return res.status(200).json({ success: false });
-  console.log('/check-profile/:address');
   try {
     const address = req.params.address;
     const profil = await prisma.profil.findUnique({
