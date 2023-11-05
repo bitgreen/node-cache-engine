@@ -156,6 +156,32 @@ router.get('/asset/transactions', async (req: Request, res: Response) => {
   }
 });
 
+router.get('/carboncredits/transactions', async (req: Request, res: Response) => {
+  console.log('/carboncredits/transactions');
+  try {
+    const { account, assetId, take } = req.query;
+    const aId = !isNaN(Number(assetId)) ? Number(assetId) : undefined;
+    const assetTransactions = await prisma.carbonCreditAssetTransaction.findMany({
+      where: {
+        AND: [
+          {
+            OR: [
+              { to: account as string },
+              { from: account as string },
+            ],
+          },
+          { projectId: aId },
+        ],
+      },
+      take: !isNaN(Number(take)) ? Number(take) : undefined,
+    });
+
+    res.json(assetTransactions);
+  } catch (e) {
+    res.status(500).json(e);
+  }
+});
+
 router.get('/token/transactions', async (req: Request, res: Response) => {
   console.log('/token/transactions');
   try {

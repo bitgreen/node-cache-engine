@@ -4,6 +4,7 @@ import { prisma } from '../prisma';
 import { Extrinsic, Event } from '@polkadot/types/interfaces';
 import { queryBalances } from './createAssetsAndTokens';
 import { CreditTransactionType } from '@prisma/client';
+import { CarbonCreditTransactionType } from '@prisma/client';
 
 export async function ccMinted(
   event: Event,
@@ -63,6 +64,20 @@ export async function ccMinted(
     //     balanceUsd: balanceUSDT,
     //   },
     // });
+
+    await prisma.carbonCreditAssetTransaction.create({
+      data: {
+        type: CarbonCreditTransactionType.ISSUED,
+        projectId: projectId as number,
+        credits: amount as number,
+        pricePerUnit: 0,
+        from: "",
+        to: recipient as string,
+        fee: 0,
+        createdAt: updatedAt.toISOString(),
+      }
+    });
+
   } catch (e) {
     // @ts-ignore
     console.log(`Error occurred (minting carbon credit): ${e.message}`);

@@ -4,6 +4,7 @@ import { ApiPromise } from '@polkadot/api';
 import { BalanceData } from '@/types/types';
 import { hexToBigInt } from '@polkadot/util';
 import { CreditTransactionType } from '@prisma/client';
+import { CarbonCreditTransactionType } from '@prisma/client';
 
 interface MetaData {
   deposit: string;
@@ -40,6 +41,20 @@ export async function createAssetTransaction(
         },
       },
     });
+
+    await prisma.carbonCreditAssetTransaction.create({
+      data: {
+        type: CarbonCreditTransactionType.TRANSFERRED,
+        projectId: assetId as number,
+        credits: amount as number,
+        pricePerUnit: 0,
+        from: "",
+        to: to as string,
+        fee: 0,
+        createdAt: createdAt.toISOString(),
+      }
+    });
+
   } catch (e) {
     // @ts-ignore
     console.log(`Error occurred (asset Transaction): ${e.message}`);

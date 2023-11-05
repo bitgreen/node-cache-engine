@@ -2,7 +2,7 @@ import { hexToString } from '@polkadot/util';
 import { Codec } from '@polkadot/types-codec/types';
 import { prisma } from '../prisma';
 import {BlockNumber, Event} from '@polkadot/types/interfaces';
-import { CreditTransactionType } from '@prisma/client';
+import { CarbonCreditTransactionType } from '@prisma/client';
 
 export async function createBuyOrder(event: Event, createdAt: Date, blockNumber: number | BlockNumber,) {
   try {
@@ -41,14 +41,12 @@ export async function createBuyOrder(event: Event, createdAt: Date, blockNumber:
       }
     })
 
-    await prisma.creditTransaction.create({
+    await prisma.carbonCreditAssetTransaction.create({
       data: {
-        type: CreditTransactionType.SALE,
+        type: CarbonCreditTransactionType.SOLD,
         projectId: projectId,
-        description: '',
         credits: units,
-        creditPrice: convertedPricePerunit as number,
-        owner: seller as string,
+        pricePerUnit: convertedPricePerunit as number,
         from: seller as string,
         to: buyer as string,
         fee: feesPaid,
@@ -56,16 +54,14 @@ export async function createBuyOrder(event: Event, createdAt: Date, blockNumber:
       }
     })
 
-    await prisma.creditTransaction.create({
+    await prisma.carbonCreditAssetTransaction.create({
       data: {
-        type: CreditTransactionType.PURCHASE,
+        type: CarbonCreditTransactionType.PURCHASED,
         projectId: projectId,
-        description: '',
         credits: units,
-        creditPrice: convertedPricePerunit as number,
-        owner: buyer as string,
-        from: seller as string,
-        to: buyer as string,
+        pricePerUnit: convertedPricePerunit as number,
+        from: buyer as string,
+        to: seller as string,
         fee: feesPaid,
         createdAt: createdAt.toISOString(),
       }

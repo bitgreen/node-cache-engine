@@ -2,7 +2,7 @@ import { Codec } from '@polkadot/types-codec/types';
 import { prisma } from '../prisma';
 import { Event } from '@polkadot/types/interfaces';
 import { CreditTransactionType } from '@prisma/client';
-
+import { CarbonCreditTransactionType } from '@prisma/client';
 import { convertHex } from '../../utils/converter';
 
 interface RetireData {
@@ -44,7 +44,21 @@ export async function retireTokens(event: Event, createdAt: Date) {
         fee: 0,
         createdAt: createdAt.toISOString(),
       }
-    })
+    });
+
+    await prisma.carbonCreditAssetTransaction.create({
+      data: {
+        type: CarbonCreditTransactionType.RETIRED,
+        projectId: projectId as number,
+        credits: amount as number,
+        pricePerUnit: 0,
+        from: account as string,
+        to: account as string,
+        fee: 0,
+        createdAt: createdAt.toISOString(),
+      }
+    });
+    
   } catch (e) {
     // @ts-ignore
     console.log(`Error occurred (retireing project): ${e.message}`);

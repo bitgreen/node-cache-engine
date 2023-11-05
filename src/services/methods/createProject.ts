@@ -5,6 +5,7 @@ import { prisma } from '../prisma';
 import { convertHex } from '../../utils/converter';
 import { ApiPromise } from '@polkadot/api';
 import { RegistryName } from '@prisma/client';
+import { CarbonCreditTransactionType } from '@prisma/client';
 
 export async function createProject(
   api: ApiPromise,
@@ -101,6 +102,7 @@ export async function createProject(
         createdAt: createdAt.toISOString(),
       },
     });
+
    } catch (e) {
     // @ts-ignore
     console.log(`Error occurred (creating project): ${e.message}`);

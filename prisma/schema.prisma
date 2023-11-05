@@ -113,6 +113,7 @@ model Profil {
 
   investments        Investment[]
   creditTransactions CreditTransaction[]
+  CarbonCreditAssetTransaction CarbonCreditAssetTransaction[]
 
   stars     Star[]
   KYC       KYC?
@@ -407,4 +408,28 @@ model Block {
   hash      String   @unique @db.VarChar(66)
   createdAt DateTime @db.Timestamp(6)
   fetchedAt DateTime @default(now()) @db.Timestamp(6)
+}
+
+model CarbonCreditAssetTransaction {
+  id            String                @id @default(uuid())
+  type          CarbonCreditTransactionType
+  projectId     Int                   @default(0)
+  credits       Int
+  pricePerUnit  Float                 @default(0)
+
+  from          String?
+  to            String?
+
+  createdAt     DateTime              @db.Timestamp(6)
+  fee           Float
+  Profil        Profil?               @relation(fields: [profilAddress], references: [address], onDelete: Cascade)
+  profilAddress String?
+}
+
+enum CarbonCreditTransactionType {
+  TRANSFERRED
+  PURCHASED
+  SOLD
+  RETIRED
+  ISSUED
 }
