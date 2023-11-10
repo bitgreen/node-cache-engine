@@ -54,7 +54,7 @@ model BatchGroups {
 model Batch {
   id           Int     @id @default(autoincrement())
   name         String? @db.VarChar
-  uuid         String? @unique
+  uuid         String?
   issuanceYear Int?
   startDate    Int?
   endDate      Int?
@@ -92,6 +92,8 @@ model SdgDetails {
   description String?
   references  String?
   project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, sdgType], name: "sdgIdentifier")
 }
 
 model Profil {

@@ -5,8 +5,8 @@ function isHex(h: string) {
 }
 
 export function convertHex(val: string) {
-  console.log(val);
-  console.log(isHex(val));
+  // console.log(val);
+  // console.log(isHex(val));
   return isHex(val) ? hexToString(val) : val === '0x' ? '' : val;
 }
 

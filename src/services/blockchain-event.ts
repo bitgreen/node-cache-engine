@@ -7,10 +7,9 @@ import {
   Extrinsic,
   EventRecord,
 } from '@polkadot/types/interfaces';
-import { createProject } from './methods/createProject';
 import { approveProject } from './methods/approveProject';
 import { ccMinted } from './methods/mintedCarbonCredit';
-import { blockExtrinsic } from './methods/blockExtrinsic';
+import {blockExtrinsic, getBlockDate} from './methods/blockExtrinsic';
 import { transaction } from './methods/transaction';
 import { rejectProject } from './methods/rejectProject';
 import { createSellOrder } from './methods/createSellOrder';
@@ -23,8 +22,6 @@ import {
   createTransferAssetTransaction,
 } from './methods/createAssetsAndTokens';
 import { sellOrderCancelled } from './methods/sellOrderCancelled';
-import { updateProject } from './methods/updateProject';
-import { updateBatchGroupInProject } from './methods/addBatchgroup';
 import { memberAddedKYC } from './methods/memberAddedKYC';
 
 export async function processBlock(
@@ -32,23 +29,9 @@ export async function processBlock(
   blockNumber: BlockNumber | number
 ) {
   console.log(`Processing block: #${blockNumber}`);
-  const { signedBlock, blockEvents } = await blockExtrinsic(api, blockNumber);
+  const { signedBlock, blockEvents, blockDate } = await blockExtrinsic(api, blockNumber);
+
   if (!signedBlock || !blockEvents) return;
-
-  let blockDate: Date;
-
-  const extrinsics = signedBlock.block.extrinsics.toHuman();
-  // @ts-ignore
-  for (const extrinsic of extrinsics) {
-    if (
-      extrinsic.method.method === 'set' &&
-      extrinsic.method.section === 'timestamp'
-    ) {
-      blockDate = new Date(
-        parseInt(extrinsic.method.args.now.replaceAll(/,/g, ''))
-      );
-    }
-  }
 
   // parse block
   signedBlock.block.extrinsics.map(async (ex: Extrinsic, index: number) => {
@@ -141,9 +124,6 @@ export async function processBlock(
         // }
       }
       if (event.section === 'carbonCredits') {
-        if (event.method === BlockEvent.ProjectCreated) {
-          await createProject(api, event, blockDate);
-        }
         if (event.method === BlockEvent.ProjectApproved) {
           await approveProject(event, blockDate);
         }
@@ -167,18 +147,6 @@ export async function processBlock(
               (ex.method.section === 'utility' && ex.method.method === 'batch') ? hash + i : hash
           );
         }
-        if (event.method === BlockEvent.ProjectUpdated) {
-          console.log('UPDATE project');
-          await updateProject(api, event, blockDate);
-        }
-        if (event.method === BlockEvent.BatchGroupAdded) {
-          console.log('UPDATE batch groups');
-          await updateBatchGroupInProject(api, event, blockDate);
-        }
-        // if (event.method === BlockEvent.ProjectResubmitted) {
-        //   console.log('resubmit project');
-        //   await resubmitProject(api,event, blockDate);
-        // }
       }
       if (event.section === 'tokens') {
         // TODO: Consider adding tokens.balanceSet
