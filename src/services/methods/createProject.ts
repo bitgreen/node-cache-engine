@@ -5,7 +5,6 @@ import { prisma } from '../prisma';
 import { convertHex } from '../../utils/converter';
 import { ApiPromise } from '@polkadot/api';
 import { RegistryName } from '@prisma/client';
-import { CarbonCreditTransactionType } from '@prisma/client';
 
 export async function createProject(
   api: ApiPromise,
@@ -63,7 +62,7 @@ export async function createProject(
     for (const [key, value] of Object.entries(project.batchGroups)) {
       batchGroups.push({
         ...value,
-        assetId: Date.now() + Math.floor(Math.random() * 1000000),
+        assetId: value.assetId,
         groupId: Number(key),
         name: convertHex(value.name as string),
         batches: {

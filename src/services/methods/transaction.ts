@@ -9,31 +9,31 @@ export async function transaction(
   createdAt: Date,
   hash: string
 ) {
-  let sender: string | undefined;
-  let recipient: string | undefined;
+  let from: string | undefined;
+  let to: string | undefined;
   let amount: string | undefined;
 
   try {
     event.data.map(async (arg: Codec, d: number) => {
       if (d === 0) {
-        sender = arg.toString();
+        from = arg.toString();
       } else if (d === 1) {
-        recipient = arg.toString();
+        to = arg.toString();
       } else if (d === 2) {
         amount = arg.toString(); /// DIVIDER;
       }
     });
 
-    console.log('sender', sender);
-    console.log('recipient', recipient);
+    console.log('from', from);
+    console.log('to', to);
     console.log('amount', amount);
 
     await prisma.transaction.create({
       data: {
         blockNumber: blockNumber,
         hash: hash as string,
-        recipient: recipient as string,
-        sender: sender as string,
+        from: from as string,
+        to: to as string,
         amount: amount as string,
         createdAt: createdAt.toISOString(),
       },

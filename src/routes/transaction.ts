@@ -68,7 +68,7 @@ router.get('/transactions', async (req: Request, res: Response) => {
 
     const account_query = account
       ? {
-          OR: [{ sender: account as string }, { recipient: account as string }],
+          OR: [{ from: account as string }, { to: account as string }],
         }
       : {};
 
@@ -85,14 +85,14 @@ router.get('/transactions', async (req: Request, res: Response) => {
         select: {
           blockNumber: true,
           hash: true,
-          sender: true,
-          recipient: true,
+          from: true,
+          to: true,
           amount: true,
           gasFees: true,
           createdAt: true,
         },
         orderBy: {
-          createdAt: 'desc',
+          blockNumber: 'desc',
         },
       });
     } catch (e) {
@@ -131,49 +131,30 @@ router.get('/transaction', async (req: Request, res: Response) => {
 });
 
 router.get('/asset/transactions', async (req: Request, res: Response) => {
-  console.log('/asset/transactions');
   try {
-    const { account, assetId, take } = req.query;
+    const {
+      account,
+      assetId,
+      take
+    } = req.query;
+
     const aId = !isNaN(Number(assetId)) ? Number(assetId) : undefined;
     const assetTransactions = await prisma.assetTransaction.findMany({
       where: {
         AND: [
           {
             OR: [
-              { recipient: account as string },
-              { sender: account as string },
+              { from: account as string },
+              { to: account as string },
             ],
           },
           { assetId: aId },
         ],
       },
       take: !isNaN(Number(take)) ? Number(take) : undefined,
-    });
-
-    res.json(assetTransactions);
-  } catch (e) {
-    res.status(500).json(e);
-  }
-});
-
-router.get('/carboncredits/transactions', async (req: Request, res: Response) => {
-  console.log('/carboncredits/transactions');
-  try {
-    const { account, assetId, take } = req.query;
-    const aId = !isNaN(Number(assetId)) ? Number(assetId) : undefined;
-    const assetTransactions = await prisma.carbonCreditAssetTransaction.findMany({
-      where: {
-        AND: [
-          {
-            OR: [
-              { to: account as string },
-              { from: account as string },
-            ],
-          },
-          { projectId: aId },
-        ],
-      },
-      take: !isNaN(Number(take)) ? Number(take) : undefined,
+      orderBy: {
+        blockNumber: 'desc'
+      }
     });
 
     res.json(assetTransactions);
@@ -189,7 +170,7 @@ router.get('/token/transactions', async (req: Request, res: Response) => {
 
     const tokensTransactions = await prisma.tokenTransaction.findMany({
       where: {
-        OR: [{ recipient: account as string }, { sender: account as string }],
+        OR: [{ from: account as string }, { to: account as string }],
       },
       take: !isNaN(Number(take)) ? Number(take) : undefined,
     });
@@ -209,8 +190,8 @@ router.get(
         prisma.tokenTransaction.findMany({
           where: {
             OR: [
-              { recipient: account as string },
-              { sender: account as string },
+              { from: account as string },
+              { to: account as string },
             ],
           },
           select: {
@@ -220,8 +201,8 @@ router.get(
         prisma.assetTransaction.findMany({
           where: {
             OR: [
-              { recipient: account as string },
-              { sender: account as string },
+              { from: account as string },
+              { to: account as string },
             ],
           },
           select: {

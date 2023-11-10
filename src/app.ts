@@ -65,7 +65,6 @@ const mainLoop = async () => {
   app.use('', investments);
   app.use('', sellOrder);
   app.use('', kyc);
-  app.use('', creditTransaction);
   // app.use("", require("./routes/test-routes"));
 
   /* serve api */

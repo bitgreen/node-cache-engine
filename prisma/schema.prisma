@@ -112,8 +112,6 @@ model Profil {
   userType                    UserType @default(Individual)
 
   investments        Investment[]
-  creditTransactions CreditTransaction[]
-  CarbonCreditAssetTransaction CarbonCreditAssetTransaction[]
 
   stars     Star[]
   KYC       KYC?
@@ -205,24 +203,6 @@ model SellOrder {
   Investment   Investment? @relation(fields: [investmentId], references: [id], onDelete: Cascade)
   investmentId String?
   trades       Trade[]     @relation("SellOrderToTrade")
-}
-
-model CreditTransaction {
-  id            String                @id @default(uuid())
-  type          CreditTransactionType
-  description   String
-  projectId     Int                   @default(0)
-  credits       Int
-  creditPrice   Float
-
-  owner         String
-  from          String?
-  to            String?
-
-  createdAt     DateTime              @db.Timestamp(6)
-  fee           Float
-  Profil        Profil?               @relation(fields: [profilAddress], references: [address], onDelete: Cascade)
-  profilAddress String?
 }
 
 model CartItem {
@@ -346,31 +326,35 @@ model Asset {
 }
 
 model AssetTransaction {
-  id          Int        @id @default(autoincrement())
-  hash        String     @unique @db.VarChar(68)
-  blockNumber Int        @default(0)
-  sender      String     @default("") @db.VarChar(48)
-  recipient   String     @default("") @db.VarChar(48)
-  assetId     Int
-  amount      String?
-  assetInfo   AssetInfo?
-  createdAt   DateTime   @db.Timestamp(6)
+  id            Int        @id @default(autoincrement())
+  hash          String     @unique @db.VarChar(68)
+  blockNumber   Int        @default(0)
+  type          AssetTransactionType
+  from          String     @default("") @db.VarChar(48)
+  to            String     @default("") @db.VarChar(48)
+  projectId     Int?
+  assetId       Int?
+  amount        Int
+  pricePerUnit  String?
+  feesPaid      String?
+  createdAt     DateTime   @db.Timestamp(6)
 }
 
-model AssetInfo {
-  id               Int               @id @default(autoincrement())
-  assetName        String?
-  assetLogo        String?
-  nftImage         String?
-  AssetTransaction AssetTransaction? @relation(fields: [id], references: [id], onDelete: Cascade)
+enum AssetTransactionType {
+  TRANSFERRED
+  TRADED
+  RETIRED
+  ISSUED
+  SELL_ORDER_CREATED
+  SELL_ORDER_CANCELLED
 }
 
 model TokenTransaction {
   id          Int      @id @default(autoincrement())
   hash        String   @unique @db.VarChar(68)
   blockNumber Int      @default(0)
-  sender      String   @default("") @db.VarChar(48)
-  recipient   String   @default("") @db.VarChar(48)
+  from        String   @default("") @db.VarChar(48)
+  to          String   @default("") @db.VarChar(48)
   tokenId     String   @default("")
   tokenName   String?
   tokenLogo   String?
@@ -384,20 +368,12 @@ model ExchangeRate {
   exchangeRateUSDT Float
 }
 
-enum CreditTransactionType {
-  PURCHASE
-  SALE
-  RETIRE
-  ISSUED
-}
-
 model Transaction {
   id          Int      @id @default(autoincrement())
   blockNumber Int
   hash        String   @unique @db.VarChar(68)
-  sender      String   @db.VarChar(64)
-  recipient   String   @db.VarChar(64)
-  // amount      Decimal  @db.Decimal(65, 0)
+  from        String   @db.VarChar(64)
+  to          String   @db.VarChar(64)
   amount      String   @db.VarChar(191)
   gasFees     Decimal  @default(0) @db.Decimal(32, 0)
   createdAt   DateTime @db.Timestamp(6)
@@ -408,28 +384,4 @@ model Block {
   hash      String   @unique @db.VarChar(66)
   createdAt DateTime @db.Timestamp(6)
   fetchedAt DateTime @default(now()) @db.Timestamp(6)
-}
-
-model CarbonCreditAssetTransaction {
-  id            String                @id @default(uuid())
-  type          CarbonCreditTransactionType
-  projectId     Int                   @default(0)
-  credits       Int
-  pricePerUnit  Float                 @default(0)
-
-  from          String?
-  to            String?
-
-  createdAt     DateTime              @db.Timestamp(6)
-  fee           Float
-  Profil        Profil?               @relation(fields: [profilAddress], references: [address], onDelete: Cascade)
-  profilAddress String?
-}
-
-enum CarbonCreditTransactionType {
-  TRANSFERRED
-  PURCHASED
-  SOLD
-  RETIRED
-  ISSUED
 }

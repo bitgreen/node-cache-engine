@@ -2,7 +2,7 @@ import { hexToString } from '@polkadot/util';
 import { Codec } from '@polkadot/types-codec/types';
 import { prisma } from '../prisma';
 import {BlockNumber, Event} from '@polkadot/types/interfaces';
-import { CarbonCreditTransactionType } from '@prisma/client';
+import {AssetTransactionType} from '@prisma/client';
 
 export async function createBuyOrder(event: Event, createdAt: Date, blockNumber: number | BlockNumber,) {
   try {
@@ -40,36 +40,9 @@ export async function createBuyOrder(event: Event, createdAt: Date, blockNumber:
         createdAt: createdAt.toISOString(),
       }
     })
-
-    await prisma.carbonCreditAssetTransaction.create({
-      data: {
-        type: CarbonCreditTransactionType.SOLD,
-        projectId: projectId,
-        credits: units,
-        pricePerUnit: convertedPricePerunit as number,
-        from: seller as string,
-        to: buyer as string,
-        fee: feesPaid,
-        createdAt: createdAt.toISOString(),
-      }
-    })
-
-    await prisma.carbonCreditAssetTransaction.create({
-      data: {
-        type: CarbonCreditTransactionType.PURCHASED,
-        projectId: projectId,
-        credits: units,
-        pricePerUnit: convertedPricePerunit as number,
-        from: buyer as string,
-        to: seller as string,
-        fee: feesPaid,
-        createdAt: createdAt.toISOString(),
-      }
-    })
   } catch (e) {
     // @ts-ignore
     console.log(`Error occurred (create buy order): ${e.message} at ${blockNumber}`);
-    process.exit(0)
   }
 }
 
@@ -91,26 +64,52 @@ export async function createTrade(event: Event, createdAt: Date, blockNumber: nu
     const sellOrderId = Number(sellOrderIdChain.replace(/,/g, ''));
     const units = Number(unitsChain.replace(/,/g, ''));
     const projectId = Number(projectIdChain.replace(/,/g, ''));
-    const feesPaid = Number(feesPaidChain.replace(/,/g, ''));
+    const feesPaid = feesPaidChain.replace(/,/g, '');
     const groupId = Number(groupIdChain.replace(/,/g, ''));
 
     const creditPrice = (pricePerUnit as string).replace(/,/g, '')
 
-    await prisma.$transaction([
-      prisma.trade.create({
-        data: {
-          hash: hash as string,
-          buyOrderId: orderId,
-          sellOrderId: sellOrderId,
-          blockNumber: blockNumber,
-          projectId: projectId,
-          creditPrice: creditPrice,
-          units: units,
-          groupId: groupId,
-          createdAt: createdAt.toISOString()
-        },
-      }),
-    ]);
+    await prisma.assetTransaction.upsert({
+      where: {
+        hash: hash as string,
+      },
+      create: {
+        hash: hash as string,
+        blockNumber: blockNumber,
+        type: AssetTransactionType.TRADED,
+        from: seller as string,
+        to: buyer as string,
+        projectId: projectId as number,
+        pricePerUnit: creditPrice,
+        feesPaid: feesPaid,
+        amount: units,
+        createdAt: createdAt.toISOString(),
+      },
+      update: {
+        type: AssetTransactionType.TRADED,
+        projectId: projectId as number,
+        pricePerUnit: creditPrice,
+        feesPaid: feesPaid,
+        from: seller as string,
+        to: buyer as string,
+      },
+    });
+
+    // await prisma.$transaction([
+    //   prisma.trade.create({
+    //     data: {
+    //       hash: hash as string,
+    //       buyOrderId: orderId,
+    //       sellOrderId: sellOrderId,
+    //       blockNumber: blockNumber,
+    //       projectId: projectId,
+    //       creditPrice: creditPrice,
+    //       units: units,
+    //       groupId: groupId,
+    //       createdAt: createdAt.toISOString()
+    //     },
+    //   }),
+    // ]);
   } catch (e) {
     // @ts-ignore
     console.log(`Error occurred (create trade): ${e.message} at ${blockNumber}`);

@@ -41,6 +41,5 @@ export async function createSellOrder(event: Event, createdAt: Date, blockNumber
   } catch (e) {
     // @ts-ignore
     console.log(`Error occurred (create sell order): ${e.message} at ${blockNumber}`);
-    process.exit(0)
   }
 }
