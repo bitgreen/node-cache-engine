@@ -1,8 +1,10 @@
 import { prisma } from '../prisma';
 import { Event } from '@polkadot/types/interfaces';
 import {AssetTransactionType} from "@prisma/client";
+import {ApiPromise} from "@polkadot/api";
 
 export async function sellOrderCancelled(
+  api: ApiPromise,
   event: Event,
   hash: string)
 {
@@ -11,18 +13,23 @@ export async function sellOrderCancelled(
 
     let [
       orderId,
+      seller
     ] = eventData as (number | string)[];
 
     await prisma.assetTransaction.update({
       where: {
-        hash: hash as string,
+        uniqueId: {
+          hash: hash as string,
+          owner: seller as string
+        }
       },
       data: {
-        type: AssetTransactionType.SELL_ORDER_CANCELLED,
+        type: AssetTransactionType.ORDER_CANCELLED,
       },
     });
   } catch (e) {
     // @ts-ignore
     console.log(`Error occurred (cancel sell order): ${e.message}`);
+    process.exit(0)
   }
 }

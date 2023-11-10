@@ -3,6 +3,7 @@ import { Codec } from '@polkadot/types-codec/types';
 import { prisma } from '../prisma';
 import {BlockNumber, Event} from '@polkadot/types/interfaces';
 import {AssetTransactionType} from '@prisma/client';
+import {ApiPromise} from "@polkadot/api";
 
 export async function createBuyOrder(event: Event, createdAt: Date, blockNumber: number | BlockNumber,) {
   try {
@@ -46,7 +47,7 @@ export async function createBuyOrder(event: Event, createdAt: Date, blockNumber:
   }
 }
 
-export async function createTrade(event: Event, createdAt: Date, blockNumber: number, hash: string) {
+export async function createTrade(api: ApiPromise, event: Event, createdAt: Date, blockNumber: number, hash: string) {
   try {
     let dataBlock = event.data.toHuman();
     let [
@@ -69,47 +70,76 @@ export async function createTrade(event: Event, createdAt: Date, blockNumber: nu
 
     const creditPrice = (pricePerUnit as string).replace(/,/g, '')
 
+    const sellOrder = (await api.query.dex.orders(sellOrderId)).toJSON() as any
+
+    const assetId = sellOrder.assetId
+
+    const sold_owner = seller
+    const purchased_owner = buyer
+
     await prisma.assetTransaction.upsert({
       where: {
-        hash: hash as string,
+        uniqueId: {
+          hash: hash as string,
+          owner: sold_owner as string
+        }
       },
       create: {
         hash: hash as string,
         blockNumber: blockNumber,
-        type: AssetTransactionType.TRADED,
+        type: AssetTransactionType.SOLD,
         from: seller as string,
         to: buyer as string,
+        owner: sold_owner as string,
         projectId: projectId as number,
+        assetId: assetId as number,
+        pricePerUnit: creditPrice,
+        amount: units,
+        createdAt: createdAt.toISOString(),
+      },
+      update: {
+        type: AssetTransactionType.SOLD,
+        projectId: projectId as number,
+        assetId: assetId as number,
+        pricePerUnit: creditPrice,
+        from: seller as string,
+        to: buyer as string,
+        owner: sold_owner as string,
+      },
+    });
+
+    await prisma.assetTransaction.upsert({
+      where: {
+        uniqueId: {
+          hash: hash as string,
+          owner: purchased_owner as string
+        }
+      },
+      create: {
+        hash: hash as string,
+        blockNumber: blockNumber,
+        type: AssetTransactionType.PURCHASED,
+        from: seller as string,
+        to: buyer as string,
+        owner: purchased_owner as string,
+        projectId: projectId as number,
+        assetId: assetId as number,
         pricePerUnit: creditPrice,
         feesPaid: feesPaid,
         amount: units,
         createdAt: createdAt.toISOString(),
       },
       update: {
-        type: AssetTransactionType.TRADED,
+        type: AssetTransactionType.PURCHASED,
         projectId: projectId as number,
+        assetId: assetId as number,
         pricePerUnit: creditPrice,
         feesPaid: feesPaid,
         from: seller as string,
         to: buyer as string,
+        owner: purchased_owner as string,
       },
     });
-
-    // await prisma.$transaction([
-    //   prisma.trade.create({
-    //     data: {
-    //       hash: hash as string,
-    //       buyOrderId: orderId,
-    //       sellOrderId: sellOrderId,
-    //       blockNumber: blockNumber,
-    //       projectId: projectId,
-    //       creditPrice: creditPrice,
-    //       units: units,
-    //       groupId: groupId,
-    //       createdAt: createdAt.toISOString()
-    //     },
-    //   }),
-    // ]);
   } catch (e) {
     // @ts-ignore
     console.log(`Error occurred (create trade): ${e.message} at ${blockNumber}`);

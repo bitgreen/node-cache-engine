@@ -21,7 +21,7 @@ interface averagePrice {
 router.get('/asset-prices', async (req: Request, res: Response) => {
   const uniqueAssetIds = await prisma.assetTransaction.findMany({
     where: {
-      type: AssetTransactionType.TRADED,
+      type: AssetTransactionType.SOLD,
       assetId: {
         not: null,
       },
@@ -36,7 +36,7 @@ router.get('/asset-prices', async (req: Request, res: Response) => {
     return prisma.assetTransaction.findMany({
       where: {
         assetId: assetId,
-        type: AssetTransactionType.TRADED
+        type: AssetTransactionType.PURCHASED
       },
       orderBy: {
         blockNumber: 'desc',

@@ -141,15 +141,8 @@ router.get('/asset/transactions', async (req: Request, res: Response) => {
     const aId = !isNaN(Number(assetId)) ? Number(assetId) : undefined;
     const assetTransactions = await prisma.assetTransaction.findMany({
       where: {
-        AND: [
-          {
-            OR: [
-              { from: account as string },
-              { to: account as string },
-            ],
-          },
-          { assetId: aId },
-        ],
+        owner: account as string,
+        assetId: aId
       },
       take: !isNaN(Number(take)) ? Number(take) : undefined,
       orderBy: {
@@ -200,10 +193,7 @@ router.get(
         }),
         prisma.assetTransaction.findMany({
           where: {
-            OR: [
-              { from: account as string },
-              { to: account as string },
-            ],
+            owner: account as string
           },
           select: {
             assetId: true

@@ -35,7 +35,10 @@ export async function createRetiredAssetTransaction(
 
     await prisma.assetTransaction.upsert({
       where: {
-        hash: hash as string,
+        uniqueId: {
+          hash: hash as string,
+          owner: account as string
+        }
       },
       create: {
         hash: hash as string,
@@ -43,6 +46,7 @@ export async function createRetiredAssetTransaction(
         type: AssetTransactionType.RETIRED,
         from: account as string,
         to: '',
+        owner: account as string,
         projectId: projectId as number,
         assetId: assetId as number,
         amount: amount,
@@ -54,6 +58,7 @@ export async function createRetiredAssetTransaction(
         assetId: assetId as number,
         from: account as string,
         to: '',
+        owner: account as string,
       },
     });
   } catch (e: any) {

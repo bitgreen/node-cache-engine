@@ -156,27 +156,6 @@ model BuyOrder {
   createdAt      DateTime    @db.Timestamp(6)
   Investment     Investment? @relation(fields: [investmentId], references: [id], onDelete: Cascade, name: "investment")
   investmentId   String?
-  // InvestmentForRetire   Investment? @relation(fields: [investmentIdForRetire], references: [id], onDelete: Cascade, name: "investmentForRetire")
-  // investmentIdForRetire String?
-  trades         Trade[]     @relation("BuyOrderToTrade")
-}
-
-model Trade {
-  id          Int        @id @default(autoincrement())
-  blockNumber Int        @default(0)
-  projectId   Int
-  units       Int
-  creditPrice String
-  buyOrderId  Int
-  sellOrderId Int
-  groupId     Int
-  createdAt   DateTime   @db.Timestamp(6)
-  hash        String     @unique @db.VarChar(68)
-  seller      String     @default("") @db.VarChar(48)
-  buyer       String     @default("") @db.VarChar(48)
-
-  sellOrder   SellOrder  @relation(fields: [sellOrderId], references: [orderId], onDelete: Cascade, name: "SellOrderToTrade")
-  buyOrder    BuyOrder   @relation(fields: [buyOrderId], references: [orderId], onDelete: Cascade, name: "BuyOrderToTrade")
 }
 
 model BuyOrderReserved {
@@ -204,7 +183,6 @@ model SellOrder {
   cancelledAt  DateTime?   @db.Timestamp(6)
   Investment   Investment? @relation(fields: [investmentId], references: [id], onDelete: Cascade)
   investmentId String?
-  trades       Trade[]     @relation("SellOrderToTrade")
 }
 
 model CartItem {
@@ -329,26 +307,31 @@ model Asset {
 
 model AssetTransaction {
   id            Int        @id @default(autoincrement())
-  hash          String     @unique @db.VarChar(68)
+  hash          String     @db.VarChar(68)
   blockNumber   Int        @default(0)
   type          AssetTransactionType
   from          String     @default("") @db.VarChar(48)
   to            String     @default("") @db.VarChar(48)
+  owner         String     @default("") @db.VarChar(48)
   projectId     Int?
   assetId       Int?
   amount        Int
   pricePerUnit  String?
   feesPaid      String?
   createdAt     DateTime   @db.Timestamp(6)
+
+  @@unique([hash, owner], name: "uniqueId")
 }
 
 enum AssetTransactionType {
-  TRANSFERRED
-  TRADED
+  SENT
+  RECEIVED
+  PURCHASED
+  SOLD
   RETIRED
   ISSUED
-  SELL_ORDER_CREATED
-  SELL_ORDER_CANCELLED
+  ORDER_CREATED
+  ORDER_CANCELLED
 }
 
 model TokenTransaction {

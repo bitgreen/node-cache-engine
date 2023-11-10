@@ -25,22 +25,53 @@ export async function createTransferAssetTransaction(
     let [assetId, from, to, amount] = eventData as (number | string)[];
     amount = Number(amount.toString().replace(/,/g, ''))
 
+    const sent_owner = from
+    const received_owner = to
+
     await prisma.assetTransaction.upsert({
       where: {
-        hash: hash as string,
+        uniqueId: {
+          hash: hash as string,
+          owner: sent_owner as string
+        }
       },
       create: {
         hash: hash as string,
         blockNumber: blockNumber,
-        type: AssetTransactionType.TRANSFERRED,
+        type: AssetTransactionType.SENT,
         from: from as string,
         to: to as string,
+        owner: sent_owner as string,
         assetId: assetId as number,
         amount: amount,
         createdAt: createdAt.toISOString(),
       },
       update: {
+        type: AssetTransactionType.SENT,
+      },
+    });
 
+    // Receiver
+    await prisma.assetTransaction.upsert({
+      where: {
+        uniqueId: {
+          hash: hash as string,
+          owner: received_owner as string
+        }
+      },
+      create: {
+        hash: hash as string,
+        blockNumber: blockNumber,
+        type: AssetTransactionType.RECEIVED,
+        from: from as string,
+        to: to as string,
+        owner: received_owner as string,
+        assetId: assetId as number,
+        amount: amount,
+        createdAt: createdAt.toISOString(),
+      },
+      update: {
+        type: AssetTransactionType.RECEIVED
       },
     });
   } catch (e: any) {
@@ -62,7 +93,10 @@ export async function createIssuedAssetTransaction(
 
     await prisma.assetTransaction.upsert({
       where: {
-        hash: hash as string,
+        uniqueId: {
+          hash: hash as string,
+          owner: owner as string
+        }
       },
       create: {
         hash: hash as string,
@@ -70,6 +104,7 @@ export async function createIssuedAssetTransaction(
         type: AssetTransactionType.ISSUED,
         from: '',
         to: owner as string,
+        owner: owner as string,
         assetId: assetId as number,
         amount: totalSupply,
         createdAt: createdAt.toISOString(),
@@ -104,18 +139,20 @@ export async function createSellOrderAssetTransaction(
     units = Number(units.toString().replace(/,/g, ''))
     pricePerUnit = Number(pricePerUnit.toString().replace(/,/g, '')).toString()
 
-    console.log(pricePerUnit)
-
     await prisma.assetTransaction.upsert({
       where: {
-        hash: hash as string,
+        uniqueId: {
+          hash: hash as string,
+          owner: owner as string
+        }
       },
       create: {
         hash: hash as string,
         blockNumber: blockNumber,
-        type: AssetTransactionType.SELL_ORDER_CREATED,
+        type: AssetTransactionType.ORDER_CREATED,
         from: owner as string,
         to: '',
+        owner: owner as string,
         assetId: assetId as number,
         projectId: projectId as number,
         amount: units,
@@ -123,9 +160,10 @@ export async function createSellOrderAssetTransaction(
         createdAt: createdAt.toISOString(),
       },
       update: {
-        type: AssetTransactionType.SELL_ORDER_CREATED,
+        type: AssetTransactionType.ORDER_CREATED,
         from: owner as string,
         to: '',
+        owner: owner as string,
         assetId: assetId as number,
         projectId: projectId as number,
         amount: units,

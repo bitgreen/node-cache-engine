@@ -19,7 +19,10 @@ export async function ccMinted(
 
     await prisma.assetTransaction.upsert({
       where: {
-        hash: hash as string,
+        uniqueId: {
+          hash: hash as string,
+          owner: to as string
+        }
       },
       create: {
         hash: hash as string,
@@ -27,6 +30,7 @@ export async function ccMinted(
         type: AssetTransactionType.ISSUED,
         from: '',
         to: to as string,
+        owner: to as string,
         projectId: projectId as number,
         amount: amount,
         createdAt: createdAt.toISOString(),

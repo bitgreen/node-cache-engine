@@ -111,17 +111,14 @@ export async function processBlock(
         }
         if (event.method === BlockEvent.SellOrderCancelled) {
           console.log('sell order cancelled');
-          await sellOrderCancelled(event, hash);
+          await sellOrderCancelled(api, event, hash);
         }
         if (event.method === BlockEvent.BuyOrderFilled) {
           console.log('buy order filled');
+          await createTrade(api, event, blockDate, blockNumber as number, hash);
+
           await createBuyOrder(event, blockDate, blockNumber);
-          await createTrade(event, blockDate, blockNumber as number, hash);
         }
-        // if (event.method === BlockEvent.BuyOrderCreated) {
-        //   console.log('buy order created');
-        //   await reserveBuyOrder(event, blockDate);
-        // }
       }
       if (event.section === 'carbonCredits') {
         if (event.method === BlockEvent.ProjectApproved) {
