@@ -5,6 +5,7 @@ import { prisma } from '../services/prisma';
 import { BlockHash } from '@polkadot/types/interfaces';
 import { initApi } from '../services/polkadot-api';
 import { GenericStorageEntryFunction } from '@polkadot/api/types';
+import {createAssetTransactionFilter} from "../utils/filters";
 
 const router = express.Router();
 
@@ -68,7 +69,7 @@ router.get('/transactions', async (req: Request, res: Response) => {
 
     const account_query = account
       ? {
-          OR: [{ sender: account as string }, { recipient: account as string }],
+          OR: [{ from: account as string }, { to: account as string }],
         }
       : {};
 
@@ -85,14 +86,14 @@ router.get('/transactions', async (req: Request, res: Response) => {
         select: {
           blockNumber: true,
           hash: true,
-          sender: true,
-          recipient: true,
+          from: true,
+          to: true,
           amount: true,
           gasFees: true,
           createdAt: true,
         },
         orderBy: {
-          createdAt: 'desc',
+          blockNumber: 'desc',
         },
       });
     } catch (e) {
@@ -131,28 +132,32 @@ router.get('/transaction', async (req: Request, res: Response) => {
 });
 
 router.get('/asset/transactions', async (req: Request, res: Response) => {
-  console.log('/asset/transactions');
   try {
-    const { account, assetId, take } = req.query;
-    const aId = !isNaN(Number(assetId)) ? Number(assetId) : undefined;
+    const {
+      account,
+      take
+    } = req.query;
+
+    const { assetIdFilter, transactionTypeFilter } = await createAssetTransactionFilter(req, res);
+
     const assetTransactions = await prisma.assetTransaction.findMany({
       where: {
+        owner: account as string,
         AND: [
-          {
-            OR: [
-              { recipient: account as string },
-              { sender: account as string },
-            ],
-          },
-          { assetId: aId },
-        ],
+          { ...assetIdFilter },
+          { ...transactionTypeFilter },
+        ]
       },
       take: !isNaN(Number(take)) ? Number(take) : undefined,
+      orderBy: {
+        blockNumber: 'desc'
+      }
     });
 
     res.json(assetTransactions);
-  } catch (e) {
-    res.status(500).json(e);
+  } catch (e: any) {
+    // console.log(e)
+    res.status(500).json(e.message);
   }
 });
 
@@ -163,7 +168,7 @@ router.get('/token/transactions', async (req: Request, res: Response) => {
 
     const tokensTransactions = await prisma.tokenTransaction.findMany({
       where: {
-        OR: [{ recipient: account as string }, { sender: account as string }],
+        OR: [{ from: account as string }, { to: account as string }],
       },
       take: !isNaN(Number(take)) ? Number(take) : undefined,
     });
@@ -183,8 +188,8 @@ router.get(
         prisma.tokenTransaction.findMany({
           where: {
             OR: [
-              { recipient: account as string },
-              { sender: account as string },
+              { from: account as string },
+              { to: account as string },
             ],
           },
           select: {
@@ -193,10 +198,7 @@ router.get(
         }),
         prisma.assetTransaction.findMany({
           where: {
-            OR: [
-              { recipient: account as string },
-              { sender: account as string },
-            ],
+            owner: account as string
           },
           select: {
             assetId: true

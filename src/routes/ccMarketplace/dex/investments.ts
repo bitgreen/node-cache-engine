@@ -100,33 +100,4 @@ router.get('/project-originator', async (req: Request, res: Response) => {
   }
 });
 
-router.get(
-  '/credit-transaction',
-  authMiddle,
-  async (req: Request, res: Response) => {
-    const address = (req.query.address as string) || '';
-
-    console.log('Credit Transation');
-    console.log('date0', req.query.date);
-    const date =
-      req.query.date !== 'undefined'
-        ? (req.query.date as string)
-        : '1970-01-01';
-    console.log('date', date);
-    try {
-      const creditTransactions = await prisma.creditTransaction.findMany({
-        where: {
-          owner: address,
-          createdAt: { gte: new Date(date) },
-        },
-      });
-
-      return res.status(200).json(creditTransactions);
-    } catch (e) {
-      console.log('error', e);
-      return res.status(500).json(undefined);
-    }
-  }
-);
-
 export default router;

@@ -1,6 +1,7 @@
 // Bitgreen API Server
 
 /* import packages */
+import cron from 'node-cron';
 import cookieParser from 'cookie-parser';
 import cors, { CorsOptions } from 'cors';
 import * as dotenv from 'dotenv';
@@ -17,6 +18,7 @@ import cart from './routes/ccMarketplace/profile/cart';
 import profile from './routes/ccMarketplace/profile/profile';
 import creditTransaction from './routes/ccMarketplace/dex/credit-transaction';
 import transaction from './routes/transaction';
+import {updateProjectsCron} from "./services/update-projects";
 
 /* config */
 dotenv.config();
@@ -65,16 +67,15 @@ const mainLoop = async () => {
   app.use('', investments);
   app.use('', sellOrder);
   app.use('', kyc);
-  app.use('', creditTransaction);
   // app.use("", require("./routes/test-routes"));
 
   /* serve api */
   const server = app.listen(port, function () {
     console.log(`API server is listening at: http://localhost:${port}.`);
   });
+
+  await updateProjectsCron()
 };
 
 // run main function
 mainLoop().catch(console.error);
-
-// write a fetch command in javascript

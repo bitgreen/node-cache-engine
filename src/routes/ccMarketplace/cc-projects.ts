@@ -14,7 +14,10 @@ router.get('/project', async (req: Request, res: Response) => {
   try {
     let [projects, resultCount] = await prisma.$transaction([
       prisma.project.findMany({
-        where: filters,
+        where: {
+          ...filters,
+          listedToMarketplace: true
+        },
         take: limit,
         cursor: cursorObj,
         skip: cursor === '' ? 0 : 1,

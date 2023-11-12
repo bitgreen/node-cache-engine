@@ -3,68 +3,44 @@ import { Codec } from '@polkadot/types-codec/types';
 import { prisma } from '../prisma';
 import { Extrinsic, Event } from '@polkadot/types/interfaces';
 import { queryBalances } from './createAssetsAndTokens';
-import { CreditTransactionType } from '@prisma/client';
+import {AssetTransactionType} from '@prisma/client';
 
 export async function ccMinted(
-  event: Event,
-  updatedAt: Date,
-  api: ApiPromise
+    event: Event,
+    blockNumber: number,
+    createdAt: Date,
+    hash: string
 ) {
   try {
-    let data = event.data.toJSON();
-    let [projectId, groupId, recipient, amount] = data as (Number | string)[];
+    let eventData = event.data.toJSON();
 
-    console.log('Carbon credits minted', projectId, groupId, recipient, amount);
+    let [projectId, groupId, to, amount] = eventData as (number | string)[];
+    amount = Number(amount.toString().replace(/,/g, ''))
 
-    const projectArgs = await prisma.project.findUnique({
-      include: {
-        batchGroups: true,
-      },
+    await prisma.assetTransaction.upsert({
       where: {
-        id: projectId as number,
+        uniqueId: {
+          hash: hash as string,
+          owner: to as string
+        }
+      },
+      create: {
+        hash: hash as string,
+        blockNumber: blockNumber,
+        type: AssetTransactionType.ISSUED,
+        from: '',
+        to: to as string,
+        owner: to as string,
+        projectId: projectId as number,
+        amount: amount,
+        createdAt: createdAt.toISOString(),
+      },
+      update: {
+        type: AssetTransactionType.ISSUED,
+        projectId: projectId as number
       },
     });
-    if (!projectArgs) return;
-    // console.log(
-    //   'TEST',
-    //   projectArgs?.batchGroups.find((bg) => bg.groupId == groupId)
-    // );
-    // console.log(
-    //   'TEST2',
-    //   projectArgs?.batchGroups.find((bg) => bg.groupId == groupId)?.id
-    // );
-    await prisma.creditTransaction.create({
-      data: {
-        type: CreditTransactionType.ISSUED,
-        projectId: projectId as number,
-        description:
-            'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Ut a ullamcorper dignissim euismod amet, ridiculus.',
-        credits: amount as number,
-        creditPrice: 0,
-        owner: recipient as string,
-        from: '',
-        to: recipient as string,
-        fee: 0,
-        createdAt: updatedAt.toISOString(),
-      }
-    })
-    // const [balanceBBB, balanceUSDT] = await queryBalances(
-    //   api,
-    //   recipient as string,
-    //   'USDT'
-    // );
-
-    // await prisma.assetTransaction.create({
-    //   data: {
-    //     sender: '',
-    //     recipient: recipient as string,
-    //     assetId: projectArgs?.batchGroups[groupId as number].assetId as number,
-    //     balance: balanceBBB,
-    //     balanceUsd: balanceUSDT,
-    //   },
-    // });
   } catch (e) {
-    // @ts-ignore
-    console.log(`Error occurred (minting carbon credit): ${e.message}`);
+
   }
 }

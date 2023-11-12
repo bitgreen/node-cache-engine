@@ -3,7 +3,7 @@ import { Event } from '@polkadot/types/interfaces';
 import { ApiPromise } from '@polkadot/api';
 import { BalanceData } from '@/types/types';
 import { hexToBigInt } from '@polkadot/util';
-import { CreditTransactionType } from '@prisma/client';
+import { AssetTransactionType } from '@prisma/client';
 
 interface MetaData {
   deposit: string;
@@ -13,70 +13,165 @@ interface MetaData {
   isFrozen: string;
 }
 
-export async function createAssetTransaction(
-  event: Event,
-  api: ApiPromise,
-  blockNumber: number,
-  createdAt: Date,
-  hash: string
+export async function createTransferAssetTransaction(
+    event: Event,
+    blockNumber: number,
+    createdAt: Date,
+    hash: string
 ) {
   try {
     let eventData = event.data.toJSON();
-    let [assetId, from, to, amount] = eventData as (Number | string)[];
-    const metaData = await getMetadata(api, assetId as number);
-    await prisma.assetTransaction.create({
-      data: {
+
+    let [assetId, from, to, amount] = eventData as (number | string)[];
+    amount = Number(amount.toString().replace(/,/g, ''))
+
+    const sent_owner = from
+    const received_owner = to
+
+    await prisma.assetTransaction.upsert({
+      where: {
+        uniqueId: {
+          hash: hash as string,
+          owner: sent_owner as string
+        }
+      },
+      create: {
         hash: hash as string,
-        sender: from as string,
-        recipient: to as string,
         blockNumber: blockNumber,
+        type: AssetTransactionType.SENT,
+        from: from as string,
+        to: to as string,
+        owner: sent_owner as string,
         assetId: assetId as number,
-        amount: amount.toString(),
+        amount: amount,
         createdAt: createdAt.toISOString(),
-        assetInfo: {
-          create: {
-            assetName: metaData.name,
-          },
-        },
+      },
+      update: {
+        type: AssetTransactionType.SENT,
       },
     });
-  } catch (e) {
-    // @ts-ignore
-    console.log(`Error occurred (asset Transaction): ${e.message}`);
+
+    // Receiver
+    await prisma.assetTransaction.upsert({
+      where: {
+        uniqueId: {
+          hash: hash as string,
+          owner: received_owner as string
+        }
+      },
+      create: {
+        hash: hash as string,
+        blockNumber: blockNumber,
+        type: AssetTransactionType.RECEIVED,
+        from: from as string,
+        to: to as string,
+        owner: received_owner as string,
+        assetId: assetId as number,
+        amount: amount,
+        createdAt: createdAt.toISOString(),
+      },
+      update: {
+        type: AssetTransactionType.RECEIVED
+      },
+    });
+  } catch (e: any) {
+    console.log(`Error occurred (asset transferred transaction): ${e.message}`);
   }
 }
 
 export async function createIssuedAssetTransaction(
-  event: Event,
-  api: ApiPromise,
-  blockNumber: number,
-  createdAt: Date,
-  hash: string
+    event: Event,
+    blockNumber: number,
+    createdAt: Date,
+    hash: string
 ) {
   try {
     let eventData = event.data.toJSON();
-    let [assetId, owner, totalSupply] = eventData as (Number | string)[];
-    const metaData = await getMetadata(api, assetId as number);
 
-    await prisma.assetTransaction.create({
-      data: {
-        hash: hash,
-        sender: '', // our sudo standard account?
-        recipient: owner as string,
+    let [assetId, owner, totalSupply] = eventData as (number | string)[];
+    totalSupply = Number(totalSupply.toString().replace(/,/g, ''))
+
+    await prisma.assetTransaction.upsert({
+      where: {
+        uniqueId: {
+          hash: hash as string,
+          owner: owner as string
+        }
+      },
+      create: {
+        hash: hash as string,
         blockNumber: blockNumber,
+        type: AssetTransactionType.ISSUED,
+        from: '',
+        to: owner as string,
+        owner: owner as string,
         assetId: assetId as number,
-        amount: totalSupply.toString(),
+        amount: totalSupply,
         createdAt: createdAt.toISOString(),
-        assetInfo: {
-          create: {
-            assetName: metaData.name,
-          },
-        },
+      },
+      update: {
+        assetId: assetId as number
       },
     });
-  } catch (e) {
-    // @ts-ignore
-    console.log(`Error occurred (issued asset Transaction): ${e.message}`);
+  } catch (e: any) {
+    console.log(`Error occurred (asset issued transaction): ${e.message}`);
+  }
+}
+
+export async function createSellOrderAssetTransaction(
+    event: Event,
+    blockNumber: number,
+    createdAt: Date,
+    hash: string
+) {
+  try {
+    let eventData = event.data.toJSON();
+
+    let [
+      orderId,
+      assetId,
+      projectId,
+      groupId,
+      units,
+      pricePerUnit,
+      owner
+    ] = eventData as (number | string)[];
+    units = Number(units.toString().replace(/,/g, ''))
+    pricePerUnit = Number(pricePerUnit.toString().replace(/,/g, '')).toString()
+
+    await prisma.assetTransaction.upsert({
+      where: {
+        uniqueId: {
+          hash: hash as string,
+          owner: owner as string
+        }
+      },
+      create: {
+        hash: hash as string,
+        blockNumber: blockNumber,
+        type: AssetTransactionType.ORDER_CREATED,
+        from: owner as string,
+        to: '',
+        owner: owner as string,
+        assetId: assetId as number,
+        projectId: projectId as number,
+        amount: units,
+        pricePerUnit: pricePerUnit,
+        createdAt: createdAt.toISOString(),
+      },
+      update: {
+        type: AssetTransactionType.ORDER_CREATED,
+        from: owner as string,
+        to: '',
+        owner: owner as string,
+        assetId: assetId as number,
+        projectId: projectId as number,
+        amount: units,
+        pricePerUnit: pricePerUnit,
+      },
+    });
+  } catch (e: any) {
+    console.log(`Error occurred (sell order transaction): ${e.message}`);
   }
 }
 
@@ -95,8 +190,8 @@ export async function createTokenTransaction(
       prisma.tokenTransaction.create({
         data: {
           hash: hash as string,
-          sender: from as string,
-          recipient: to as string,
+          from: from as string,
+          to: to as string,
           blockNumber: blockNumber,
           tokenId: currencyId as string,
           tokenName: '',
@@ -109,13 +204,6 @@ export async function createTokenTransaction(
     // @ts-ignore
     console.log(`Error occurred (asset Transaction): ${e.message}`);
   }
-}
-
-async function getMetadata(api: ApiPromise, assetId: number) {
-  let dataQuery = await api.query['assets']['metadata'](assetId);
-  const metaDataArg = dataQuery.toHuman();
-  let metaData = metaDataArg as unknown as MetaData;
-  return metaData;
 }
 
 // function getExchangeRate(currencyId: String): number {

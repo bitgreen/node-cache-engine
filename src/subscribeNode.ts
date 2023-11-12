@@ -65,26 +65,25 @@ async function main() {
   const fetchedBlocksSet = new Set(fetchedBlocks);
   const missingBlocks = allBlocks.filter(id => !fetchedBlocksSet.has(id));
 
-  let chunk = []
-
-  // Process each missing block, in chunks of 400
+  // Process each missing block, in chunks of 1200
+  const activePromises = new Set();
   for(const blockNumber of missingBlocks) {
-    chunk.push(blockNumber);
-    if (chunk.length === 400) {
-      await Promise.all(chunk.map(async (blockNumber) => {
-        await processBlock(api, blockNumber)
-      }))
-
-      chunk = [];
+    // Wait if we reach the concurrency limit
+    if (activePromises.size >= 1200) {
+      await Promise.race(activePromises);
     }
+
+    const promise = processBlock(api, blockNumber).finally(() => {
+      // Remove the promise from the set when it's settled
+      activePromises.delete(promise);
+    });
+
+    // Add the new promise to the set
+    activePromises.add(promise);
   }
 
-  // Process last chunk
-  if (chunk.length > 0) {
-    await Promise.all(chunk.map(async (blockNumber) => {
-      await processBlock(api, blockNumber)
-    }))
-  }
+  // Wait for all remaining promises to settle
+  await Promise.all(activePromises);
 }
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
