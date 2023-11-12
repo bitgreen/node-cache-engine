@@ -5,6 +5,7 @@ import { prisma } from '../services/prisma';
 import { BlockHash } from '@polkadot/types/interfaces';
 import { initApi } from '../services/polkadot-api';
 import { GenericStorageEntryFunction } from '@polkadot/api/types';
+import {createAssetTransactionFilter} from "../utils/filters";
 
 const router = express.Router();
 
@@ -134,15 +135,18 @@ router.get('/asset/transactions', async (req: Request, res: Response) => {
   try {
     const {
       account,
-      assetId,
       take
     } = req.query;
 
-    const aId = !isNaN(Number(assetId)) ? Number(assetId) : undefined;
+    const { assetIdFilter, transactionTypeFilter } = await createAssetTransactionFilter(req, res);
+
     const assetTransactions = await prisma.assetTransaction.findMany({
       where: {
         owner: account as string,
-        assetId: aId
+        AND: [
+          { ...assetIdFilter },
+          { ...transactionTypeFilter },
+        ]
       },
       take: !isNaN(Number(take)) ? Number(take) : undefined,
       orderBy: {
@@ -151,8 +155,9 @@ router.get('/asset/transactions', async (req: Request, res: Response) => {
     });
 
     res.json(assetTransactions);
-  } catch (e) {
-    res.status(500).json(e);
+  } catch (e: any) {
+    // console.log(e)
+    res.status(500).json(e.message);
   }
 });
 

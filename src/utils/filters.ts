@@ -1,7 +1,9 @@
-import { SdgType, SellOrder } from '@prisma/client';
+import {AssetTransactionType, SdgType, SellOrder} from '@prisma/client';
 import { BatchGroups, Project } from './../types/prismaTypes';
 import { Prisma } from '@prisma/client';
-import { Request } from 'express';
+import { Request, Response } from 'express';
+import { prisma } from '../services/prisma';
+
 
 export function createProjectFilter(req: Request) {
   const cursor = req.query.cursor ?? '';
@@ -86,12 +88,59 @@ export function createProjectFilter(req: Request) {
   };
 }
 
-function createFilter(filterStr: string, key: string) {
+export async function createAssetTransactionFilter(req: Request, res: Response) {
+  const projectId = (req.query.projectId as string) ?? undefined;
+  const assetId = (req.query.assetId as string) ?? undefined;
+  const type: AssetTransactionType = (req.query.transactionType as AssetTransactionType) ?? undefined;
+
+  let assetIds: (number | string)[] = []
+  if(projectId) {
+    const assetIdsRes = await prisma.batchGroups.findMany({
+      where: {
+        project: {
+          id: {
+            in: projectId.split(',').map((pId) => Number(pId))
+          }
+        }
+      },
+      select: {
+        assetId: true,
+      },
+      distinct: 'assetId'
+    })
+
+    if(assetIdsRes?.length) {
+      assetIds = assetIdsRes.map(item => item.assetId)
+    } else {
+      throw new Error('Invalid projectId.')
+    }
+  }
+
+  if(assetId) {
+    assetIds.push(assetId)
+  }
+
+  const assetIdFilter: any = createFilter(assetIds.join(','), 'assetId', true);
+
+  const validateTypeInput = type?.split(',').every(type => Object.values(AssetTransactionType).includes(type as AssetTransactionType));
+  if(type && !validateTypeInput) {
+    throw new Error('Invalid type provided.')
+  }
+
+  const transactionTypeFilter = createFilter(type, 'type')
+
+  return {
+    assetIdFilter,
+    transactionTypeFilter
+  }
+}
+
+function createFilter(filterStr: string, key: string, asId?: boolean) {
   if (!filterStr) return undefined;
 
   const filters = filterStr.split(',').map((filter) => ({
     [key]: {
-      equals: filter,
+      equals: asId ? Number(filter) : filter,
     },
   }));
 
