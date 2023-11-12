@@ -30,6 +30,5 @@ export async function sellOrderCancelled(
   } catch (e) {
     // @ts-ignore
     console.log(`Error occurred (cancel sell order): ${e.message}`);
-    process.exit(0)
   }
 }
