@@ -16,7 +16,6 @@ import ipfs from './routes/ccMarketplace/ipfs';
 import kyc from './routes/ccMarketplace/kyc/kyc-approval';
 import cart from './routes/ccMarketplace/profile/cart';
 import profile from './routes/ccMarketplace/profile/profile';
-import creditTransaction from './routes/ccMarketplace/dex/credit-transaction';
 import transaction from './routes/transaction';
 import {updateProjectsCron} from "./services/update-projects";
 
