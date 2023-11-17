@@ -13,7 +13,7 @@ router.get('/investments', authMiddle, async (req: Request, res: Response) => {
       req.query.projectId === 'undefined' || isNaN(Number(req.query.projectId))
         ? {}
         : { projectId: Number(req.query.projectId) };
-    const profil = await prisma.profil.findUnique({
+    const profile = await prisma.profile.findUnique({
       where: {
         address: req.session?.address, //req.session?.address,
       },
@@ -28,7 +28,7 @@ router.get('/investments', authMiddle, async (req: Request, res: Response) => {
         },
       },
     });
-    const projectIds = profil?.investments.map((item) => item.projectId);
+    const projectIds = profile?.investments.map((item) => item.projectId);
     const projects = await prisma.project.findMany({
       where: {
         id: { in: projectIds },
@@ -39,7 +39,7 @@ router.get('/investments', authMiddle, async (req: Request, res: Response) => {
         batchGroups: { include: { batches: true } },
       },
     });
-    const investmentProjects = profil?.investments.map((item) => {
+    const investmentProjects = profile?.investments.map((item) => {
       const pro = projects.find((el) => el.id === item.projectId);
       return { ...item, project: pro };
     });

@@ -185,7 +185,7 @@ router.get(
     try {
       const address = req.session?.address || '';
 
-      const profile = await prisma.profil.findUnique({
+      const profile = await prisma.profile.findUnique({
         where: { address: address },
         include: { stars: true },
       });

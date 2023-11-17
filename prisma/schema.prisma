@@ -96,7 +96,7 @@ model SdgDetails {
   @@unique([projectId, sdgType], name: "sdgIdentifier")
 }
 
-model Profil {
+model Profile {
   address              String  @id
   firstName            String?
   lastName             String?
@@ -133,8 +133,8 @@ model Investment {
   sellorders           SellOrder[]
   buyOrders            BuyOrder[]             @relation("investment")
   // buyOrdersForRetire BuyOrder[]  @relation("investmentForRetire")
-  Profil               Profil?                @relation(fields: [profilAddress], references: [address], onDelete: Cascade)
-  profilAddress        String?
+  Profile              Profile?                @relation(fields: [profileAddress], references: [address], onDelete: Cascade)
+  profileAddress       String?
 }
 
 model CreditsOwnedPerGroup {
@@ -192,8 +192,8 @@ model CartItem {
   projectPrices   Float[]
   projectId       Int
   batchEntities   BatchEntity[]
-  profilId        String
-  profil          Profil        @relation(fields: [profilId], references: [address], onDelete: Cascade)
+  profileId       String
+  profile         Profile        @relation(fields: [profileId], references: [address], onDelete: Cascade)
 }
 
 model BatchEntity {
@@ -208,22 +208,22 @@ model BatchEntity {
 }
 
 model KYC {
-  profilAddress String             @id
-  status        VerificationStatus @default(NOT_VERIFIED)
-  FirstName     String?
-  LastName      String?
-  Address       String?
-  Country       String?
-  Profil        Profil?            @relation(fields: [profilAddress], references: [address], onDelete: Cascade)
-  FractalId     String?
+  profileAddress String             @id
+  status         VerificationStatus @default(NOT_VERIFIED)
+  FirstName      String?
+  LastName       String?
+  Address        String?
+  Country        String?
+  Profile        Profile?            @relation(fields: [profileAddress], references: [address], onDelete: Cascade)
+  FractalId      String?
 }
 
 model Star {
-  profilAddress String
-  projectId     Int
-  profil        Profil @relation(fields: [profilAddress], references: [address], onDelete: Cascade)
+  profileAddress String
+  projectId      Int
+  profile         Profile @relation(fields: [profileAddress], references: [address], onDelete: Cascade)
 
-  @@id([profilAddress, projectId])
+  @@id([profileAddress, projectId])
 }
 
 enum VerificationStatus {

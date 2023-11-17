@@ -164,7 +164,7 @@ router.post('/webhook/kyc-rejected', async (req: Request, res: Response) => {
     const { user_id } = data;
 
     // find profile entry in DB
-    const profile = await prisma.profil.findFirst({
+    const profile = await prisma.profile.findFirst({
       where: {
         KYC: {
           FractalId: user_id,

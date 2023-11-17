@@ -11,7 +11,7 @@ const router = express.Router();
 router.get('/profile', authMiddle, async (req: Request, res: Response) => {
   console.log('/profile');
   try {
-    const profil = await prisma.profil.findUnique({
+    const profile = await prisma.profile.findUnique({
       where: {
         address: req.session?.address,
       },
@@ -26,7 +26,7 @@ router.get('/profile', authMiddle, async (req: Request, res: Response) => {
     }
 
     return res.status(200).json({
-      ...profil,
+      ...profile,
       KYC: {
         "status": kycStatus,
       }
@@ -40,13 +40,13 @@ router.get('/profile', authMiddle, async (req: Request, res: Response) => {
 router.get('/check-profile/:address', async (req: Request, res: Response) => {
   try {
     const address = req.params.address;
-    const profil = await prisma.profil.findUnique({
+    const profile = await prisma.profile.findUnique({
       where: {
         address: address,
       },
     });
-    const isOnboarded = !!(profil?.firstName && profil?.lastName && profil?.email)
-    if (!profil) return res.status(200).json({ success: false });
+    const isOnboarded = !!(profile?.firstName && profile?.lastName && profile?.email)
+    if (!profile) return res.status(200).json({ success: false });
     return res.status(200).json({ success: true, isOnboarded: isOnboarded });
   } catch (e) {
     return res.status(500).json(e);
@@ -92,7 +92,7 @@ router.put('/profile', authMiddle, async (req: Request, res: Response) => {
               ? validator.toBoolean(`${profile.marketingNews}`)
               : false,
           };
-    const result = await prisma.profil.upsert({
+    const result = await prisma.profile.upsert({
       where: {
         address: auth_address,
       },
@@ -140,17 +140,17 @@ router.get('/profile-info/:address', async (req: Request, res: Response) => {
   console.log('Profile');
   if (typeof address !== 'string') return res.status(400).end();
 
-  const profil = await prisma.profil.findUnique({
+  const profile = await prisma.profile.findUnique({
     where: {
       address: address,
     },
   });
-  if (profil === null)
-    return res.status(404).json({ error: 'Profil not found' });
+  if (profile === null)
+    return res.status(404).json({ error: 'profile not found' });
 
   return res.status(200).json({
-    orginatorName: profil.orginatorName,
-    orginatorDescription: profil.orginatorDescription,
+    orginatorName: profile.orginatorName,
+    orginatorDescription: profile.orginatorDescription,
   });
 });
 
@@ -158,7 +158,7 @@ router.post('/save-email', authMiddle, async (req: Request, res: Response) => {
   try {
     const { email } = req.body;
     console.log('EMAIL', email);
-    await prisma.profil.update({
+    await prisma.profile.update({
       where: { address: req.session?.address },
       data: {
         email: email,

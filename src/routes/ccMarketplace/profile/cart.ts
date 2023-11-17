@@ -10,7 +10,7 @@ const router = express.Router();
 router.get('/carts', authMiddle, async (req: Request, res: Response) => {
   console.log('/carts');
   try {
-    const profil = await prisma.profil.findUnique({
+    const profile = await prisma.profile.findUnique({
       where: {
         address: req.session?.address,
       },
@@ -19,7 +19,7 @@ router.get('/carts', authMiddle, async (req: Request, res: Response) => {
       },
     });
 
-    return res.status(200).json(profil?.cartItems);
+    return res.status(200).json(profile?.cartItems);
   } catch (e) {
     return res.status(500).json(e);
   }
@@ -29,7 +29,7 @@ router.get('/full-carts', authMiddle, async (req: Request, res: Response) => {
   console.log('/full-carts');
 
   try {
-    const profil = await prisma.profil.findUnique({
+    const profile = await prisma.profile.findUnique({
       where: {
         address: req.session?.address,
       },
@@ -37,7 +37,7 @@ router.get('/full-carts', authMiddle, async (req: Request, res: Response) => {
         cartItems: { include: { batchEntities: true } },
       },
     });
-    const projectIds = profil?.cartItems.map((item) => item.projectId);
+    const projectIds = profile?.cartItems.map((item) => item.projectId);
     const projects = await prisma.project.findMany({
       where: {
         id: { in: projectIds },
@@ -47,7 +47,7 @@ router.get('/full-carts', authMiddle, async (req: Request, res: Response) => {
         batchGroups: true,
       },
     });
-    const cartProjects = profil?.cartItems.map((item) => {
+    const cartProjects = profile?.cartItems.map((item) => {
       const pro = projects.find((el) => el.id === item.projectId);
       return { ...item, project: pro };
     });
@@ -70,7 +70,7 @@ router.post('/cart', authMiddle, async (req: Request, res: Response) => {
     console.log(projectId, projectName);
     console.log("batchEntities", batchEntities);
 
-    const profil = await prisma.profil.findUnique({
+    const profile = await prisma.profile.findUnique({
       where: {
         address: req.session?.address,
       },
@@ -79,7 +79,7 @@ router.post('/cart', authMiddle, async (req: Request, res: Response) => {
       },
     });
 
-    const currentCI = profil?.cartItems.find(
+    const currentCI = profile?.cartItems.find(
       (el) => el.projectId === projectId
     );
     const batchWithAssetId = currentCI?.batchEntities.find(
@@ -139,7 +139,7 @@ router.post('/cart', authMiddle, async (req: Request, res: Response) => {
           },
         };
 
-    await prisma.profil.update({
+    await prisma.profile.update({
       where: { address: req.session?.address },
       data: updateParams,
     });
@@ -160,7 +160,7 @@ router.patch('/full-cart', authMiddle, async (req: Request, res: Response) => {
       isNaN(Number(quantity))
     )
       return res.status(400).json(undefined);
-    await prisma.profil.update({
+    await prisma.profile.update({
       where: { address: req.session?.address },
       data: {
         cartItems: {
@@ -214,7 +214,7 @@ router.delete('/full-cart', authMiddle, async (req: Request, res: Response) => {
           },
         };
 
-    await prisma.profil.update({
+    await prisma.profile.update({
       where: {
         address: req.session?.address, //"5CJpxdAFyLd1YhGBmC7FToe2SWrtR6UvGZcqpjKbxYUhRjWx"
       },
