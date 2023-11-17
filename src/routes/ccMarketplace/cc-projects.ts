@@ -289,8 +289,8 @@ router.delete('/project/delete',authKYC, async (req: Request, res: Response) => 
     return res.status(500).json(e);
   }
 });
-router.get('/project-orginator/:address', async (req: Request, res: Response) => {
-  console.log('get /project-orginator/:address');
+router.get('/project-originator/:address', async (req: Request, res: Response) => {
+  console.log('get /project-originator/:address');
 
   try {
     const address = req.params.address

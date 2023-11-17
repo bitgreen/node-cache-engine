@@ -69,12 +69,12 @@ router.put('/profile', authMiddle, async (req: Request, res: Response) => {
             lastName: profile.lastName
               ? validator.escape(validator.trim(`${profile.lastName}`))
               : '',
-            orginatorName: profile.orginatorName
-              ? validator.escape(validator.trim(`${profile.orginatorName}`))
+            originatorName: profile.originatorName
+              ? validator.escape(validator.trim(`${profile.originatorName}`))
               : '',
-            orginatorDescription: profile.orginatorDescription
+            originatorDescription: profile.originatorDescription
               ? validator.escape(
-                  validator.trim(`${profile.orginatorDescription}`)
+                  validator.trim(`${profile.originatorDescription}`)
                 )
               : '',
             email: (profile.email && req.session?.authType !== 'Google')
@@ -110,11 +110,11 @@ router.put('/profile', authMiddle, async (req: Request, res: Response) => {
         lastName: profile.lastName
           ? validator.escape(validator.trim(`${profile.lastName}`))
           : '',
-        orginatorName: profile.orginatorName
-          ? validator.escape(validator.trim(`${profile.orginatorName}`))
+        originatorName: profile.originatorName
+          ? validator.escape(validator.trim(`${profile.originatorName}`))
           : '',
-        orginatorDescription: profile.orginatorDescription
-          ? validator.escape(validator.trim(`${profile.orginatorDescription}`))
+        originatorDescription: profile.originatorDescription
+          ? validator.escape(validator.trim(`${profile.originatorDescription}`))
           : '',
         // avatar: profile.avatar, // TODO: temp disabled
         activityTransactionReceipts: profile.activityTransactionReceipts
@@ -149,8 +149,8 @@ router.get('/profile-info/:address', async (req: Request, res: Response) => {
     return res.status(404).json({ error: 'profile not found' });
 
   return res.status(200).json({
-    orginatorName: profile.orginatorName,
-    orginatorDescription: profile.orginatorDescription,
+    originatorName: profile.originatorName,
+    originatorDescription: profile.originatorDescription,
   });
 });
 
