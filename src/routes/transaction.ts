@@ -139,7 +139,7 @@ router.get('/asset/transactions', async (req: Request, res: Response) => {
       take
     } = req.query;
 
-    const { assetIdFilter, transactionTypeFilter } = await createAssetTransactionFilter(req, res);
+    const { assetIdFilter, transactionTypeFilter, sortFilter, sortByTransactionType } = await createAssetTransactionFilter(req);
 
     const assetTransactions = await prisma.assetTransaction.findMany({
       where: {
@@ -150,26 +150,10 @@ router.get('/asset/transactions', async (req: Request, res: Response) => {
         ]
       },
       take: !isNaN(Number(take)) ? Number(take) : undefined,
-      orderBy: {
-        blockNumber: 'desc',
-      }
+      orderBy: sortFilter
     });
 
-    // Custom sort by transaction priority
-    assetTransactions.sort((a, b) => {
-      // Check if block numbers are the same
-      if (a.blockNumber === b.blockNumber) {
-        // Prioritize "RETIRED" over "PURCHASED"
-        if (a.type === AssetTransactionType.PURCHASED && b.type === AssetTransactionType.RETIRED) {
-          return 1; // b comes before a
-        }
-        if (a.type === AssetTransactionType.RETIRED && b.type === AssetTransactionType.PURCHASED) {
-          return -1; // a comes before b
-        }
-      }
-
-      return 0;
-    });
+    assetTransactions.sort((a, b) => sortByTransactionType(a, b));
 
     res.json(assetTransactions);
   } catch (e: any) {
