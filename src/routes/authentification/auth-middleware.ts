@@ -19,7 +19,7 @@ export async function authMiddle(
   if (!req.cookies.session) {
     return res
       .status(401)
-      .json({ authenticated: false, error: 'Token verification failed.' });
+      .json({ success: false, authenticated: false, error: 'Token verification failed.' });
   }
 
   try {
@@ -28,14 +28,14 @@ export async function authMiddle(
     if (!(await authenticate(session))) {
       return res
           .status(401)
-          .json({ authenticated: false, error: 'Token verification failed.' });
+          .json({ success: false, authenticated: false, error: 'Token verification failed.' });
     }
     req.session = session;
     next();
   } catch (e) {
     return res
         .status(401)
-        .json({ authenticated: false, error: 'Something went wrong' });
+        .json({ success: false, authenticated: false, error: 'Something went wrong' });
   }
 }
 

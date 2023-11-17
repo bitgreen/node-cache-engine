@@ -50,6 +50,7 @@ router.get('/asset-prices', async (req: Request, res: Response) => {
       if (!trades.length) {
         return { assetId, averagePrice: '0', totalVolume: '0' }; // Return '0' if there are no trades
       }
+
       let totalVolume = new BigNumber(0);
       let totalPriceVolume = new BigNumber(0);
 
