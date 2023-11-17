@@ -6,6 +6,7 @@ import { BlockHash } from '@polkadot/types/interfaces';
 import { initApi } from '../services/polkadot-api';
 import { GenericStorageEntryFunction } from '@polkadot/api/types';
 import {createAssetTransactionFilter} from "../utils/filters";
+import {AssetTransactionType} from "@prisma/client";
 
 const router = express.Router();
 
@@ -150,8 +151,24 @@ router.get('/asset/transactions', async (req: Request, res: Response) => {
       },
       take: !isNaN(Number(take)) ? Number(take) : undefined,
       orderBy: {
-        blockNumber: 'desc'
+        blockNumber: 'desc',
       }
+    });
+
+    // Custom sort by transaction priority
+    assetTransactions.sort((a, b) => {
+      // Check if block numbers are the same
+      if (a.blockNumber === b.blockNumber) {
+        // Prioritize "RETIRED" over "PURCHASED"
+        if (a.type === AssetTransactionType.PURCHASED && b.type === AssetTransactionType.RETIRED) {
+          return 1; // b comes before a
+        }
+        if (a.type === AssetTransactionType.RETIRED && b.type === AssetTransactionType.PURCHASED) {
+          return -1; // a comes before b
+        }
+      }
+
+      return 0;
     });
 
     res.json(assetTransactions);

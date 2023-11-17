@@ -313,7 +313,6 @@ model AssetTransaction {
   from          String     @default("") @db.VarChar(48)
   to            String     @default("") @db.VarChar(48)
   owner         String     @default("") @db.VarChar(48)
-  projectId     Int?
   assetId       Int?
   amount        Int
   pricePerUnit  String?
