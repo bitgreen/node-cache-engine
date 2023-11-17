@@ -1,4 +1,4 @@
-import {AssetTransactionType, SdgType, SellOrder} from '@prisma/client';
+import {AssetTransaction, AssetTransactionType, SdgType, SellOrder} from '@prisma/client';
 import { BatchGroups, Project } from './../types/prismaTypes';
 import { Prisma } from '@prisma/client';
 import { Request, Response } from 'express';
@@ -88,9 +88,10 @@ export function createProjectFilter(req: Request) {
   };
 }
 
-export async function createAssetTransactionFilter(req: Request, res: Response) {
+export async function createAssetTransactionFilter(req: Request) {
   const projectId = (req.query.projectId as string) ?? undefined;
   const assetId = (req.query.assetId as string) ?? undefined;
+  const sortBy = (req.query.sortBy as string) ?? 'desc';
   const type: AssetTransactionType = (req.query.transactionType as AssetTransactionType) ?? undefined;
 
   let assetIds: (number | string)[] = []
@@ -129,9 +130,46 @@ export async function createAssetTransactionFilter(req: Request, res: Response) 
 
   const transactionTypeFilter = createFilter(type, 'type')
 
+  const sortFilter = {
+    blockNumber: sortBy === 'asc' ? Prisma.SortOrder.asc : Prisma.SortOrder.desc,
+  }
+
+  function sortByTransactionType(a: AssetTransaction, b: AssetTransaction) {
+    const hashA = a.type === AssetTransactionType.RETIRED ? a.hash.slice(0, -1) : a.hash;
+    const hashB = b.type === AssetTransactionType.RETIRED ? b.hash.slice(0, -1) : b.hash;
+
+    // Compare the modified hashes based on the sortOrder
+    let hashComparison = 0;
+    if (sortBy === 'asc') {
+      hashComparison = hashA.localeCompare(hashB);
+    } else if (sortBy === 'desc') {
+      hashComparison = hashB.localeCompare(hashA);
+    }
+
+    if (hashComparison !== 0) {
+      return hashComparison;
+    }
+
+    // If the hashes are equal, follow the previous logic
+    if (a.blockNumber === b.blockNumber) {
+      if (a.type === AssetTransactionType.RETIRED && b.type === AssetTransactionType.PURCHASED) {
+        return sortBy === 'asc' ? 1 : -1;
+      }
+      if (a.type === AssetTransactionType.PURCHASED && b.type === AssetTransactionType.RETIRED) {
+        return sortBy === 'asc' ? -1 : 1;
+      }
+    } else {
+      return sortBy === 'asc' ? a.blockNumber - b.blockNumber : b.blockNumber - a.blockNumber;
+    }
+
+    return 0;
+  }
+
   return {
     assetIdFilter,
-    transactionTypeFilter
+    transactionTypeFilter,
+    sortFilter,
+    sortByTransactionType
   }
 }
 
