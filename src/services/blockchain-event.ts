@@ -141,7 +141,7 @@ export async function processBlock(
             event,
             blockNumber as number,
             blockDate,
-              (ex.method.section === 'utility' && ex.method.method === 'batch') ? hash + i : hash
+            hash + i
           );
         }
       }

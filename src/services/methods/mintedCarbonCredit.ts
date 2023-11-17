@@ -31,13 +31,11 @@ export async function ccMinted(
         from: '',
         to: to as string,
         owner: to as string,
-        projectId: projectId as number,
         amount: amount,
         createdAt: createdAt.toISOString(),
       },
       update: {
-        type: AssetTransactionType.ISSUED,
-        projectId: projectId as number
+        type: AssetTransactionType.ISSUED
       },
     });
   } catch (e) {

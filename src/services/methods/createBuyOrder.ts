@@ -91,7 +91,6 @@ export async function createTrade(api: ApiPromise, event: Event, createdAt: Date
         from: seller as string,
         to: buyer as string,
         owner: sold_owner as string,
-        projectId: projectId as number,
         assetId: assetId as number,
         pricePerUnit: creditPrice,
         amount: units,
@@ -99,7 +98,6 @@ export async function createTrade(api: ApiPromise, event: Event, createdAt: Date
       },
       update: {
         type: AssetTransactionType.SOLD,
-        projectId: projectId as number,
         assetId: assetId as number,
         pricePerUnit: creditPrice,
         from: seller as string,
@@ -122,7 +120,6 @@ export async function createTrade(api: ApiPromise, event: Event, createdAt: Date
         from: seller as string,
         to: buyer as string,
         owner: purchased_owner as string,
-        projectId: projectId as number,
         assetId: assetId as number,
         pricePerUnit: creditPrice,
         feesPaid: feesPaid,
@@ -131,7 +128,6 @@ export async function createTrade(api: ApiPromise, event: Event, createdAt: Date
       },
       update: {
         type: AssetTransactionType.PURCHASED,
-        projectId: projectId as number,
         assetId: assetId as number,
         pricePerUnit: creditPrice,
         feesPaid: feesPaid,
