@@ -58,7 +58,7 @@ router.put('/profile', authMiddle, async (req: Request, res: Response) => {
   console.log('put /profile');
   try {
     const { profile, isLogin } = req.body;
-    console.log('profile', profile, isLogin);
+    // console.log('profile', profile, isLogin);
     const updateParams =
       isLogin == 'true'
         ? {}
@@ -76,9 +76,6 @@ router.put('/profile', authMiddle, async (req: Request, res: Response) => {
               ? validator.escape(
                   validator.trim(`${profile.originatorDescription}`)
                 )
-              : '',
-            email: (profile.email && req.session?.authType !== 'Google')
-              ? validator.escape(validator.trim(`${profile.email}`))
               : '',
             userType: profile.userType ? profile.userType : UserType.Individual,
             // avatar: profile.avatar, // TODO: temp disabled
