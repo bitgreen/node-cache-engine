@@ -48,10 +48,10 @@ router.get('/kyc/callback', async (req: Request, res: Response) => {
       if(wallet?.currency === 'substrate') {
         await prisma.kYC.upsert({
           where: {
-            profilAddress: wallet.address,
+            profileAddress: wallet.address,
           },
           create: {
-            profilAddress: wallet.address,
+            profileAddress: wallet.address,
             FractalId: user.uid,
             status: VerificationStatus.PENDING,
             FirstName: user.person.full_name.split(' ').slice(0, -1).join(' '),
@@ -123,7 +123,7 @@ router.post('/webhook/kyc-approval', async (req: Request, res: Response) => {
     all_kyc.map(async (kyc) => {
       // save on blockchain
       // no need to do this in db since this is done by blockchain event listener later
-      await submitExtrinsic('kyc', 'addMember', [kyc.profilAddress]);
+      await submitExtrinsic('kyc', 'addMember', [kyc.profileAddress]);
     })
 
     return res.status(200).json({ success: true });

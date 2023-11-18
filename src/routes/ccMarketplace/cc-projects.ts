@@ -164,8 +164,8 @@ router.get(
 
       const starred = await prisma.star.findUnique({
         where: {
-          profilAddress_projectId: {
-            profilAddress: address as string,
+          profileAddress_projectId: {
+            profileAddress: address as string,
             projectId: projectId,
           },
         },
@@ -222,7 +222,7 @@ router.post(
 
       await prisma.star.create({
         data: {
-          profilAddress: address as string,
+          profileAddress: address as string,
           projectId: projectId,
         },
       });
@@ -248,9 +248,9 @@ router.delete(
 
       await prisma.star.delete({
         where: {
-          profilAddress_projectId: {
+          profileAddress_projectId: {
             projectId: projectId,
-            profilAddress: address as string,
+            profileAddress: address as string,
           },
         },
       });

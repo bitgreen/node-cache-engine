@@ -19,7 +19,7 @@ export type BatchGroups = Prisma.BatchGroupsGetPayload<typeof BatchGroupsArg>;
 
 const CartItemArgs = Prisma.validator<Prisma.CartItemArgs>()({include: {batchEntities:true}})
 type CartItem1 = Prisma.CartItemGetPayload<typeof CartItemArgs>
-export type CartItem = Omit<CartItem1, "profilId" | "id">; 
+export type CartItem = Omit<CartItem1, "profileId" | "id">;
 
 const InvestmentArg = Prisma.validator<Prisma.InvestmentArgs>()({
   include: { sellorders: true },
