@@ -8,6 +8,7 @@ import {AssetTransactionType} from '@prisma/client';
 export async function ccMinted(
     event: Event,
     blockNumber: number,
+    index: number,
     createdAt: Date,
     hash: string
 ) {
@@ -20,13 +21,14 @@ export async function ccMinted(
     await prisma.assetTransaction.upsert({
       where: {
         uniqueId: {
-          hash: hash as string,
+          hash: hash,
           owner: to as string
         }
       },
       create: {
-        hash: hash as string,
+        hash: hash,
         blockNumber: blockNumber,
+        index: index,
         type: AssetTransactionType.ISSUED,
         from: '',
         to: to as string,
@@ -35,6 +37,7 @@ export async function ccMinted(
         createdAt: createdAt.toISOString(),
       },
       update: {
+        index: index,
         type: AssetTransactionType.ISSUED
       },
     });

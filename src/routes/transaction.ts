@@ -136,26 +136,39 @@ router.get('/asset/transactions', async (req: Request, res: Response) => {
   try {
     const {
       account,
-      take
+      page = 1,
+      pageSize = 10
     } = req.query;
 
-    const { assetIdFilter, transactionTypeFilter, sortFilter, sortByTransactionType } = await createAssetTransactionFilter(req);
+    const { assetIdFilter, dateFilter, transactionTypeFilter, sortFilter, paginationFilter} = await createAssetTransactionFilter(req);
 
-    const assetTransactions = await prisma.assetTransaction.findMany({
-      where: {
-        owner: account as string,
-        AND: [
-          { ...assetIdFilter },
-          { ...transactionTypeFilter },
-        ]
-      },
-      take: !isNaN(Number(take)) ? Number(take) : undefined,
+    const whereQuery = {
+      owner: account as string,
+      AND: [
+        { ...assetIdFilter },
+        { ...dateFilter },
+        { ...transactionTypeFilter },
+      ]
+    }
+
+    const totalRecords = await prisma.assetTransaction.count({
+      where: whereQuery,
       orderBy: sortFilter
     });
 
-    assetTransactions.sort((a, b) => sortByTransactionType(a, b));
+    const totalPages = Math.ceil(totalRecords / Number(pageSize));
 
-    res.json(assetTransactions);
+    const assetTransactions = await prisma.assetTransaction.findMany({
+      where: whereQuery,
+      orderBy: sortFilter,
+      ...paginationFilter(totalRecords, Number(pageSize), Number(page))
+    });
+
+    res.json({
+      transactions: assetTransactions,
+      totalRecords: totalRecords,
+      totalPages: totalPages
+    });
   } catch (e: any) {
     // console.log(e)
     res.status(500).json(e.message);

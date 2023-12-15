@@ -29,51 +29,62 @@ export async function processBlock(
   blockNumber: BlockNumber | number
 ) {
   console.log(`Processing block: #${blockNumber}`);
-  const { signedBlock, blockEvents, blockDate } = await blockExtrinsic(api, blockNumber);
+  const { signedBlock, blockEvents, blockDate, blockHash } = await blockExtrinsic(api, blockNumber);
 
   if (!signedBlock || !blockEvents) return;
 
+  let index = 0
+
   // parse block
-  signedBlock.block.extrinsics.map(async (ex: Extrinsic, index: number) => {
+  for (const [exIndex, ex] of signedBlock.block.extrinsics.entries()) {
     const isSigned = ex.isSigned;
     const hash = ex.hash.toString();
-
-    await updateBlock(blockNumber as number, hash, blockDate);
-
-    let extrinsicSuccess = false,
-      newAssetId: number | undefined;
 
     let signed_by_address: string | undefined;
     if (isSigned) {
       signed_by_address = ex.signer.toString();
     }
-    blockEvents
+
+    const extrinsicSuccess = blockEvents
       .filter(
         ({ phase }: EventRecord) =>
-          phase.isApplyExtrinsic && phase.asApplyExtrinsic.eq(index)
+          phase.isApplyExtrinsic && phase.asApplyExtrinsic.eq(exIndex)
       )
-      .map(async ({ event }: EventRecord) => {
-        extrinsicSuccess = !!api.events.system.ExtrinsicSuccess.is(event);
-      });
+      .some(({ event }) => !!api.events.system.ExtrinsicSuccess.is(event))
+
+    if(exIndex === 0) {
+      // Do system events
+      const sysEvents = blockEvents
+          .filter(
+              ({ phase }: EventRecord) => !phase.isApplyExtrinsic
+          )
+
+      index = sysEvents.length
+    }
+
     // Start processing extrinsic and it's data
-    const allEvents = blockEvents
+    const exEvents = blockEvents
       .filter(
-        ({ phase }: EventRecord) =>
-          phase.isApplyExtrinsic && phase.asApplyExtrinsic.eq(index)
+        ({ phase }: EventRecord) => {
+          // console.log('phase', phase.isApplyExtrinsic)
+          // console.log('phase', phase.asApplyExtrinsic)
+          // return phase.isApplyExtrinsic && phase.asApplyExtrinsic.eq(exIndex)
+          return phase.isApplyExtrinsic && phase.asApplyExtrinsic.eq(exIndex)
+        }
       )
 
-    let i = 0
-    for(const {event} of allEvents) {
+    for(const {event} of exEvents) {
       if (!extrinsicSuccess) return;
       // if (api.events.system.ExtrinsicSuccess.is(event) == false) return;
       console.log('event.section', event.section);
-      console.log('method', event.method);
+      console.log('event.method', event.method);
       if (event.section === 'assets') {
         if (event.method === BlockEvent.TransferAssets) {
           console.log('Asset called');
           await createTransferAssetTransaction(
               event,
               blockNumber as number,
+              index,
               blockDate,
               hash
           );
@@ -83,8 +94,9 @@ export async function processBlock(
           await createIssuedAssetTransaction(
               event,
               blockNumber as number,
+              index,
               blockDate,
-              hash
+              hash + index
           );
         }
       }
@@ -94,7 +106,7 @@ export async function processBlock(
             event,
             blockNumber as number,
             blockDate,
-            hash + i
+            hash + exIndex
           );
         }
       }
@@ -105,17 +117,18 @@ export async function processBlock(
           await createSellOrderAssetTransaction(
             event,
             blockNumber as number,
+            index,
             blockDate,
             hash
           );
         }
         if (event.method === BlockEvent.SellOrderCancelled) {
           console.log('sell order cancelled');
-          await sellOrderCancelled(api, event, hash);
+          await sellOrderCancelled(api, event, blockNumber as number, index, hash);
         }
         if (event.method === BlockEvent.BuyOrderFilled) {
           console.log('buy order filled');
-          await createTrade(api, event, blockDate, blockNumber as number, hash);
+          await createTrade(api, event, blockDate, blockNumber as number, index, hash);
 
           await createBuyOrder(event, blockDate, blockNumber);
         }
@@ -128,20 +141,22 @@ export async function processBlock(
           await rejectProject(event, blockDate);
         }
         if (event.method === BlockEvent.CarbonCreditMinted) {
-          await ccMinted(
-              event,
-              blockNumber as number,
-              blockDate,
-              hash
-          );
+          // await ccMinted(
+          //     event,
+          //     blockNumber as number,
+          //     index,
+          //     blockDate,
+          //     hash
+          // );
         }
         if (event.method === BlockEvent.CarbonCreditRetired) {
           console.log('retire tokens');
           await createRetiredAssetTransaction(
             event,
             blockNumber as number,
+            index,
             blockDate,
-            hash + i
+            hash + index
           );
         }
       }
@@ -154,7 +169,7 @@ export async function processBlock(
               api,
               blockNumber as number,
               blockDate,
-              hash + i
+              hash + exIndex
           );
         }
       }
@@ -165,9 +180,11 @@ export async function processBlock(
         }
       }
 
-      i++
+      index++
     }
-  });
+  }
+
+  await updateBlock(blockNumber as number, blockHash.toHex(), blockDate);
 
   console.log('-----------------------------------------------------');
 

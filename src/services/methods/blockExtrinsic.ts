@@ -24,7 +24,7 @@ export async function blockExtrinsic(
 
     const blockDate = await getBlockDate(api, signedBlock)
 
-    return { signedBlock: signedBlock, blockEvents: blockEvents, blockDate };
+    return { signedBlock: signedBlock, blockEvents: blockEvents, blockDate, blockHash };
   } catch (error) {
     return {};
   }

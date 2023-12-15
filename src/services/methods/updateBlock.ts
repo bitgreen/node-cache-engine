@@ -9,15 +9,17 @@ export async function updateBlock(blockNumber:number, blockHash:string, createdA
             },
             update: {
                 hash: blockHash,
-                createdAt: createdAt
+                createdAt: createdAt,
+                fetchedAt: new Date().toISOString()
             },
             create: {
                 number: blockNumber,
                 hash: blockHash,
                 createdAt: createdAt,
+                fetchedAt: new Date().toISOString()
             }
         })
     } catch(e) {
-        // console.log(e);
+        console.log(e);
     }
 }

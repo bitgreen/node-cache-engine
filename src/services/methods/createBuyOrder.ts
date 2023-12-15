@@ -7,7 +7,7 @@ import {ApiPromise} from "@polkadot/api";
 
 export async function createBuyOrder(event: Event, createdAt: Date, blockNumber: number | BlockNumber,) {
   try {
-    let dataBlock = event.data.toHuman();
+    let dataBlock = event.data.toPrimitive();
     let [
       orderIdChain,
       sellOrderIdChain,
@@ -19,14 +19,14 @@ export async function createBuyOrder(event: Event, createdAt: Date, blockNumber:
       seller,
       buyer,
     ] = dataBlock as string[];
-    const orderId = Number(orderIdChain.replace(/,/g, ''));
-    const sellOrderId = Number(sellOrderIdChain.replace(/,/g, ''));
-    const units = Number(unitsChain.replace(/,/g, ''));
-    const projectId = Number(projectIdChain.replace(/,/g, ''));
-    const feesPaid = Number(feesPaidChain.replace(/,/g, ''));
-    const groupId = Number(groupIdChain.replace(/,/g, ''));
 
-    console.log(orderId, sellOrderId, units, pricePerUnit, seller, buyer);
+    const orderId = Number(orderIdChain);
+    const sellOrderId = Number(sellOrderIdChain);
+    const units = Number(unitsChain);
+    const projectId = Number(projectIdChain);
+    const feesPaid = feesPaidChain?.replace(/,/g, '') || 0
+    const groupId = Number(groupIdChain);
+
     const convertedPricePerunit = parseFloat(
       (pricePerUnit as string).replace(/,/g, '').slice(0, -18)
     ) || 0;
@@ -47,9 +47,9 @@ export async function createBuyOrder(event: Event, createdAt: Date, blockNumber:
   }
 }
 
-export async function createTrade(api: ApiPromise, event: Event, createdAt: Date, blockNumber: number, hash: string) {
+export async function createTrade(api: ApiPromise, event: Event, createdAt: Date, blockNumber: number, index: number, hash: string) {
   try {
-    let dataBlock = event.data.toHuman();
+    let dataBlock = event.data.toPrimitive();
     let [
       orderIdChain,
       sellOrderIdChain,
@@ -61,14 +61,15 @@ export async function createTrade(api: ApiPromise, event: Event, createdAt: Date
       seller,
       buyer,
     ] = dataBlock as string[];
-    const orderId = Number(orderIdChain.replace(/,/g, ''));
-    const sellOrderId = Number(sellOrderIdChain.replace(/,/g, ''));
-    const units = Number(unitsChain.replace(/,/g, ''));
-    const projectId = Number(projectIdChain.replace(/,/g, ''));
-    const feesPaid = feesPaidChain.replace(/,/g, '');
-    const groupId = Number(groupIdChain.replace(/,/g, ''));
 
-    const creditPrice = (pricePerUnit as string).replace(/,/g, '')
+    const orderId = Number(orderIdChain);
+    const sellOrderId = Number(sellOrderIdChain);
+    const units = Number(unitsChain);
+    const projectId = Number(projectIdChain);
+    const feesPaid = feesPaidChain.toString()?.replace(/,/g, '') || 0;
+    const groupId = Number(groupIdChain);
+
+    const creditPrice = pricePerUnit.toString().replace(/,/g, '')
 
     const sellOrder = (await api.query.dex.orders(sellOrderId)).toJSON() as any
 
@@ -80,13 +81,14 @@ export async function createTrade(api: ApiPromise, event: Event, createdAt: Date
     await prisma.assetTransaction.upsert({
       where: {
         uniqueId: {
-          hash: hash as string,
+          hash: hash,
           owner: sold_owner as string
         }
       },
       create: {
-        hash: hash as string,
+        hash: hash,
         blockNumber: blockNumber,
+        index: index,
         type: AssetTransactionType.SOLD,
         from: seller as string,
         to: buyer as string,
@@ -97,6 +99,7 @@ export async function createTrade(api: ApiPromise, event: Event, createdAt: Date
         createdAt: createdAt.toISOString(),
       },
       update: {
+        index: index,
         type: AssetTransactionType.SOLD,
         assetId: assetId as number,
         pricePerUnit: creditPrice,
@@ -109,28 +112,30 @@ export async function createTrade(api: ApiPromise, event: Event, createdAt: Date
     await prisma.assetTransaction.upsert({
       where: {
         uniqueId: {
-          hash: hash as string,
+          hash: hash,
           owner: purchased_owner as string
         }
       },
       create: {
-        hash: hash as string,
+        hash: hash,
         blockNumber: blockNumber,
+        index: index,
         type: AssetTransactionType.PURCHASED,
         from: seller as string,
         to: buyer as string,
         owner: purchased_owner as string,
         assetId: assetId as number,
         pricePerUnit: creditPrice,
-        feesPaid: feesPaid,
+        feesPaid: feesPaid as string,
         amount: units,
         createdAt: createdAt.toISOString(),
       },
       update: {
+        index: index,
         type: AssetTransactionType.PURCHASED,
         assetId: assetId as number,
         pricePerUnit: creditPrice,
-        feesPaid: feesPaid,
+        feesPaid: feesPaid as string,
         from: seller as string,
         to: buyer as string,
         owner: purchased_owner as string,
@@ -139,5 +144,8 @@ export async function createTrade(api: ApiPromise, event: Event, createdAt: Date
   } catch (e) {
     // @ts-ignore
     console.log(`Error occurred (create trade): ${e.message} at ${blockNumber}`);
+    process.exit()
   }
+
+  return
 }

@@ -3,7 +3,6 @@ import {prisma} from "./prisma";
 import {initApi} from "./polkadot-api";
 import {ApiPromise} from "@polkadot/api";
 import {Project} from "../types/prismaTypes";
-import {convertHex} from "../utils/converter";
 import {RegistryName, SdgType} from "@prisma/client";
 import {blockExtrinsic, getBlockDate} from "./methods/blockExtrinsic";
 
@@ -17,7 +16,7 @@ export const updateProjectsCron = async() => {
     // console.log(projectsData)
     projectsData.forEach(([key, project]) => {
       let [projectId] = key.toHuman() as Array<string>
-      const projectData = project.toJSON() as any
+      const projectData = project.toPrimitive() as any
 
       if(!projectData) return
 
@@ -46,32 +45,23 @@ async function createProject(
 
     if (!project || (projectId.toString() === '')) return;
 
-    let images: string[] = project.images?.map((image: string) =>
-        convertHex(image as string)
-    );
-    let videos: string[] = project.videos?.map((video: string) =>
-        convertHex(video as string)
-    );
-    let documents: string[] = project.documents?.map((document: string) =>
-        convertHex(document as string)
-    );
     let RegistryDetails = project.registryDetails?.map((reg) => {
       return {
-        name: convertHex(reg.name as string),
-        summary: convertHex(reg.summary),
-        regName: convertHex(reg.regName as string ) as RegistryName,
+        name: reg.name,
+        summary: reg.summary,
+        regName: reg.regName,
       };
     });
     let sdgDetails = project.sdgDetails?.map((reg) => {
       return {
-        sdgType: convertHex(reg.sdgType as string),
-        description: convertHex(reg.description as string),
-        references: convertHex(reg.references as string),
+        sdgType: reg.sdgType,
+        description: reg.description,
+        references: reg.references,
       };
     });
     let royalties = project.royalties?.map((reg) => {
       return {
-        accountId: convertHex(reg.accountId),
+        accountId: reg.accountId,
         percentOfFees: reg.percentOfFees,
       };
     });
@@ -81,10 +71,10 @@ async function createProject(
         ...value,
         assetId: value.assetId,
         groupId: Number(key),
-        name: convertHex(value.name as string),
+        name: value.name,
         batches: {
           create: value.batches.map((batch) => {
-            return { ...batch, uuid: batch.uuid as string };
+            return { ...batch, uuid: batch.uuid };
           }),
         },
       });
@@ -93,15 +83,13 @@ async function createProject(
     await prisma.project.create({
       data: {
         id: projectId,
-        originator: project.originator
-            ? convertHex(project.originator)
-            : 'empty',
-        name: convertHex(project.name),
-        description: convertHex(project.description as string),
-        location: convertHex(project.location as string),
-        images: images,
-        videos: videos,
-        documents: documents,
+        originator: project.originator || 'empty',
+        name: project.name,
+        description: project.description,
+        location: project.location,
+        images: project.images,
+        videos: project.videos,
+        documents: project.documents,
         registryDetails: {
           create: RegistryDetails,
         },
@@ -136,24 +124,15 @@ async function updateProject(
 
     if (!project || (projectId.toString() === '')) return;
 
-    let images: string[] = project.images?.map((image: string) =>
-        convertHex(image as string)
-    );
-    let videos: string[] = project.videos?.map((video: string) =>
-        convertHex(video as string)
-    );
-    let documents: string[] = project.documents?.map((document: string) =>
-        convertHex(document as string)
-    );
     let RegistryDetails = project.registryDetails?.map((reg) => {
       return {
         where: {
           registryId: projectId
         },
         create: {
-          name: convertHex(reg.name as string),
-          summary: convertHex(reg.summary),
-          regName: convertHex(reg.regName as string ) as RegistryName,
+          name: reg.name,
+          summary: reg.summary,
+          regName: reg.regName,
         }
       }
     });
@@ -166,15 +145,15 @@ async function updateProject(
           }
         },
         create: {
-          sdgType: convertHex(sdg.sdgType as string) as SdgType,
-          description: convertHex(sdg.description as string),
-          references: convertHex(sdg.references as string)
+          sdgType: sdg.sdgType,
+          description: sdg.description,
+          references: sdg.references
         }
       }
     });
     let royalties = project.royalties?.map((reg) => {
       return {
-        accountId: convertHex(reg.accountId),
+        accountId: reg.accountId,
         percentOfFees: reg.percentOfFees,
       };
     });
@@ -188,10 +167,10 @@ async function updateProject(
           ...value,
           assetId: value.assetId,
           groupId: Number(key),
-          name: convertHex(value.name as string),
+          name: value.name,
           batches: {
             create: value.batches.map((batch) => {
-              return { ...batch, uuid: batch.uuid as string };
+              return { ...batch, uuid: batch.uuid };
             }),
           },
         }
@@ -203,12 +182,12 @@ async function updateProject(
         id: projectId
       },
       data: {
-        name: convertHex(project.name),
-        description: convertHex(project.description as string),
-        location: convertHex(project.location as string),
-        images: images,
-        videos: videos,
-        documents: documents,
+        name: project.name,
+        description: project.description,
+        location: project.location,
+        images: project.images,
+        videos: project.videos,
+        documents: project.documents,
         registryDetails: {
           connectOrCreate: RegistryDetails,
         },

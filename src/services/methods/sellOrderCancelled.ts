@@ -6,8 +6,10 @@ import {ApiPromise} from "@polkadot/api";
 export async function sellOrderCancelled(
   api: ApiPromise,
   event: Event,
-  hash: string)
-{
+  blockNumber: number,
+  index: number,
+  hash: string
+) {
   try {
     let eventData = event.data.toJSON();
 
@@ -19,11 +21,12 @@ export async function sellOrderCancelled(
     await prisma.assetTransaction.update({
       where: {
         uniqueId: {
-          hash: hash as string,
+          hash: hash,
           owner: seller as string
         }
       },
       data: {
+        index: index,
         type: AssetTransactionType.ORDER_CANCELLED,
       },
     });

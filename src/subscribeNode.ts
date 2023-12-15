@@ -55,9 +55,14 @@ async function main() {
 
   // Get fetched blocks
   const dbBlocks = await prisma.block.findMany({
+    where: {
+      fetchedAt: {
+        gt: new Date(Number(process?.env?.INVALIDATION_TIMESTAMP) * 1000)
+      }
+    },
     select: {
       number: true,
-    },
+    }
   });
   const fetchedBlocks = dbBlocks.map((row) => row.number);
 
@@ -69,7 +74,7 @@ async function main() {
   const activePromises = new Set();
   for(const blockNumber of missingBlocks) {
     // Wait if we reach the concurrency limit
-    if (activePromises.size >= 1200) {
+    if (activePromises.size >= 100) {
       await Promise.race(activePromises);
     }
 

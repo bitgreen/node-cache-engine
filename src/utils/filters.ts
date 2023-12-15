@@ -91,6 +91,8 @@ export function createProjectFilter(req: Request) {
 export async function createAssetTransactionFilter(req: Request) {
   const projectId = (req.query.projectId as string) ?? undefined;
   const assetId = (req.query.assetId as string) ?? undefined;
+  const startDate = (req.query.startDate as string) ?? undefined;
+  const endDate = (req.query.endDate as string) ?? undefined;
   const sortBy = (req.query.sortBy as string) ?? 'desc';
   const type: AssetTransactionType = (req.query.transactionType as AssetTransactionType) ?? undefined;
 
@@ -123,6 +125,15 @@ export async function createAssetTransactionFilter(req: Request) {
 
   const assetIdFilter: any = createFilter(assetIds.join(','), 'assetId', true);
 
+  const dateFilter = (startDate || endDate) ? {
+    AND: {
+      createdAt: {
+        gte: startDate ? new Date(startDate).toISOString() : new Date(0),
+        lte: endDate ? new Date(endDate).toISOString() : new Date()
+      },
+    }
+  } : {};
+
   const validateTypeInput = type?.split(',').every(type => Object.values(AssetTransactionType).includes(type as AssetTransactionType));
   if(type && !validateTypeInput) {
     throw new Error('Invalid type provided.')
@@ -130,46 +141,31 @@ export async function createAssetTransactionFilter(req: Request) {
 
   const transactionTypeFilter = createFilter(type, 'type')
 
-  const sortFilter = {
-    blockNumber: sortBy === 'asc' ? Prisma.SortOrder.asc : Prisma.SortOrder.desc,
-  }
-
-  function sortByTransactionType(a: AssetTransaction, b: AssetTransaction) {
-    const hashA = a.type === AssetTransactionType.RETIRED ? a.hash.slice(0, -1) : a.hash;
-    const hashB = b.type === AssetTransactionType.RETIRED ? b.hash.slice(0, -1) : b.hash;
-
-    // Compare the modified hashes based on the sortOrder
-    let hashComparison = 0;
-    if (sortBy === 'asc') {
-      hashComparison = hashA.localeCompare(hashB);
-    } else if (sortBy === 'desc') {
-      hashComparison = hashB.localeCompare(hashA);
+  const sortFilter = [
+    {
+      blockNumber: sortBy === 'asc' ? Prisma.SortOrder.asc : Prisma.SortOrder.desc,
+    },
+    {
+      index: sortBy === 'asc' ? Prisma.SortOrder.asc : Prisma.SortOrder.desc,
     }
+  ]
 
-    if (hashComparison !== 0) {
-      return hashComparison;
+  const paginationFilter = (totalRecords: number, pageSize: number, page: number) => {
+    const skip = (page - 1) * pageSize;
+    const totalPages = Math.ceil(totalRecords / pageSize);
+
+    return {
+      skip: skip,
+      take: pageSize
     }
-
-    // If the hashes are equal, follow the previous logic
-    if (a.blockNumber === b.blockNumber) {
-      if (a.type === AssetTransactionType.RETIRED && b.type === AssetTransactionType.PURCHASED) {
-        return sortBy === 'asc' ? 1 : -1;
-      }
-      if (a.type === AssetTransactionType.PURCHASED && b.type === AssetTransactionType.RETIRED) {
-        return sortBy === 'asc' ? -1 : 1;
-      }
-    } else {
-      return sortBy === 'asc' ? a.blockNumber - b.blockNumber : b.blockNumber - a.blockNumber;
-    }
-
-    return 0;
   }
 
   return {
     assetIdFilter,
+    dateFilter,
     transactionTypeFilter,
     sortFilter,
-    sortByTransactionType
+    paginationFilter
   }
 }
 

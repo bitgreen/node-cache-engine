@@ -16,6 +16,7 @@ interface MetaData {
 export async function createTransferAssetTransaction(
     event: Event,
     blockNumber: number,
+    index: number,
     createdAt: Date,
     hash: string
 ) {
@@ -31,13 +32,14 @@ export async function createTransferAssetTransaction(
     await prisma.assetTransaction.upsert({
       where: {
         uniqueId: {
-          hash: hash as string,
+          hash: hash,
           owner: sent_owner as string
         }
       },
       create: {
-        hash: hash as string,
+        hash: hash,
         blockNumber: blockNumber,
+        index: index,
         type: AssetTransactionType.SENT,
         from: from as string,
         to: to as string,
@@ -55,13 +57,14 @@ export async function createTransferAssetTransaction(
     await prisma.assetTransaction.upsert({
       where: {
         uniqueId: {
-          hash: hash as string,
+          hash: hash,
           owner: received_owner as string
         }
       },
       create: {
-        hash: hash as string,
+        hash: hash,
         blockNumber: blockNumber,
+        index: index,
         type: AssetTransactionType.RECEIVED,
         from: from as string,
         to: to as string,
@@ -82,6 +85,7 @@ export async function createTransferAssetTransaction(
 export async function createIssuedAssetTransaction(
     event: Event,
     blockNumber: number,
+    index: number,
     createdAt: Date,
     hash: string
 ) {
@@ -91,16 +95,20 @@ export async function createIssuedAssetTransaction(
     let [assetId, owner, totalSupply] = eventData as (number | string)[];
     totalSupply = Number(totalSupply.toString().replace(/,/g, ''))
 
+    console.log('index', index)
+    console.log('totalSupply', totalSupply)
+
     await prisma.assetTransaction.upsert({
       where: {
         uniqueId: {
-          hash: hash as string,
+          hash: hash,
           owner: owner as string
         }
       },
       create: {
-        hash: hash as string,
+        hash: hash,
         blockNumber: blockNumber,
+        index: index,
         type: AssetTransactionType.ISSUED,
         from: '',
         to: owner as string,
@@ -110,6 +118,7 @@ export async function createIssuedAssetTransaction(
         createdAt: createdAt.toISOString(),
       },
       update: {
+        index: index,
         assetId: assetId as number
       },
     });
@@ -121,6 +130,7 @@ export async function createIssuedAssetTransaction(
 export async function createSellOrderAssetTransaction(
     event: Event,
     blockNumber: number,
+    index: number,
     createdAt: Date,
     hash: string
 ) {
@@ -142,13 +152,14 @@ export async function createSellOrderAssetTransaction(
     await prisma.assetTransaction.upsert({
       where: {
         uniqueId: {
-          hash: hash as string,
+          hash: hash,
           owner: owner as string
         }
       },
       create: {
-        hash: hash as string,
+        hash: hash,
         blockNumber: blockNumber,
+        index: index,
         type: AssetTransactionType.ORDER_CREATED,
         from: owner as string,
         to: '',
@@ -159,6 +170,7 @@ export async function createSellOrderAssetTransaction(
         createdAt: createdAt.toISOString(),
       },
       update: {
+        index: index,
         type: AssetTransactionType.ORDER_CREATED,
         from: owner as string,
         to: '',

@@ -309,6 +309,7 @@ model AssetTransaction {
   id            Int        @id @default(autoincrement())
   hash          String     @db.VarChar(68)
   blockNumber   Int        @default(0)
+  index         Int        @default(0)
   type          AssetTransactionType
   from          String     @default("") @db.VarChar(48)
   to            String     @default("") @db.VarChar(48)
@@ -318,6 +319,8 @@ model AssetTransaction {
   pricePerUnit  String?
   feesPaid      String?
   createdAt     DateTime   @db.Timestamp(6)
+  data          String?
+  reason        String?
 
   @@unique([hash, owner], name: "uniqueId")
 }

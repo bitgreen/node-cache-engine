@@ -12,11 +12,12 @@ interface RetireData {
 export async function createRetiredAssetTransaction(
     event: Event,
     blockNumber: number,
+    index: number,
     createdAt: Date,
     hash: string
 ) {
   try {
-    let eventData = event.data.toJSON();
+    let eventData = event.data.toPrimitive();
 
     let [
       projectId,
@@ -24,7 +25,8 @@ export async function createRetiredAssetTransaction(
       assetId,
       account,
       amount,
-      retireData
+      retireData,
+      reason
     ] = eventData as (
         | number
         | string
@@ -36,13 +38,14 @@ export async function createRetiredAssetTransaction(
     await prisma.assetTransaction.upsert({
       where: {
         uniqueId: {
-          hash: hash as string,
+          hash: hash,
           owner: account as string
         }
       },
       create: {
-        hash: hash as string,
+        hash: hash,
         blockNumber: blockNumber,
+        index: index,
         type: AssetTransactionType.RETIRED,
         from: account as string,
         to: '',
@@ -50,13 +53,19 @@ export async function createRetiredAssetTransaction(
         assetId: assetId as number,
         amount: amount,
         createdAt: createdAt.toISOString(),
+        data: JSON.stringify(retireDataUpdate),
+        reason: reason as string
       },
       update: {
+        blockNumber: blockNumber,
+        index: index,
         type: AssetTransactionType.RETIRED,
         assetId: assetId as number,
         from: account as string,
         to: '',
         owner: account as string,
+        data: JSON.stringify(retireDataUpdate),
+        reason: reason as string
       },
     });
   } catch (e: any) {
