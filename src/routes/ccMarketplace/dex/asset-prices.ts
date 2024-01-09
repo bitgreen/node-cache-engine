@@ -2,7 +2,6 @@ import { prisma } from '../../../services/prisma';
 import express, { Request, Response } from 'express';
 import { authMiddle } from '../../authentification/auth-middleware';
 import validator from 'validator';
-import { authenticatedAddress } from '../../../services/authentification';
 import BigNumber from "bignumber.js";
 import {AssetTransactionType} from "@prisma/client";
 

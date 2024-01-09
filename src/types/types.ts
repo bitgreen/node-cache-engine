@@ -21,11 +21,11 @@ export enum BlockEvent {
 }
 
 export interface AuthSession {
+  address: string;
   authType: AuthType,
 
   message: string;
   signature: string;
-  address: string;
 
   proxyaddress?: string;
   googleData?: any;

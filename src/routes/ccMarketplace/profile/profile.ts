@@ -2,7 +2,6 @@ import { prisma } from '../../../services/prisma';
 import express, { Request, Response } from 'express';
 import { authMiddle } from '../../authentification/auth-middleware';
 import validator from 'validator';
-import {authenticatedAddress} from '../../../services/authentification';
 import { UserType, VerificationStatus } from '@prisma/client';
 import {queryChain} from "../../../utils/chain";
 
@@ -56,7 +55,6 @@ router.get('/check-profile/:address', async (req: Request, res: Response) => {
 });
 
 router.put('/profile', authMiddle, async (req: Request, res: Response) => {
-  const auth_address = await authenticatedAddress(req);
   console.log('put /profile');
   try {
     const { profile, isLogin } = req.body;
@@ -93,11 +91,11 @@ router.put('/profile', authMiddle, async (req: Request, res: Response) => {
           };
     const result = await prisma.profile.upsert({
       where: {
-        address: auth_address,
+        address: req.session?.address,
       },
       update: updateParams,
       create: {
-        address: auth_address,
+        address: req.session?.address as string,
         email: profile.email
             ? validator.escape(validator.trim(`${profile.email}`))
             : '',

@@ -2,7 +2,6 @@ import { Project } from '../../types/prismaTypes';
 import { prisma } from '../../services/prisma';
 import { createProjectFilter } from '../../utils/filters';
 import express, { Request, Response } from 'express';
-import { authenticatedAddress } from '../../services/authentification';
 import { authKYC, authMiddle } from '../authentification/auth-middleware';
 import { addProjectTokens, filterAndAddProjectPrice } from '../../utils/projectsCalc';
 const router = express.Router();
