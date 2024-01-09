@@ -65,20 +65,20 @@ async function createProject(
         percentOfFees: reg.percentOfFees,
       };
     });
-    let batchGroups = [];
-    for (const [key, value] of Object.entries(project.batchGroups)) {
-      batchGroups.push({
-        ...value,
-        assetId: value.assetId,
-        groupId: Number(key),
-        name: value.name,
-        batches: {
-          create: value.batches.map((batch) => {
-            return { ...batch, uuid: batch.uuid };
-          }),
-        },
-      });
-    }
+    // let batchGroups = [];
+    // for (const [key, value] of Object.entries(project.batchGroups)) {
+    //   batchGroups.push({
+    //     ...value,
+    //     assetId: value.assetId,
+    //     groupId: Number(key),
+    //     name: value.name,
+    //     batches: {
+    //       create: value.batches.map((batch) => {
+    //         return { ...batch, uuid: batch.uuid };
+    //       }),
+    //     },
+    //   });
+    // }
 
     await prisma.project.create({
       data: {
@@ -99,9 +99,9 @@ async function createProject(
         royalties: {
           create: royalties,
         },
-        batchGroups: {
-          create: batchGroups,
-        },
+        // batchGroups: {
+          // create: batchGroups,
+        // },
         approved: project?.approved?.toString() === 'Approved',
         createdAt: createdAtBlock.blockDate!.toISOString(),
       },
@@ -157,25 +157,25 @@ async function updateProject(
         percentOfFees: reg.percentOfFees,
       };
     });
-    let batchGroups = [];
-    for (const [key, value] of Object.entries(project.batchGroups)) {
-      batchGroups.push({
-        where: {
-          assetId: value.assetId
-        },
-        create: {
-          ...value,
-          assetId: value.assetId,
-          groupId: Number(key),
-          name: value.name,
-          batches: {
-            create: value.batches.map((batch) => {
-              return { ...batch, uuid: batch.uuid };
-            }),
-          },
-        }
-      });
-    }
+    // let batchGroups = [];
+    // for (const [key, value] of Object.entries(project.batchGroups)) {
+    //   batchGroups.push({
+    //     where: {
+    //       assetId: value.assetId
+    //     },
+    //     create: {
+    //       ...value,
+    //       assetId: value.assetId,
+    //       groupId: Number(key),
+    //       name: value.name,
+    //       batches: {
+    //         create: value.batches.map((batch) => {
+    //           return { ...batch, uuid: batch.uuid };
+    //         }),
+    //       },
+    //     }
+    //   });
+    // }
 
     await prisma.project.update({
       where: {
@@ -194,9 +194,9 @@ async function updateProject(
         sdgDetails: {
           connectOrCreate: sdgDetails,
         },
-        batchGroups: {
-          connectOrCreate: batchGroups,
-        },
+        // batchGroups: {
+        //   connectOrCreate: batchGroups,
+        // },
         approved: project?.approved?.toString() === 'Approved',
         updatedAt: updatedAtBlock.blockDate?.toISOString() || undefined,
       },
