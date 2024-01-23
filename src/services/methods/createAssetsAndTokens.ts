@@ -1,9 +1,10 @@
 import { prisma } from '../prisma';
 import { Event } from '@polkadot/types/interfaces';
 import { ApiPromise } from '@polkadot/api';
-import { BalanceData } from '@/types/types';
+import {BalanceData, BlockEvent} from '../../types/types';
 import { hexToBigInt } from '@polkadot/util';
 import { AssetTransactionType } from '@prisma/client';
+import BigNumber from "bignumber.js";
 
 interface MetaData {
   deposit: string;
@@ -193,9 +194,18 @@ export async function createTokenTransaction(
   hash: string
 ) {
   try {
-    let eventData = event.data.toJSON();
-    let [currencyId, from, to, amount] = eventData as string[];
-    let amountConverted = hexToBigInt(amount).toString();
+    let eventData = event.data.toPrimitive();
+
+    let currencyId, from, to, amount, amountConverted
+
+    if(event.method === BlockEvent.BalanceSet) {
+      [currencyId, to, amount] = eventData as string[];
+    } else {
+      [currencyId, from, to, amount] = eventData as string[];
+    }
+
+    amountConverted = new BigNumber(amount).toString();
+
     await prisma.$transaction([
       prisma.tokenTransaction.create({
         data: {
@@ -205,7 +215,7 @@ export async function createTokenTransaction(
           blockNumber: blockNumber,
           tokenId: currencyId as string,
           tokenName: '',
-          amount: amountConverted,
+          amount: amountConverted as string,
           createdAt: createdAt.toISOString()
         },
       }),

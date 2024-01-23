@@ -88,42 +88,10 @@ export function createProjectFilter(req: Request) {
   };
 }
 
-export async function createAssetTransactionFilter(req: Request) {
-  const projectId = (req.query.projectId as string) ?? undefined;
-  const assetId = (req.query.assetId as string) ?? undefined;
+export async function createTransactionFilter(req: Request) {
   const startDate = (req.query.startDate as string) ?? undefined;
   const endDate = (req.query.endDate as string) ?? undefined;
   const sortBy = (req.query.sortBy as string) ?? 'desc';
-  const type: AssetTransactionType = (req.query.transactionType as AssetTransactionType) ?? undefined;
-
-  let assetIds: (number | string)[] = []
-  if(projectId) {
-    const assetIdsRes = await prisma.batchGroups.findMany({
-      where: {
-        project: {
-          id: {
-            in: projectId.split(',').map((pId) => Number(pId))
-          }
-        }
-      },
-      select: {
-        assetId: true,
-      },
-      distinct: 'assetId'
-    })
-
-    if(assetIdsRes?.length) {
-      assetIds = assetIdsRes.map(item => item.assetId)
-    } else {
-      throw new Error('Invalid projectId.')
-    }
-  }
-
-  if(assetId) {
-    assetIds.push(assetId)
-  }
-
-  const assetIdFilter: any = createFilter(assetIds.join(','), 'assetId', true);
 
   const dateFilter = (startDate || endDate) ? {
     AND: {
@@ -134,19 +102,9 @@ export async function createAssetTransactionFilter(req: Request) {
     }
   } : {};
 
-  const validateTypeInput = type?.split(',').every(type => Object.values(AssetTransactionType).includes(type as AssetTransactionType));
-  if(type && !validateTypeInput) {
-    throw new Error('Invalid type provided.')
-  }
-
-  const transactionTypeFilter = createFilter(type, 'type')
-
   const sortFilter = [
     {
       blockNumber: sortBy === 'asc' ? Prisma.SortOrder.asc : Prisma.SortOrder.desc,
-    },
-    {
-      index: sortBy === 'asc' ? Prisma.SortOrder.asc : Prisma.SortOrder.desc,
     }
   ]
 
@@ -161,15 +119,56 @@ export async function createAssetTransactionFilter(req: Request) {
   }
 
   return {
-    assetIdFilter,
     dateFilter,
-    transactionTypeFilter,
     sortFilter,
     paginationFilter
   }
 }
 
-function createFilter(filterStr: string, key: string, asId?: boolean) {
+export async function createAssetTransactionFilter(req: Request) {
+  const projectId = (req.query.projectId as string) ?? undefined;
+  const assetId = (req.query.assetId as string) ?? undefined;
+  const sortBy = (req.query.sortBy as string) ?? 'desc';
+
+  const type: AssetTransactionType = (req.query.transactionType as AssetTransactionType) ?? undefined;
+
+  if(projectId && assetId) throw new Error('Either use projectId or assetId.')
+
+  const projectIdFilter = projectId ? {
+    batchGroup: {
+      project: {
+        id: Number(projectId)
+      }
+    }
+  } : undefined
+
+  const assetIdFilter: any = createFilter(assetId, 'assetId', true);
+
+  const validateTypeInput = type?.split(',').every(type => Object.values(AssetTransactionType).includes(type as AssetTransactionType));
+  if(type && !validateTypeInput) {
+    throw new Error('Invalid type provided.')
+  }
+
+  const transactionTypeFilter = createFilter(type, 'type', false, true)
+
+  const sortFilter = [
+    {
+      blockNumber: sortBy === 'asc' ? Prisma.SortOrder.asc : Prisma.SortOrder.desc,
+    },
+    {
+      index: sortBy === 'asc' ? Prisma.SortOrder.asc : Prisma.SortOrder.desc,
+    }
+  ]
+
+  return {
+    projectIdFilter,
+    assetIdFilter,
+    transactionTypeFilter,
+    sortFilter
+  }
+}
+
+function createFilter(filterStr: string, key: string, asId?: boolean, isOr?: boolean) {
   if (!filterStr) return undefined;
 
   const filters = filterStr.split(',').map((filter) => ({
@@ -179,7 +178,7 @@ function createFilter(filterStr: string, key: string, asId?: boolean) {
   }));
 
   return {
-    OR: filters,
+    [isOr ? 'OR' : 'AND']: filters,
   };
 }
 

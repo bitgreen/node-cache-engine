@@ -16,8 +16,10 @@ export enum BlockEvent {
   ProjectUpdated  = "ProjectUpdated",
   BatchGroupAdded = "BatchGroupAdded",
   MemberAdded = "MemberAdded",
-  BuyOrderCreated = "BuyOrderCreated"
-
+  BuyOrderCreated = "BuyOrderCreated",
+  Created = "Created",
+  ForceCreated = "ForceCreated",
+  BalanceSet = "BalanceSet",
 }
 
 export interface AuthSession {

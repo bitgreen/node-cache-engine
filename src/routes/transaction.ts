@@ -5,7 +5,7 @@ import { prisma } from '../services/prisma';
 import { BlockHash } from '@polkadot/types/interfaces';
 import { initApi } from '../services/polkadot-api';
 import { GenericStorageEntryFunction } from '@polkadot/api/types';
-import {createAssetTransactionFilter} from "../utils/filters";
+import {createAssetTransactionFilter, createTransactionFilter} from "../utils/filters";
 import {AssetTransactionType} from "@prisma/client";
 
 const router = express.Router();
@@ -64,47 +64,50 @@ router.get('/transactions', async (req: Request, res: Response) => {
   try {
     const {
       account,
-      dateStart = '2000-01-01',
-      dateEnd = '2200-01-01',
+      page = 1,
+      pageSize = 10
     } = req.query;
 
-    const account_query = account
-      ? {
-          OR: [{ from: account as string }, { to: account as string }],
-        }
-      : {};
+    const { dateFilter, sortFilter, paginationFilter } = await createTransactionFilter(req);
 
-    let transactions;
-    try {
-      transactions = await prisma.transaction.findMany({
-        where: {
-          createdAt: {
-            gte: new Date(dateStart as string),
-            lte: new Date(dateEnd as string),
-          },
-          ...account_query,
-        },
-        select: {
-          blockNumber: true,
-          hash: true,
-          from: true,
-          to: true,
-          amount: true,
-          gasFees: true,
-          createdAt: true,
-        },
-        orderBy: {
-          blockNumber: 'desc',
-        },
-      });
-    } catch (e) {
-      transactions = null;
+    const whereQuery = {
+      AND: [
+        { ...dateFilter },
+      ],
+      OR: [
+        { from: account as string },
+        { to: account as string },
+      ]
     }
+
+    const totalRecords = await prisma.transaction.count({
+      where: whereQuery,
+      orderBy: sortFilter,
+    });
+
+    const totalPages = Math.ceil(totalRecords / Number(pageSize));
+
+    const transactions = await prisma.transaction.findMany({
+      where: whereQuery,
+      orderBy: sortFilter,
+      select: {
+        blockNumber: true,
+        hash: true,
+        from: true,
+        to: true,
+        amount: true,
+        gasFees: true,
+        createdAt: true,
+      },
+    });
 
     res.json({
       transactions: transactions,
+      totalRecords: totalRecords,
+      totalPages: totalPages
     });
   } catch (e) {
+    console.log(e)
     return res.status(500).json(e);
   }
 });
@@ -140,11 +143,13 @@ router.get('/asset/transactions', async (req: Request, res: Response) => {
       pageSize = 10
     } = req.query;
 
-    const { assetIdFilter, dateFilter, transactionTypeFilter, sortFilter, paginationFilter} = await createAssetTransactionFilter(req);
+    const { projectIdFilter, assetIdFilter, transactionTypeFilter, sortFilter } = await createAssetTransactionFilter(req);
+    const { dateFilter, paginationFilter } = await createTransactionFilter(req);
 
     const whereQuery = {
       owner: account as string,
       AND: [
+        { ...projectIdFilter },
         { ...assetIdFilter },
         { ...dateFilter },
         { ...transactionTypeFilter },
@@ -153,7 +158,7 @@ router.get('/asset/transactions', async (req: Request, res: Response) => {
 
     const totalRecords = await prisma.assetTransaction.count({
       where: whereQuery,
-      orderBy: sortFilter
+      orderBy: sortFilter,
     });
 
     const totalPages = Math.ceil(totalRecords / Number(pageSize));
@@ -161,11 +166,32 @@ router.get('/asset/transactions', async (req: Request, res: Response) => {
     const assetTransactions = await prisma.assetTransaction.findMany({
       where: whereQuery,
       orderBy: sortFilter,
+      include: {
+        batchGroup: {
+          select: {
+            assetId: true,
+            project: {
+              select: {
+                id: true
+              }
+            }
+          }
+        }
+      },
       ...paginationFilter(totalRecords, Number(pageSize), Number(page))
     });
 
+    // Manually transform the data to rename the property
+    const transformedAssetTransactions = assetTransactions.map((item) => {
+      const { batchGroup, ...rest } = item;
+      return {
+        ...rest,
+        data: batchGroup, // Rename the property to data
+      };
+    });
+
     res.json({
-      transactions: assetTransactions,
+      transactions: transformedAssetTransactions,
       totalRecords: totalRecords,
       totalPages: totalPages
     });
@@ -197,7 +223,7 @@ router.get(
   async (req: Request, res: Response) => {
     console.log('/tokens-assets/ids');
     try {
-      const { account } = req.query;
+      const { account, includeInfo } = req.query;
       const [tokens, assets] = await prisma.$transaction([
         prisma.tokenTransaction.findMany({
           where: {
@@ -215,21 +241,50 @@ router.get(
             owner: account as string
           },
           select: {
-            assetId: true
+            assetId: true,
+            batchGroup: (includeInfo === 'true') ? {
+              select: {
+                project: {
+                  select: {
+                    name: true
+                  }
+                }
+              }
+            } : false
           }
         }),
       ]);
-      const uniqeAssetIds = [...new Set(assets.map((tk) => tk.assetId).filter(assetId => {
-        return assetId || assetId === 0
-      }))];
-      const uniqeTokenIds = [...new Set(tokens.map((tk) => tk.tokenId).filter(Boolean))];
+      const uniqueAssetIds = Array.from(
+          new Set(
+              assets
+                  .map((tk: any) => {
+                    if(!includeInfo) {
+                      return tk.assetId
+                    }
+
+                    return {
+                      assetId: tk.assetId,
+                      projectName: tk.batchGroup?.project?.name,
+                    }
+                  })
+                  // .filter((tk: any) => {
+                  //   if(tk && tk?.assetId) {
+                  //     return true
+                  //   }
+                  //   return true
+                  // })
+                  .map(tk => JSON.stringify(tk))
+          )
+      ).map(strTk => JSON.parse(strTk));
+      const uniqueTokenIds = [...new Set(tokens.map((tk) => tk.tokenId).filter(Boolean))];
 
       res.json({
-        assets: uniqeAssetIds, 
-        tokens: uniqeTokenIds
+        assets: uniqueAssetIds,
+        tokens: uniqueTokenIds
       }
       );
     } catch (e) {
+      console.log('e', e)
       res.status(500).json(e);
     }
   }
