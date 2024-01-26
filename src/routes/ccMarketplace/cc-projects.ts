@@ -28,7 +28,10 @@ router.get('/project', async (req: Request, res: Response) => {
         orderBy: [sortFilter],
       }),
       prisma.project.count({
-        where: filters,
+        where: {
+          ...filters,
+          listedToMarketplace: true
+        },
       }),
     ]);
     let minCreditPrice = (req.query.minCreditPrice as string) ?? undefined;
@@ -73,6 +76,7 @@ router.get('/project', async (req: Request, res: Response) => {
       const minCreditQuantityLimit = Number(minCreditQuantity) ? Number(minCreditQuantity) : 0;
       projects = filterAndAddProjectPrice(projects,invs,minCreditQuantityLimit,Number(minCreditPrice), sellChecked == "true" ? true : false)
     }
+
     const projectsWithMinMaxCreditPrices: Project = addProjectTokens(projects);
     // console.log("projectsWithMinMaxCreditPrices",projectsWithMinMaxCreditPrices)
     return res.json({

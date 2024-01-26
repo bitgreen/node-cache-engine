@@ -16,21 +16,25 @@ router.get('/profile', authMiddle, async (req: Request, res: Response) => {
       },
     });
 
-    // TODO: Implement KYC levels
-    let kycStatus = "NOT_VERIFIED"
+    const kyc = {
+      status: "NOT_VERIFIED",
+      level: 0
+    }
+
     if(req.session?.address) {
       const kycData = await queryChain('kycPallet', 'members', [req.session?.address])
 
       if(kycData.data) {
-        kycStatus = "VERIFIED"
+        const kycLevel = parseInt(kycData.data.match(/\d+/)[0]);
+
+        kyc.status = "VERIFIED"
+        kyc.level = kycLevel
       }
     }
 
     return res.status(200).json({
       ...profile,
-      KYC: {
-        "status": kycStatus,
-      }
+      kyc
     });
   } catch (e) {
     console.log(e)

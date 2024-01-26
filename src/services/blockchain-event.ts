@@ -23,6 +23,7 @@ import {
 } from './methods/createAssetsAndTokens';
 import { sellOrderCancelled } from './methods/sellOrderCancelled';
 import { memberAddedKYC } from './methods/memberAddedKYC';
+import { createOrUpdateProject } from "./methods/createOrUpdateProject";
 
 export async function processBlock(
   api: ApiPromise,
@@ -79,6 +80,9 @@ export async function processBlock(
       console.log('event.section', event.section);
       console.log('event.method', event.method);
       if (event.section === 'assets') {
+        if (event.method === BlockEvent.Created || event.method === BlockEvent.ForceCreated) {
+          console.log('Asset created');
+        }
         if (event.method === BlockEvent.TransferAssets) {
           console.log('Asset called');
           await createTransferAssetTransaction(
@@ -134,12 +138,18 @@ export async function processBlock(
         }
       }
       if (event.section === 'carbonCredits') {
+        if (event.method === BlockEvent.ProjectCreated || event.method === BlockEvent.ProjectUpdated) {
+          await createOrUpdateProject(api, event, blockDate);
+        }
+
         if (event.method === BlockEvent.ProjectApproved) {
           await approveProject(event, blockDate);
         }
+
         if (event.method === BlockEvent.ProjectRejected) {
           await rejectProject(event, blockDate);
         }
+
         if (event.method === BlockEvent.CarbonCreditMinted) {
           // await ccMinted(
           //     event,
@@ -149,6 +159,7 @@ export async function processBlock(
           //     hash
           // );
         }
+
         if (event.method === BlockEvent.CarbonCreditRetired) {
           console.log('retire tokens');
           await createRetiredAssetTransaction(
@@ -161,8 +172,7 @@ export async function processBlock(
         }
       }
       if (event.section === 'tokens') {
-        // TODO: Consider adding tokens.balanceSet
-        if (event.method === BlockEvent.TransferTokens) {
+        if (event.method === BlockEvent.TransferTokens || event.method === BlockEvent.BalanceSet) {
           console.log('tokens called');
           await createTokenTransaction(
               event,
