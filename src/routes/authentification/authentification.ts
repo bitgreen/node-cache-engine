@@ -41,7 +41,8 @@ router.post('/auth', async (req: Request, res: Response) => {
       httpOnly: true,
       sameSite: 'strict',
       path: '/',
-      secure: process.env.NODE_ENV !== 'development'
+      secure: process.env.NODE_ENV !== 'development',
+      domain: (process.env.COOKIE_DOMAIN && process.env.COOKIE_DOMAIN?.length > 3) ? process.env.COOKIE_DOMAIN : undefined
     }
   );
 
