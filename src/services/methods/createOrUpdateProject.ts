@@ -176,20 +176,19 @@ export async function createOrUpdateProject(
   } catch (e) {
     // @ts-ignore
     console.log(`Error occurred (creating project): ${e.message}`);
-    process.exit()
-
   }
 }
 
 export async function updateProjectData(projectId: number, projectData: any) {
-  console.log('updateProjectData')
+  // console.log('updateProjectData')
   // console.log('projectData', projectData)
 
   try {
     const batchGroups = [];
     for (const [groupId, batchGroup] of Object.entries(projectData.batchGroups) as [string, any][]) {
-      if(batchGroup.credits) {
-        const data = batchGroup.credits
+      if(batchGroup.credits || batchGroup.forwards || batchGroup.shares) {
+        const data = batchGroup.credits || batchGroup.forwards || batchGroup.shares
+        const type = batchGroup.credits ? BatchGroupType.CREDITS : (batchGroup.forwards ? BatchGroupType.FORWARDS : BatchGroupType.SHARES)
 
         batchGroups.push(prisma.batchGroups.upsert({
           where: {
@@ -201,7 +200,41 @@ export async function updateProjectData(projectId: number, projectData: any) {
           create: {
             ...data,
             assetId: Number(data.minted) > 0 ? Number(data.assetId) : null,
-            type: BatchGroupType.CREDITS,
+            type: type,
+            groupId: Number(groupId),
+            projectId: Number(projectId),
+            batches: {
+              create: data.batches?.map((batch: any) => {
+                return { ...batch, uuid: batch.uuid };
+              }),
+            },
+          },
+          update: {
+            ...data,
+            assetId: Number(data.minted) > 0 ? Number(data.assetId) : null,
+            batches: {
+              create: data.batches?.map((batch: any) => {
+                return { ...batch, uuid: batch.uuid };
+              }),
+            },
+          }
+        }))
+      }
+
+      if(batchGroup.forwards) {
+        const data = batchGroup.forwards
+
+        batchGroups.push(prisma.batchGroups.upsert({
+          where: {
+            uniqueId: {
+              projectId: Number(projectId),
+              groupId: Number(groupId)
+            }
+          },
+          create: {
+            ...data,
+            assetId: Number(data.minted) > 0 ? Number(data.assetId) : null,
+            type: BatchGroupType.FORWARDS,
             groupId: Number(groupId),
             projectId: Number(projectId),
             batches: {

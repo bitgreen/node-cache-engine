@@ -4,7 +4,7 @@ import {initApi} from "./polkadot-api";
 import {updateProjectData} from "../services/methods/createOrUpdateProject";
 
 export const updateProjectsCron = async() => {
-  cron.schedule('*/5 * * * *', async () => {
+  // cron.schedule('*/5 * * * *', async () => {
     const api = await initApi();
 
     let projectsData = await api.query['carbonCredits']['projects'].entries();
@@ -25,5 +25,5 @@ export const updateProjectsCron = async() => {
         }
       })
     })
-  });
+  // });
 };

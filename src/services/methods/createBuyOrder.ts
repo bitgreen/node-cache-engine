@@ -144,7 +144,6 @@ export async function createTrade(api: ApiPromise, event: Event, createdAt: Date
   } catch (e) {
     // @ts-ignore
     console.log(`Error occurred (create trade): ${e.message} at ${blockNumber}`);
-    process.exit()
   }
 
   return
