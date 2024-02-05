@@ -170,6 +170,7 @@ router.get('/asset/transactions', async (req: Request, res: Response) => {
         batchGroup: {
           select: {
             assetId: true,
+            type: true,
             project: {
               select: {
                 id: true
@@ -186,7 +187,11 @@ router.get('/asset/transactions', async (req: Request, res: Response) => {
       const { batchGroup, ...rest } = item;
       return {
         ...rest,
-        data: batchGroup, // Rename the property to data
+        info: {
+          projectId: batchGroup?.project?.id,
+          assetId: batchGroup?.assetId,
+          type: batchGroup?.type,
+        },
       };
     });
 
