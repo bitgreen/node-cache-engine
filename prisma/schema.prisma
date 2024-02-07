@@ -37,34 +37,52 @@ model Project {
 // }
 
 model BatchGroups {
-  id          Int      @id @default(autoincrement())
-  name        String?  @db.VarChar
-  uuid        String?
-  assetId     Int      @unique
-  totalSupply Int?
-  minted      Int?
-  isMinted    Boolean? @default(false)
-  retired     Int?
-  groupId     Int?
-  batches     Batch[]
-  projectId   Int?
-  project     Project? @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  id                      Int       @id @default(autoincrement())
+  groupId                 Int
+  type                    BatchGroupType
+  name                    String?   @db.VarChar
+  uuid                    String?
+  assetId                 Int?      @unique
+  totalSupply             Int?
+  minted                  Int?
+  filled                  Int?
+  convertedToCredits      Int?
+  convertedToForwards     Int?
+  retired                 Int?
+
+  projectId     Int?
+  project       Project? @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  assetTransaction        AssetTransaction[]
+
+  batches       Batch[]
+
+  @@unique([projectId, groupId], name: "uniqueId")
+}
+
+enum BatchGroupType {
+  CREDITS
+  DONATIONS
+  SHARES
+  FORWARDS
 }
 
 model Batch {
   id           Int     @id @default(autoincrement())
   name         String? @db.VarChar
-  uuid         String? @unique
+  uuid         String?
   issuanceYear Int?
   startDate    Int?
   endDate      Int?
   totalSupply  Int?
   minted       Int?
   retired      Int?
-  groupId      Int?
+  index        Int?
 
   batchGroupId Int
   batchGroups  BatchGroups @relation(fields: [batchGroupId], references: [id], onDelete: Cascade)
+
+  @@unique([batchGroupId, index], name: "uniqueId")
 }
 
 model RegistryDetails {
@@ -72,8 +90,10 @@ model RegistryDetails {
   name       String
   summary    String
   regName    RegistryName?
-  registryId Int           @unique
-  project    Project       @relation(fields: [registryId], references: [id], onDelete: Cascade)
+  registryId String           @unique
+
+  projectId  Int
+  project    Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
 }
 
 model Royalties {
@@ -92,15 +112,17 @@ model SdgDetails {
   description String?
   references  String?
   project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, sdgType], name: "sdgIdentifier")
 }
 
-model Profil {
-  address              String  @id
-  firstName            String?
-  lastName             String?
-  avatar               String?
-  orginatorName        String? @default("")
-  orginatorDescription String? @default("")
+model Profile {
+  address               String  @id
+  firstName             String?
+  lastName              String?
+  avatar                String?
+  originatorName        String? @default("")
+  originatorDescription String? @default("")
 
   email           String?
   emailStatus     VerificationStatus @default(NOT_VERIFIED)
@@ -112,7 +134,6 @@ model Profil {
   userType                    UserType @default(Individual)
 
   investments        Investment[]
-  creditTransactions CreditTransaction[]
 
   stars     Star[]
   KYC       KYC?
@@ -132,8 +153,8 @@ model Investment {
   sellorders           SellOrder[]
   buyOrders            BuyOrder[]             @relation("investment")
   // buyOrdersForRetire BuyOrder[]  @relation("investmentForRetire")
-  Profil               Profil?                @relation(fields: [profilAddress], references: [address], onDelete: Cascade)
-  profilAddress        String?
+  Profile              Profile?                @relation(fields: [profileAddress], references: [address], onDelete: Cascade)
+  profileAddress       String?
 }
 
 model CreditsOwnedPerGroup {
@@ -150,13 +171,11 @@ model BuyOrder {
   creditsOwned   Int
   retiredCredits Int
   creditPrice    Float
-  orderId        Int
+  orderId        Int         @unique
   groupId        Int //notwendig, da man sonst die einzelnen Käufe nicht den Gruppen zuordnen kann
   createdAt      DateTime    @db.Timestamp(6)
   Investment     Investment? @relation(fields: [investmentId], references: [id], onDelete: Cascade, name: "investment")
   investmentId   String?
-  // InvestmentForRetire   Investment? @relation(fields: [investmentIdForRetire], references: [id], onDelete: Cascade, name: "investmentForRetire")
-  // investmentIdForRetire String?
 }
 
 model BuyOrderReserved {
@@ -186,21 +205,6 @@ model SellOrder {
   investmentId String?
 }
 
-model CreditTransaction {
-  id            String                @id @default(uuid())
-  type          CreditTransactionType
-  description   String
-  projectId     Int                   @default(0)
-  credits       Int
-  creditPrice   Float
-  from          String
-  to            String
-  createdAt     DateTime              @db.Timestamp(6)
-  fee           Float
-  Profil        Profil?               @relation(fields: [profilAddress], references: [address], onDelete: Cascade)
-  profilAddress String?
-}
-
 model CartItem {
   id              Int           @id @default(autoincrement())
   projectName     String
@@ -208,8 +212,8 @@ model CartItem {
   projectPrices   Float[]
   projectId       Int
   batchEntities   BatchEntity[]
-  profilId        String
-  profil          Profil        @relation(fields: [profilId], references: [address], onDelete: Cascade)
+  profileId       String
+  profile         Profile        @relation(fields: [profileId], references: [address], onDelete: Cascade)
 }
 
 model BatchEntity {
@@ -224,22 +228,22 @@ model BatchEntity {
 }
 
 model KYC {
-  profilAddress String             @id
-  status        VerificationStatus @default(NOT_VERIFIED)
-  FirstName     String?
-  LastName      String?
-  Address       String?
-  Country       String?
-  Profil        Profil?            @relation(fields: [profilAddress], references: [address], onDelete: Cascade)
-  FractalId     String?
+  profileAddress String             @id
+  status         VerificationStatus @default(NOT_VERIFIED)
+  FirstName      String?
+  LastName       String?
+  Address        String?
+  Country        String?
+  Profile        Profile?            @relation(fields: [profileAddress], references: [address], onDelete: Cascade)
+  FractalId      String?
 }
 
 model Star {
-  profilAddress String
-  projectId     Int
-  profil        Profil @relation(fields: [profilAddress], references: [address], onDelete: Cascade)
+  profileAddress String
+  projectId      Int
+  profile         Profile @relation(fields: [profileAddress], references: [address], onDelete: Cascade)
 
-  @@id([profilAddress, projectId])
+  @@id([profileAddress, projectId])
 }
 
 enum VerificationStatus {
@@ -322,29 +326,44 @@ model Asset {
 }
 
 model AssetTransaction {
-  id          Int        @id @default(autoincrement())
-  blockNumber Int        @default(0)
-  sender      String     @default("") @db.VarChar(48)
-  recipient   String     @default("") @db.VarChar(48)
-  assetId     Int
-  amount      String?
-  assetInfo   AssetInfo?
-  createdAt   DateTime   @db.Timestamp(6)
+  id            Int        @id @default(autoincrement())
+  hash          String     @db.VarChar(68)
+  blockNumber   Int        @default(0)
+  index         Int        @default(0)
+  type          AssetTransactionType
+  from          String     @default("") @db.VarChar(48)
+  to            String     @default("") @db.VarChar(48)
+  owner         String     @default("") @db.VarChar(48)
+  assetId       Int?
+  amount        Int
+  pricePerUnit  String?
+  feesPaid      String?
+  createdAt     DateTime   @db.Timestamp(6)
+  data          String?
+  reason        String?
+
+  batchGroup    BatchGroups? @relation(fields: [assetId], references: [assetId], onDelete: Cascade)
+
+  @@unique([hash, owner], name: "uniqueId")
 }
 
-model AssetInfo {
-  id               Int               @id @default(autoincrement())
-  assetName        String?
-  assetLogo        String?
-  nftImage         String?
-  AssetTransaction AssetTransaction? @relation(fields: [id], references: [id], onDelete: Cascade)
+enum AssetTransactionType {
+  SENT
+  RECEIVED
+  PURCHASED
+  SOLD
+  RETIRED
+  ISSUED
+  ORDER_CREATED
+  ORDER_CANCELLED
 }
 
 model TokenTransaction {
   id          Int      @id @default(autoincrement())
+  hash        String   @unique @db.VarChar(68)
   blockNumber Int      @default(0)
-  sender      String   @default("") @db.VarChar(48)
-  recipient   String   @default("") @db.VarChar(48)
+  from        String?  @default("") @db.VarChar(48)
+  to          String   @default("") @db.VarChar(48)
   tokenId     String   @default("")
   tokenName   String?
   tokenLogo   String?
@@ -358,20 +377,12 @@ model ExchangeRate {
   exchangeRateUSDT Float
 }
 
-enum CreditTransactionType {
-  PURCHASE
-  SALE
-  RETIRE
-  ISSUED
-}
-
 model Transaction {
   id          Int      @id @default(autoincrement())
   blockNumber Int
   hash        String   @unique @db.VarChar(68)
-  sender      String   @db.VarChar(64)
-  recipient   String   @db.VarChar(64)
-  // amount      Decimal  @db.Decimal(65, 0)
+  from        String   @db.VarChar(64)
+  to          String   @db.VarChar(64)
   amount      String   @db.VarChar(191)
   gasFees     Decimal  @default(0) @db.Decimal(32, 0)
   createdAt   DateTime @db.Timestamp(6)

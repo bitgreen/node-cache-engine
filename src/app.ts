@@ -1,6 +1,7 @@
 // Bitgreen API Server
 
 /* import packages */
+import cron from 'node-cron';
 import cookieParser from 'cookie-parser';
 import cors, { CorsOptions } from 'cors';
 import * as dotenv from 'dotenv';
@@ -8,14 +9,15 @@ import express, { Express, Request, Response } from 'express';
 import authentification from './routes/authentification/authentification'; //./routes/authentification/authentification.js
 import carbonCredit from './routes/carbon-credit'; //./routes/carbon-credit.js
 import ccProjects from './routes/ccMarketplace/cc-projects';
+import assetPrices from './routes/ccMarketplace/dex/asset-prices';
 import investments from './routes/ccMarketplace/dex/investments';
 import sellOrder from './routes/ccMarketplace/dex/sell-order';
 import ipfs from './routes/ccMarketplace/ipfs';
 import kyc from './routes/ccMarketplace/kyc/kyc-approval';
 import cart from './routes/ccMarketplace/profile/cart';
 import profile from './routes/ccMarketplace/profile/profile';
-import creditTransaction from './routes/ccMarketplace/dex/credit-transaction';
 import transaction from './routes/transaction';
+import {updateProjectsCron} from "./services/update-projects";
 
 /* config */
 dotenv.config();
@@ -60,19 +62,19 @@ const mainLoop = async () => {
   app.use('', profile);
   app.use('', authentification);
   app.use('', cart);
+  app.use('', assetPrices);
   app.use('', investments);
   app.use('', sellOrder);
   app.use('', kyc);
-  app.use('', creditTransaction);
   // app.use("", require("./routes/test-routes"));
 
   /* serve api */
   const server = app.listen(port, function () {
     console.log(`API server is listening at: http://localhost:${port}.`);
   });
+
+  await updateProjectsCron()
 };
 
 // run main function
 mainLoop().catch(console.error);
-
-// write a fetch command in javascript

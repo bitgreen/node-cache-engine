@@ -48,44 +48,47 @@ async function main() {
     }
   );
 
-  // // Get current block
-  // const currentBlock = block.block.header.number.toNumber()
-  // // Get all blocks up to current block
-  // const allBlocks = Array.from({ length: currentBlock }, (_, i) => i + 1);
+  // Get current block
+  const currentBlock = block.block.header.number.toNumber()
+  // Get all blocks up to current block
+  const allBlocks = Array.from({ length: currentBlock }, (_, i) => i + 1);
 
-  // // Get fetched blocks
-  // const dbBlocks = await prisma.block.findMany({
-  //   select: {
-  //     number: true,
-  //   },
-  // });
-  // const fetchedBlocks = dbBlocks.map((row) => row.number);
+  // Get fetched blocks
+  const dbBlocks = await prisma.block.findMany({
+    where: {
+      fetchedAt: {
+        gt: new Date(Number(process?.env?.INVALIDATION_TIMESTAMP) * 1000)
+      }
+    },
+    select: {
+      number: true,
+    }
+  });
+  const fetchedBlocks = dbBlocks.map((row) => row.number);
 
-  // // Determine missing blocks
-  // const missingBlocks = allBlocks.filter((id) => !fetchedBlocks.includes(id));
+  // Determine missing blocks
+  const fetchedBlocksSet = new Set(fetchedBlocks);
+  const missingBlocks = allBlocks.filter(id => !fetchedBlocksSet.has(id));
 
-  // let chunk = []
+  // Process each missing block, in chunks of 1200
+  const activePromises = new Set();
+  for(const blockNumber of missingBlocks) {
+    // Wait if we reach the concurrency limit
+    if (activePromises.size >= 100) {
+      await Promise.race(activePromises);
+    }
 
-  // // Process each missing block, in chunks of 100, 1s delay per chunk
-  // for(const blockNumber of missingBlocks) {
-  //   chunk.push(blockNumber);
-  //   if (chunk.length === 100) {
-  //     chunk.map(async (blockNumber) => {
-  //       await processBlock(api, blockNumber)
-  //     })
+    const promise = processBlock(api, blockNumber).finally(() => {
+      // Remove the promise from the set when it's settled
+      activePromises.delete(promise);
+    });
 
-  //     await sleep(1000)
+    // Add the new promise to the set
+    activePromises.add(promise);
+  }
 
-  //     chunk = [];
-  //   }
-  // }
-
-  // // Process last chunk
-  // if (chunk.length > 0) {
-  //   chunk.map(async (blockNumber) => {
-  //     await processBlock(api, blockNumber)
-  //   })
-  // }
+  // Wait for all remaining promises to settle
+  await Promise.all(activePromises);
 }
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));

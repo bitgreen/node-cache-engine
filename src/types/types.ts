@@ -16,15 +16,27 @@ export enum BlockEvent {
   ProjectUpdated  = "ProjectUpdated",
   BatchGroupAdded = "BatchGroupAdded",
   MemberAdded = "MemberAdded",
-  BuyOrderCreated = "BuyOrderCreated"
-
+  BuyOrderCreated = "BuyOrderCreated",
+  Created = "Created",
+  ForceCreated = "ForceCreated",
+  BalanceSet = "BalanceSet",
 }
 
-export interface WalletSession {
+export interface AuthSession {
+  address: string;
+  authType: AuthType,
+
   message: string;
   signature: string;
-  address: string;
+
   proxyaddress?: string;
+  googleData?: any;
+}
+
+export enum AuthType {
+  BitgreenWallet = 'BitgreenWallet',
+  MetaMaskWallet = 'MetaMaskWallet',
+  Google = 'Google'
 }
 
 export interface Account {

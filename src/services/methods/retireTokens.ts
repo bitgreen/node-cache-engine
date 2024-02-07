@@ -1,9 +1,6 @@
-import { Codec } from '@polkadot/types-codec/types';
 import { prisma } from '../prisma';
 import { Event } from '@polkadot/types/interfaces';
-import { CreditTransactionType } from '@prisma/client';
-
-import { convertHex } from '../../utils/converter';
+import {AssetTransactionType} from '@prisma/client';
 
 interface RetireData {
   name: string;
@@ -12,94 +9,66 @@ interface RetireData {
   count: number;
 }
 
-export async function retireTokens(event: Event, createdAt: Date) {
-  //[orderId, assetId, units, pricePerUnit, owner]
+export async function createRetiredAssetTransaction(
+    event: Event,
+    blockNumber: number,
+    index: number,
+    createdAt: Date,
+    hash: string
+) {
   try {
-    let data = event.data.toJSON();
+    let eventData = event.data.toPrimitive();
 
-    let [projectId, groupId, assetId, account, amount, retireData] = data as (
-      | Number
-      | string
-      | RetireData[]
-    )[];
+    let [
+      projectId,
+      groupId,
+      assetId,
+      account,
+      amount,
+      retireData,
+      reason
+    ] = eventData as (
+        | number
+        | string
+        | RetireData[]
+        )[];
     let retireDataUpdate = retireData as RetireData[];
-    console.log(projectId, account, amount, retireData);
+    amount = Number(amount.toString().replace(/,/g, ''))
 
-    let retiredCreditsSum = retireDataUpdate.reduce(
-      (acc, cv) => acc + cv.count,
-      0
-    );
-
-    await prisma.$transaction([
-      prisma.project.update({
-        where: { id: projectId as number },
-        data: {
-          batchGroups: {
-            update: retireDataUpdate.map((retireData) => ({
-              where: { assetId: assetId as number },
-              data: {
-                retired: {
-                  increment: retireData.count,
-                },
-                batches: {
-                  update: {
-                    where: { uuid: convertHex(retireData.uuid as string) },
-                    data: {
-                      retired: {
-                        increment: retireData.count,
-                      },
-                    },
-                  },
-                },
-              },
-            })),
-          },
-        },
-      }),
-      prisma.profil.update({
-        where: { address: account as string },
-        data: {
-          investments: {
-            update: {
-              where: { addressProjectId: `${account}_${projectId}` },
-              data: {
-                retiredCredits: {
-                  increment: retiredCreditsSum,
-                },
-                creditsOwnedPerGroup: {
-                  update: {
-                    where: {
-                      addressGroupId: `${account}_${groupId}_${projectId}`,
-                    },
-                    data: {
-                      creditsOwned: {
-                        decrement: retiredCreditsSum as number,
-                      },
-                    },
-                  },
-                },
-              },
-            },
-          },
-          creditTransactions: {
-            create: {
-              type: CreditTransactionType.RETIRE,
-              projectId: projectId as number,
-              description:
-                'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Ut a ullamcorper dignissim euismod amet, ridiculus.',
-              credits: amount as number,
-              creditPrice: 0,
-              from: account as string,
-              to: account as string,
-              fee: 0,
-              createdAt: createdAt.toISOString(),
-            },
-          },
-        },
-      }),
-    ]);
-  } catch (e) {
-    // @ts-ignore
-    console.log(`Error occurred (retireing project): ${e.message}`);
+    await prisma.assetTransaction.upsert({
+      where: {
+        uniqueId: {
+          hash: hash,
+          owner: account as string
+        }
+      },
+      create: {
+        hash: hash,
+        blockNumber: blockNumber,
+        index: index,
+        type: AssetTransactionType.RETIRED,
+        from: account as string,
+        to: '',
+        owner: account as string,
+        assetId: assetId as number,
+        amount: amount,
+        createdAt: createdAt.toISOString(),
+        data: JSON.stringify(retireDataUpdate),
+        reason: reason as string
+      },
+      update: {
+        blockNumber: blockNumber,
+        index: index,
+        type: AssetTransactionType.RETIRED,
+        assetId: assetId as number,
+        from: account as string,
+        to: '',
+        owner: account as string,
+        data: JSON.stringify(retireDataUpdate),
+        reason: reason as string
+      },
+    });
+  } catch (e: any) {
+    console.log(`Error occurred (asset retired transaction): ${e.message}`);
   }
 }

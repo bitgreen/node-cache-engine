@@ -2,7 +2,6 @@ import { prisma } from '../../../services/prisma';
 import express, { Request, Response } from 'express';
 import { authMiddle } from '../../authentification/auth-middleware';
 import validator from 'validator';
-import { authenticatedAddress } from '../../../services/authentification';
 
 const router = express.Router();
 
@@ -13,7 +12,7 @@ router.get('/investments', authMiddle, async (req: Request, res: Response) => {
       req.query.projectId === 'undefined' || isNaN(Number(req.query.projectId))
         ? {}
         : { projectId: Number(req.query.projectId) };
-    const profil = await prisma.profil.findUnique({
+    const profile = await prisma.profile.findUnique({
       where: {
         address: req.session?.address, //req.session?.address,
       },
@@ -28,7 +27,7 @@ router.get('/investments', authMiddle, async (req: Request, res: Response) => {
         },
       },
     });
-    const projectIds = profil?.investments.map((item) => item.projectId);
+    const projectIds = profile?.investments.map((item) => item.projectId);
     const projects = await prisma.project.findMany({
       where: {
         id: { in: projectIds },
@@ -39,7 +38,7 @@ router.get('/investments', authMiddle, async (req: Request, res: Response) => {
         batchGroups: { include: { batches: true } },
       },
     });
-    const investmentProjects = profil?.investments.map((item) => {
+    const investmentProjects = profile?.investments.map((item) => {
       const pro = projects.find((el) => el.id === item.projectId);
       return { ...item, project: pro };
     });
@@ -99,38 +98,5 @@ router.get('/project-originator', async (req: Request, res: Response) => {
     return res.status(500).json(e);
   }
 });
-
-router.get(
-  '/credit-transaction',
-  authMiddle,
-  async (req: Request, res: Response) => {
-    console.log('Credit Transation');
-    console.log('date0', req.query.date);
-    const date =
-      req.query.date !== 'undefined'
-        ? (req.query.date as string)
-        : '1970-01-01';
-    console.log('date', date);
-    try {
-      const profil = await prisma.profil.findUnique({
-        where: {
-          address: req.session?.address,
-        },
-        include: {
-          creditTransactions: {
-            where: {
-              createdAt: { gte: new Date(date) },
-            },
-          },
-        },
-      });
-      console.log(profil);
-      return res.status(200).json(profil?.creditTransactions);
-    } catch (e) {
-      console.log('error', e);
-      return res.status(500).json(undefined);
-    }
-  }
-);
 
 export default router;

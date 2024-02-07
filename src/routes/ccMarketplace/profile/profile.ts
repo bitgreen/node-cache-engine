@@ -2,48 +2,67 @@ import { prisma } from '../../../services/prisma';
 import express, { Request, Response } from 'express';
 import { authMiddle } from '../../authentification/auth-middleware';
 import validator from 'validator';
-import { authenticatedAddress } from '../../../services/authentification';
 import { UserType, VerificationStatus } from '@prisma/client';
+import {queryChain} from "../../../utils/chain";
 
 const router = express.Router();
 
 router.get('/profile', authMiddle, async (req: Request, res: Response) => {
   console.log('/profile');
   try {
-    const profil = await prisma.profil.findUnique({
+    const profile = await prisma.profile.findUnique({
       where: {
         address: req.session?.address,
       },
-      include: { KYC: true },
     });
-    return res.status(200).json(profil);
+
+    const kyc = {
+      status: "NOT_VERIFIED",
+      level: 0
+    }
+
+    if(req.session?.address) {
+      const kycData = await queryChain('kycPallet', 'members', [req.session?.address])
+
+      if(kycData.data) {
+        const kycLevel = parseInt(kycData.data.match(/\d+/)[0]);
+
+        kyc.status = "VERIFIED"
+        kyc.level = kycLevel
+      }
+    }
+
+    return res.status(200).json({
+      ...profile,
+      kyc
+    });
   } catch (e) {
+    console.log(e)
     return res.status(500).json(e);
   }
 });
 
 router.get('/check-profile/:address', async (req: Request, res: Response) => {
-  console.log('/check-profile/:address');
   try {
     const address = req.params.address;
-    const profil = await prisma.profil.findUnique({
+    const profile = await prisma.profile.findUnique({
       where: {
         address: address,
       },
     });
-    if (!profil) return res.status(200).json({ success: false });
-    return res.status(200).json({ success: true });
+    const isOnboarded = !!(profile?.firstName && profile?.lastName && profile?.email)
+    if (!profile) return res.status(200).json({ success: false });
+    return res.status(200).json({ success: true, isOnboarded: isOnboarded });
   } catch (e) {
     return res.status(500).json(e);
   }
 });
 
-router.put('/profile', async (req: Request, res: Response) => {
-  // const auth_address = await authenticatedAddress(req);
+router.put('/profile', authMiddle, async (req: Request, res: Response) => {
   console.log('put /profile');
   try {
     const { profile, isLogin } = req.body;
-    console.log('profile', profile, isLogin);
+    // console.log('profile', profile, isLogin);
     const updateParams =
       isLogin == 'true'
         ? {}
@@ -54,16 +73,13 @@ router.put('/profile', async (req: Request, res: Response) => {
             lastName: profile.lastName
               ? validator.escape(validator.trim(`${profile.lastName}`))
               : '',
-            orginatorName: profile.orginatorName
-              ? validator.escape(validator.trim(`${profile.orginatorName}`))
+            originatorName: profile.originatorName
+              ? validator.escape(validator.trim(`${profile.originatorName}`))
               : '',
-            orginatorDescription: profile.orginatorDescription
+            originatorDescription: profile.originatorDescription
               ? validator.escape(
-                  validator.trim(`${profile.orginatorDescription}`)
+                  validator.trim(`${profile.originatorDescription}`)
                 )
-              : '',
-            email: profile.email
-              ? validator.escape(validator.trim(`${profile.email}`))
               : '',
             userType: profile.userType ? profile.userType : UserType.Individual,
             // avatar: profile.avatar, // TODO: temp disabled
@@ -77,32 +93,29 @@ router.put('/profile', async (req: Request, res: Response) => {
               ? validator.toBoolean(`${profile.marketingNews}`)
               : false,
           };
-    const result = await prisma.profil.upsert({
+    const result = await prisma.profile.upsert({
       where: {
-        address: profile.address,
+        address: req.session?.address,
       },
       update: updateParams,
       create: {
-        address: profile.address,
-        // KYC: {
-        //   create: {
-        //     status: VerificationStatus.NOT_VERIFIED,
-        //   },
-        // },
+        address: req.session?.address as string,
         email: profile.email
             ? validator.escape(validator.trim(`${profile.email}`))
             : '',
+        emailStatus: req.session?.authType === 'Google' ? 'VERIFIED' : 'NOT_VERIFIED',
+        emailVerifiedAt: req.session?.authType === 'Google' ? new Date() : undefined,
         firstName: profile.firstName
           ? validator.escape(validator.trim(`${profile.firstName}`))
           : '',
         lastName: profile.lastName
           ? validator.escape(validator.trim(`${profile.lastName}`))
           : '',
-        orginatorName: profile.orginatorName
-          ? validator.escape(validator.trim(`${profile.orginatorName}`))
+        originatorName: profile.originatorName
+          ? validator.escape(validator.trim(`${profile.originatorName}`))
           : '',
-        orginatorDescription: profile.orginatorDescription
-          ? validator.escape(validator.trim(`${profile.orginatorDescription}`))
+        originatorDescription: profile.originatorDescription
+          ? validator.escape(validator.trim(`${profile.originatorDescription}`))
           : '',
         // avatar: profile.avatar, // TODO: temp disabled
         activityTransactionReceipts: profile.activityTransactionReceipts
@@ -128,17 +141,17 @@ router.get('/profile-info/:address', async (req: Request, res: Response) => {
   console.log('Profile');
   if (typeof address !== 'string') return res.status(400).end();
 
-  const profil = await prisma.profil.findUnique({
+  const profile = await prisma.profile.findUnique({
     where: {
       address: address,
     },
   });
-  if (profil === null)
-    return res.status(404).json({ error: 'Profil not found' });
+  if (profile === null)
+    return res.status(404).json({ error: 'profile not found' });
 
   return res.status(200).json({
-    orginatorName: profil.orginatorName,
-    orginatorDescription: profil.orginatorDescription,
+    originatorName: profile.originatorName,
+    originatorDescription: profile.originatorDescription,
   });
 });
 
@@ -146,7 +159,7 @@ router.post('/save-email', authMiddle, async (req: Request, res: Response) => {
   try {
     const { email } = req.body;
     console.log('EMAIL', email);
-    await prisma.profil.update({
+    await prisma.profile.update({
       where: { address: req.session?.address },
       data: {
         email: email,

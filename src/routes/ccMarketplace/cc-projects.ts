@@ -2,7 +2,6 @@ import { Project } from '../../types/prismaTypes';
 import { prisma } from '../../services/prisma';
 import { createProjectFilter } from '../../utils/filters';
 import express, { Request, Response } from 'express';
-import { authenticatedAddress } from '../../services/authentification';
 import { authKYC, authMiddle } from '../authentification/auth-middleware';
 import { addProjectTokens, filterAndAddProjectPrice } from '../../utils/projectsCalc';
 const router = express.Router();
@@ -14,7 +13,10 @@ router.get('/project', async (req: Request, res: Response) => {
   try {
     let [projects, resultCount] = await prisma.$transaction([
       prisma.project.findMany({
-        where: filters,
+        where: {
+          ...filters,
+          listedToMarketplace: true
+        },
         take: limit,
         cursor: cursorObj,
         skip: cursor === '' ? 0 : 1,
@@ -26,7 +28,10 @@ router.get('/project', async (req: Request, res: Response) => {
         orderBy: [sortFilter],
       }),
       prisma.project.count({
-        where: filters,
+        where: {
+          ...filters,
+          listedToMarketplace: true
+        },
       }),
     ]);
     let minCreditPrice = (req.query.minCreditPrice as string) ?? undefined;
@@ -71,6 +76,7 @@ router.get('/project', async (req: Request, res: Response) => {
       const minCreditQuantityLimit = Number(minCreditQuantity) ? Number(minCreditQuantity) : 0;
       projects = filterAndAddProjectPrice(projects,invs,minCreditQuantityLimit,Number(minCreditPrice), sellChecked == "true" ? true : false)
     }
+
     const projectsWithMinMaxCreditPrices: Project = addProjectTokens(projects);
     // console.log("projectsWithMinMaxCreditPrices",projectsWithMinMaxCreditPrices)
     return res.json({
@@ -161,8 +167,8 @@ router.get(
 
       const starred = await prisma.star.findUnique({
         where: {
-          profilAddress_projectId: {
-            profilAddress: address as string,
+          profileAddress_projectId: {
+            profileAddress: address as string,
             projectId: projectId,
           },
         },
@@ -182,7 +188,7 @@ router.get(
     try {
       const address = req.session?.address || '';
 
-      const profile = await prisma.profil.findUnique({
+      const profile = await prisma.profile.findUnique({
         where: { address: address },
         include: { stars: true },
       });
@@ -219,7 +225,7 @@ router.post(
 
       await prisma.star.create({
         data: {
-          profilAddress: address as string,
+          profileAddress: address as string,
           projectId: projectId,
         },
       });
@@ -245,9 +251,9 @@ router.delete(
 
       await prisma.star.delete({
         where: {
-          profilAddress_projectId: {
+          profileAddress_projectId: {
             projectId: projectId,
-            profilAddress: address as string,
+            profileAddress: address as string,
           },
         },
       });
@@ -286,8 +292,8 @@ router.delete('/project/delete',authKYC, async (req: Request, res: Response) => 
     return res.status(500).json(e);
   }
 });
-router.get('/project-orginator/:address', async (req: Request, res: Response) => {
-  console.log('get /project-orginator/:address');
+router.get('/project-originator/:address', async (req: Request, res: Response) => {
+  console.log('get /project-originator/:address');
 
   try {
     const address = req.params.address

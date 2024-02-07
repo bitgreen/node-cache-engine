@@ -1,12 +1,13 @@
 import { hexToString } from '@polkadot/util';
 import { Codec } from '@polkadot/types-codec/types';
 import { prisma } from '../prisma';
-import { Event } from '@polkadot/types/interfaces';
-import { CreditTransactionType } from '@prisma/client';
+import {BlockNumber, Event} from '@polkadot/types/interfaces';
+import {AssetTransactionType} from '@prisma/client';
+import {ApiPromise} from "@polkadot/api";
 
-export async function createBuyOrder(event: Event, createdAt: Date) {
+export async function createBuyOrder(event: Event, createdAt: Date, blockNumber: number | BlockNumber,) {
   try {
-    let dataBlock = event.data.toHuman();
+    let dataBlock = event.data.toPrimitive();
     let [
       orderIdChain,
       sellOrderIdChain,
@@ -18,171 +19,132 @@ export async function createBuyOrder(event: Event, createdAt: Date) {
       seller,
       buyer,
     ] = dataBlock as string[];
-    const orderId = Number(orderIdChain.replace(/,/g, ''));
-    const sellOrderId = Number(sellOrderIdChain.replace(/,/g, ''));
-    const units = Number(unitsChain.replace(/,/g, ''));
-    const projectId = Number(projectIdChain.replace(/,/g, ''));
-    const feesPaid = Number(feesPaidChain.replace(/,/g, ''));
-    const groupId = Number(groupIdChain.replace(/,/g, ''));
 
-    console.log(orderId, sellOrderId, units, pricePerUnit, seller, buyer);
+    const orderId = Number(orderIdChain);
+    const sellOrderId = Number(sellOrderIdChain);
+    const units = Number(unitsChain);
+    const projectId = Number(projectIdChain);
+    const feesPaid = feesPaidChain?.replace(/,/g, '') || 0
+    const groupId = Number(groupIdChain);
+
     const convertedPricePerunit = parseFloat(
       (pricePerUnit as string).replace(/,/g, '').slice(0, -18)
-    );
+    ) || 0;
 
-    // Seller and Buyer
-    await prisma.$transaction([
-      prisma.profil.update({
-        where: {
-          address: seller as string,
-        },
-        data: {
-          investments: {
-            update: {
-              where: {
-                addressProjectId: `${seller}_${projectId}`,
-              },
-              data: {
-                // creditsOwned: {
-                //   decrement: units as number,
-                // },
-                quantity: {
-                  decrement: units,
-                },
-                totalValue: {
-                  decrement: (convertedPricePerunit as number) * units,
-                },
-                sellorders: {
-                  update: {
-                    where: {
-                      orderId: sellOrderId,
-                    },
-                    data: {
-                      // isSold: sellOrder?.unitsRemain == units ? true : false,
-                      unitsRemain: {
-                        decrement: units,
-                      },
-                    },
-                  },
-                },
-              },
-            },
-          },
-          creditTransactions: {
-            create: {
-              type: CreditTransactionType.SALE,
-              projectId: projectId,
-              description:
-                'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Ut a ullamcorper dignissim euismod amet, ridiculus.',
-              credits: units,
-              creditPrice: convertedPricePerunit as number,
-              from: seller as string,
-              to: buyer as string,
-              fee: feesPaid,
-              createdAt: createdAt.toISOString(),
-            },
-          },
-        },
-      }),
-      prisma.profil.update({
-        where: {
-          address: buyer as string,
-        },
-        data: {
-          investments: {
-            upsert: {
-              where: { addressProjectId: `${buyer}_${projectId}` },
-              update: {
-                creditsOwned: {
-                  increment: units,
-                },
-                totalValue: {
-                  increment: (convertedPricePerunit as number) * units,
-                },
-                creditPrice: convertedPricePerunit as number,
-                quantity: {
-                  increment: units,
-                },
-                creditsOwnedPerGroup: {
-                  upsert: {
-                    where: {
-                      addressGroupId: `${buyer}_${groupId}_${projectId}`,
-                    },
-                    update: {
-                      creditsOwned: {
-                        increment: units,
-                      },
-                    },
-                    create: {
-                      groupId: groupId,
-                      addressGroupId: `${buyer}_${groupId}`,
-                      creditsOwned: units,
-                    },
-                  },
-                },
-                buyOrders: {
-                  create: {
-                    creditsOwned: units,
-                    retiredCredits: 0,
-                    creditPrice: convertedPricePerunit as number,
-                    orderId: orderId,
-                    groupId: groupId,
-                    createdAt: createdAt.toISOString(),
-                  },
-                },
-              },
-              create: {
-                projectId: projectId,
-                creditsOwned: units,
-                retiredCredits: 0,
-                totalValue: (convertedPricePerunit as number) * units,
-                addressProjectId: `${buyer}_${projectId}`,
-                creditPrice: convertedPricePerunit as number,
-                quantity: units,
-                creditsOwnedPerGroup: {
-                  create: {
-                    groupId: groupId,
-                    addressGroupId: `${buyer}_${groupId}_${projectId}`,
-                    creditsOwned: units,
-                  },
-                },
-                buyOrders: {
-                  create: {
-                    creditsOwned: units,
-                    retiredCredits: 0,
-                    creditPrice: convertedPricePerunit as number,
-                    orderId: orderId,
-                    groupId: groupId,
-                    createdAt: createdAt.toISOString(),
-                  },
-                },
-                sellorders: undefined,
-              },
-            },
-          },
-          creditTransactions: {
-            create: {
-              type: CreditTransactionType.PURCHASE,
-              projectId: projectId,
-              description:
-                'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Ut a ullamcorper dignissim euismod amet, ridiculus.',
-              credits: units,
-              creditPrice: convertedPricePerunit as number,
-              from: seller as string,
-              to: buyer as string,
-              fee: feesPaid,
-              createdAt: createdAt.toISOString(),
-            },
-          },
-        },
-      }),
-    ]);
-
-    // await prisma.buyOrderReserved.deleteMany({
-    //   where: {buyorderId: orderId},
-    // })
+    await prisma.buyOrder.create({
+      data: {
+        creditsOwned: units,
+        retiredCredits: 0,
+        creditPrice: convertedPricePerunit as number,
+        orderId: orderId,
+        groupId: groupId,
+        createdAt: createdAt.toISOString(),
+      }
+    })
   } catch (e) {
     // @ts-ignore
-    console.log(`Error occurred (create buy order): ${e.message}`);
+    console.log(`Error occurred (create buy order): ${e.message} at ${blockNumber}`);
   }
+}
+
+export async function createTrade(api: ApiPromise, event: Event, createdAt: Date, blockNumber: number, index: number, hash: string) {
+  try {
+    let dataBlock = event.data.toPrimitive();
+    let [
+      orderIdChain,
+      sellOrderIdChain,
+      unitsChain,
+      projectIdChain,
+      groupIdChain,
+      pricePerUnit,
+      feesPaidChain,
+      seller,
+      buyer,
+    ] = dataBlock as string[];
+
+    const orderId = Number(orderIdChain);
+    const sellOrderId = Number(sellOrderIdChain);
+    const units = Number(unitsChain);
+    const projectId = Number(projectIdChain);
+    const feesPaid = feesPaidChain.toString()?.replace(/,/g, '') || 0;
+    const groupId = Number(groupIdChain);
+
+    const creditPrice = pricePerUnit.toString().replace(/,/g, '')
+
+    const sellOrder = (await api.query.dex.orders(sellOrderId)).toJSON() as any
+
+    const assetId = sellOrder.assetId
+
+    const sold_owner = seller
+    const purchased_owner = buyer
+
+    await prisma.assetTransaction.upsert({
+      where: {
+        uniqueId: {
+          hash: hash,
+          owner: sold_owner as string
+        }
+      },
+      create: {
+        hash: hash,
+        blockNumber: blockNumber,
+        index: index,
+        type: AssetTransactionType.SOLD,
+        from: seller as string,
+        to: buyer as string,
+        owner: sold_owner as string,
+        assetId: assetId as number,
+        pricePerUnit: creditPrice,
+        amount: units,
+        createdAt: createdAt.toISOString(),
+      },
+      update: {
+        index: index,
+        type: AssetTransactionType.SOLD,
+        assetId: assetId as number,
+        pricePerUnit: creditPrice,
+        from: seller as string,
+        to: buyer as string,
+        owner: sold_owner as string,
+      },
+    });
+
+    await prisma.assetTransaction.upsert({
+      where: {
+        uniqueId: {
+          hash: hash,
+          owner: purchased_owner as string
+        }
+      },
+      create: {
+        hash: hash,
+        blockNumber: blockNumber,
+        index: index,
+        type: AssetTransactionType.PURCHASED,
+        from: seller as string,
+        to: buyer as string,
+        owner: purchased_owner as string,
+        assetId: assetId as number,
+        pricePerUnit: creditPrice,
+        feesPaid: feesPaid as string,
+        amount: units,
+        createdAt: createdAt.toISOString(),
+      },
+      update: {
+        index: index,
+        type: AssetTransactionType.PURCHASED,
+        assetId: assetId as number,
+        pricePerUnit: creditPrice,
+        feesPaid: feesPaid as string,
+        from: seller as string,
+        to: buyer as string,
+        owner: purchased_owner as string,
+      },
+    });
+  } catch (e) {
+    // @ts-ignore
+    console.log(`Error occurred (create trade): ${e.message} at ${blockNumber}`);
+  }
+
+  return
 }

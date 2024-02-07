@@ -44,7 +44,7 @@ export async function queryChain(
           // console.log(result.forEach())
           resolve({
             success: true,
-            data: result.toHuman()
+            data: result.toPrimitive()
           });
         })
         .catch((err) => {
