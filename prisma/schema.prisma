@@ -77,10 +77,12 @@ model Batch {
   totalSupply  Int?
   minted       Int?
   retired      Int?
-  groupId      Int?
+  index        Int?
 
   batchGroupId Int
   batchGroups  BatchGroups @relation(fields: [batchGroupId], references: [id], onDelete: Cascade)
+
+  @@unique([batchGroupId, index], name: "uniqueId")
 }
 
 model RegistryDetails {
