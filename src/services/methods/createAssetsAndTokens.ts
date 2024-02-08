@@ -96,9 +96,6 @@ export async function createIssuedAssetTransaction(
     let [assetId, owner, totalSupply] = eventData as (number | string)[];
     totalSupply = Number(totalSupply.toString().replace(/,/g, ''))
 
-    console.log('index', index)
-    console.log('totalSupply', totalSupply)
-
     await prisma.assetTransaction.upsert({
       where: {
         uniqueId: {

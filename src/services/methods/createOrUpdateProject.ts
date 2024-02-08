@@ -149,7 +149,6 @@ export async function updateProjectData(projectId: number, projectData: any) {
             create: {
               ...batch,
               uuid: batch.uuid,
-              // batchGroup: Number(groupId),
               index: i
             }
           };
