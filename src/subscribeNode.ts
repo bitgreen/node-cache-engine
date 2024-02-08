@@ -74,7 +74,7 @@ async function main() {
   const activePromises = new Set();
   for(const blockNumber of missingBlocks) {
     // Wait if we reach the concurrency limit
-    if (activePromises.size >= 100) {
+    if (activePromises.size >= 1200) {
       await Promise.race(activePromises);
     }
 
