@@ -80,7 +80,7 @@ model Batch {
   index        Int?
 
   batchGroupId Int
-  batchGroups  BatchGroups @relation(fields: [batchGroupId], references: [id], onDelete: Cascade)
+  batchGroup   BatchGroups @relation(fields: [batchGroupId], references: [id], onDelete: Cascade)
 
   @@unique([batchGroupId, index], name: "uniqueId")
 }

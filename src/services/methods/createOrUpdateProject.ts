@@ -4,6 +4,7 @@ import {BatchGroupType, ProjectState, SdgType} from '@prisma/client';
 import {ApiPromise} from "@polkadot/api";
 import {blockExtrinsic} from "../../services/methods/blockExtrinsic";
 import logger from "@/utils/logger";
+import * as process from "process";
 
 export async function createOrUpdateProject(
     blockNumber: number | BlockNumber,
@@ -139,11 +140,20 @@ export async function updateProjectData(projectId: number, projectData: any) {
         const data = batchGroup.credits || batchGroup.forwards || batchGroup.shares
         const type = batchGroup.credits ? BatchGroupType.CREDITS : (batchGroup.forwards ? BatchGroupType.FORWARDS : BatchGroupType.SHARES)
 
+        const existingBatchGroup = await prisma.batchGroups.findUnique({
+          where: {
+            uniqueId: {
+              projectId: Number(projectId),
+              groupId: Number(groupId)
+            }
+          }
+        })
+
         const batches = data.batches?.map((batch: any, i: number) => {
           return {
             where: {
               uniqueId: {
-                batchGroupId: Number(groupId),
+                batchGroupId: Number(existingBatchGroup?.id) || null,
                 index: i
               }
             },
@@ -174,8 +184,10 @@ export async function updateProjectData(projectId: number, projectData: any) {
           },
           update: {
             ...data,
-            batches: {},
-            assetId: Number(data.minted) > 0 ? Number(data.assetId) : null
+            assetId: Number(data.minted) > 0 ? Number(data.assetId) : null,
+            batches: {
+              connectOrCreate: batches
+            },
           }
         }))
       }
@@ -194,12 +206,7 @@ export async function updateProjectData(projectId: number, projectData: any) {
             ...data,
             type: BatchGroupType.DONATIONS,
             groupId: Number(groupId),
-            projectId: Number(projectId),
-            batches: {
-              create: data?.batches?.map((batch: any) => {
-                return { ...batch, uuid: batch.uuid };
-              }),
-            },
+            projectId: Number(projectId)
           },
           update: {
             ...data,
