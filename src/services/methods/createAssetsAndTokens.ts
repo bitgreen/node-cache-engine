@@ -5,6 +5,7 @@ import {BalanceData, BlockEvent} from '../../types/types';
 import { hexToBigInt } from '@polkadot/util';
 import { AssetTransactionType } from '@prisma/client';
 import BigNumber from "bignumber.js";
+import logger from "@/utils/logger";
 
 interface MetaData {
   deposit: string;
@@ -79,7 +80,7 @@ export async function createTransferAssetTransaction(
       },
     });
   } catch (e: any) {
-    console.log(`Error occurred (asset transferred transaction): ${e.message}`);
+    logger.error(`createTransferAssetTransaction - Block #${blockNumber}: ${e.message}`)
   }
 }
 
@@ -121,7 +122,7 @@ export async function createIssuedAssetTransaction(
       },
     });
   } catch (e: any) {
-    console.log(`Error occurred (asset issued transaction): ${e.message}`);
+    logger.error(`createIssuedAssetTransaction - Block #${blockNumber}: ${e.message}`)
   }
 }
 
@@ -179,7 +180,7 @@ export async function createSellOrderAssetTransaction(
       },
     });
   } catch (e: any) {
-    console.log(`Error occurred (sell order transaction): ${e.message}`);
+    logger.error(`createSellOrderAssetTransaction - Block #${blockNumber}: ${e.message}`)
   }
 }
 
@@ -217,9 +218,8 @@ export async function createTokenTransaction(
         },
       }),
     ]);
-  } catch (e) {
-    // @ts-ignore
-    console.log(`Error occurred (asset Transaction): ${e.message}`);
+  } catch (e: any) {
+    logger.error(`createTokenTransaction - Block #${blockNumber}: ${e.message}`)
   }
 }
 

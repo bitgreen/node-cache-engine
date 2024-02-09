@@ -1,6 +1,7 @@
 
 import axios from 'axios';
 import { prisma } from './prisma';
+import logger from "@/utils/logger";
 
 interface GeckoResponse {
     polkadot: {
@@ -26,9 +27,8 @@ export async function fetchExchangeRate() {
                 exchangeRateUSDT: response.data.tether.usd
             }
         })
-    } catch (e) {
-        // @ts-ignore
-        console.log(`Error occurred (coingecko api fetch): ${e.message}`);
+    } catch (e: any) {
+        logger.error(`fetchExchangeRate: ${e.message}`)
     }
 
 }

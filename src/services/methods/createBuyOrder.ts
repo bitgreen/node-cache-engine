@@ -4,6 +4,7 @@ import { prisma } from '../prisma';
 import {BlockNumber, Event} from '@polkadot/types/interfaces';
 import {AssetTransactionType} from '@prisma/client';
 import {ApiPromise} from "@polkadot/api";
+import logger from "@/utils/logger";
 
 export async function createBuyOrder(event: Event, createdAt: Date, blockNumber: number | BlockNumber,) {
   try {
@@ -41,9 +42,8 @@ export async function createBuyOrder(event: Event, createdAt: Date, blockNumber:
         createdAt: createdAt.toISOString(),
       }
     })
-  } catch (e) {
-    // @ts-ignore
-    console.log(`Error occurred (create buy order): ${e.message} at ${blockNumber}`);
+  } catch (e: any) {
+    logger.error(`createBuyOrder - Block #${blockNumber}: ${e.message}`)
   }
 }
 
@@ -141,9 +141,8 @@ export async function createTrade(api: ApiPromise, event: Event, createdAt: Date
         owner: purchased_owner as string,
       },
     });
-  } catch (e) {
-    // @ts-ignore
-    console.log(`Error occurred (create trade): ${e.message} at ${blockNumber}`);
+  } catch (e: any) {
+    logger.error(`createTrade - Block #${blockNumber}: ${e.message}`)
   }
 
   return

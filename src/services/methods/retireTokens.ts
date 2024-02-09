@@ -1,6 +1,7 @@
 import { prisma } from '../prisma';
 import { Event } from '@polkadot/types/interfaces';
 import {AssetTransactionType} from '@prisma/client';
+import logger from "@/utils/logger";
 
 interface RetireData {
   name: string;
@@ -69,6 +70,6 @@ export async function createRetiredAssetTransaction(
       },
     });
   } catch (e: any) {
-    console.log(`Error occurred (asset retired transaction): ${e.message}`);
+    logger.error(`createRetiredAssetTransaction - Block #${blockNumber}: ${e.message}`)
   }
 }

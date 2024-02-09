@@ -7,29 +7,30 @@ import {
   Extrinsic,
   EventRecord,
 } from '@polkadot/types/interfaces';
-import { approveProject } from './methods/approveProject';
-import { ccMinted } from './methods/mintedCarbonCredit';
-import {blockExtrinsic, getBlockDate} from './methods/blockExtrinsic';
-import { transaction } from './methods/transaction';
-import { rejectProject } from './methods/rejectProject';
-import { createSellOrder } from './methods/createSellOrder';
-import { createBuyOrder, createTrade } from './methods/createBuyOrder';
-import { createRetiredAssetTransaction } from './methods/retireTokens';
-import { updateBlock } from './methods/updateBlock';
+import { approveProject } from '@/services/methods/approveProject';
+import { ccMinted } from '@/services/methods/mintedCarbonCredit';
+import {blockExtrinsic, getBlockDate} from '@/services/methods/blockExtrinsic';
+import { transaction } from '@/services/methods/transaction';
+import { rejectProject } from '@/services/methods/rejectProject';
+import { createSellOrder } from '@/services/methods/createSellOrder';
+import { createBuyOrder, createTrade } from '@/services/methods/createBuyOrder';
+import { createRetiredAssetTransaction } from '@/services/methods/retireTokens';
+import { updateBlock } from '@/services/methods/updateBlock';
 import {
   createIssuedAssetTransaction, createSellOrderAssetTransaction,
   createTokenTransaction,
   createTransferAssetTransaction,
-} from './methods/createAssetsAndTokens';
-import { sellOrderCancelled } from './methods/sellOrderCancelled';
-import { memberAddedKYC } from './methods/memberAddedKYC';
-import { createOrUpdateProject } from "./methods/createOrUpdateProject";
+} from '@/services/methods/createAssetsAndTokens';
+import { sellOrderCancelled } from '@/services/methods/sellOrderCancelled';
+import { memberAddedKYC } from '@/services/methods/memberAddedKYC';
+import { createOrUpdateProject } from "@/services/methods/createOrUpdateProject";
 
 export async function processBlock(
   api: ApiPromise,
   blockNumber: BlockNumber | number
 ) {
   console.log(`Processing block: #${blockNumber}`);
+
   const { signedBlock, blockEvents, blockDate, blockHash } = await blockExtrinsic(api, blockNumber);
 
   if (!signedBlock || !blockEvents) return;
@@ -139,7 +140,7 @@ export async function processBlock(
       }
       if (event.section === 'carbonCredits') {
         if (event.method === BlockEvent.ProjectCreated || event.method === BlockEvent.ProjectUpdated) {
-          await createOrUpdateProject(api, event, blockDate);
+          await createOrUpdateProject(blockNumber, api, event, blockDate);
         }
 
         if (event.method === BlockEvent.ProjectApproved) {
@@ -147,7 +148,7 @@ export async function processBlock(
         }
 
         if (event.method === BlockEvent.ProjectRejected) {
-          await rejectProject(event, blockDate);
+          await rejectProject(blockNumber, event, blockDate);
         }
 
         if (event.method === BlockEvent.CarbonCreditMinted) {

@@ -1,6 +1,7 @@
 import { Event } from '@polkadot/types/interfaces';
 import { VerificationStatus } from '@prisma/client';
 import { prisma } from '../prisma';
+import logger from "@/utils/logger";
 
 export async function memberAddedKYC(event: Event, block_date: Date) {
   try {
@@ -13,8 +14,8 @@ export async function memberAddedKYC(event: Event, block_date: Date) {
         status: VerificationStatus.VERIFIED,
       },
     });
-  } catch (e) {
-    // @ts-ignore
-    console.log(`Error occurred (member added kyc): ${e.message}`);
+  } catch (e: any) {
+    logger.error(`memberAddedKYC: ${e.message}`)
+
   }
 }

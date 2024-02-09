@@ -1,6 +1,7 @@
 import { prisma } from '../prisma';
 import { Event } from '@polkadot/types/interfaces';
 import { ProjectState } from '@prisma/client';
+import logger from "@/utils/logger";
 
 export async function approveProject(event: Event, updatedAt: Date) {
   try {
@@ -50,8 +51,7 @@ export async function approveProject(event: Event, updatedAt: Date) {
         updatedAt: updatedAt.toISOString(),
       },
     });
-  } catch (e) {
-    // @ts-ignore
-    console.log(`Error occurred (approving project): ${e.message}`);
+  } catch (e: any) {
+    logger.error(`approveProject: ${e.message}`)
   }
 }

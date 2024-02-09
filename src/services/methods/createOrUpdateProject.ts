@@ -1,10 +1,12 @@
 import { prisma } from '../prisma';
-import { Event } from '@polkadot/types/interfaces';
+import {BlockNumber, Event} from '@polkadot/types/interfaces';
 import {BatchGroupType, ProjectState, SdgType} from '@prisma/client';
 import {ApiPromise} from "@polkadot/api";
 import {blockExtrinsic} from "../../services/methods/blockExtrinsic";
+import logger from "@/utils/logger";
 
 export async function createOrUpdateProject(
+    blockNumber: number | BlockNumber,
     api: ApiPromise,
     event: Event,
     createdAt: Date
@@ -120,9 +122,8 @@ export async function createOrUpdateProject(
 
     // to update batch groups
     await updateProjectData(Number(projectId), project)
-  } catch (e) {
-    // @ts-ignore
-    console.log(`Error occurred (creating project): ${e.message}`);
+  } catch (e: any) {
+    logger.error(`createOrUpdateProject - Block #${blockNumber}: ${e.message}`)
   }
 }
 
@@ -208,8 +209,7 @@ export async function updateProjectData(projectId: number, projectData: any) {
     }
 
     await prisma.$transaction(batchGroups)
-  } catch (e) {
-    console.log(projectId)
-    console.log('error updating project id:', projectId, e)
+  } catch (e: any) {
+    logger.error(`updateProjectData - Project #${projectId}: ${e.message}`)
   }
 }
