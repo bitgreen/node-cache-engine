@@ -74,7 +74,11 @@ export function setCookie(
 ): void {
   const stringValue =
     typeof value === 'object' ? `j:${JSON.stringify(value)}` : String(value);
-  res.cookie(name, stringValue, options);
+  res.cookie(name, stringValue, {
+    ...options,
+    secure: process.env.NODE_ENV !== 'development',
+    domain: (process.env.COOKIE_DOMAIN && process.env.COOKIE_DOMAIN?.length > 3) ? process.env.COOKIE_DOMAIN : undefined
+  });
   // res.setHeader('Set-Cookie', serialize(name, String(stringValue), options));
 }
 
