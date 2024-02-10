@@ -149,21 +149,14 @@ export async function updateProjectData(projectId: number, projectData: any) {
           }
         })
 
-        const batches = data.batches?.map((batch: any, i: number) => {
-          return {
-            where: {
-              uniqueId: {
-                batchGroupId: Number(existingBatchGroup?.id) || null,
-                index: i
-              }
-            },
-            create: {
-              ...batch,
-              uuid: batch.uuid,
-              index: i
-            }
-          };
-        })
+        const batches = {
+          ...(existingBatchGroup
+                  ? { connectOrCreate: data.batches?.map((batch: any, i: number) => ({
+                      where: { uniqueId: { batchGroupId: Number(existingBatchGroup?.id), index: i } },
+                      create: { ...batch, uuid: batch.uuid, index: i }
+                    })) }
+                  : { create: data.batches }
+          )};
 
         batchGroups.push(prisma.batchGroups.upsert({
           where: {
@@ -178,16 +171,12 @@ export async function updateProjectData(projectId: number, projectData: any) {
             type: type,
             groupId: Number(groupId),
             projectId: Number(projectId),
-            batches: {
-              connectOrCreate: batches
-            },
+            batches: batches,
           },
           update: {
             ...data,
             assetId: Number(data.minted) > 0 ? Number(data.assetId) : null,
-            batches: {
-              connectOrCreate: batches
-            },
+            batches: batches,
           }
         }))
       }
