@@ -17,7 +17,7 @@ import kyc from './routes/ccMarketplace/kyc/kyc-approval';
 import cart from './routes/ccMarketplace/profile/cart';
 import profile from './routes/ccMarketplace/profile/profile';
 import transaction from './routes/transaction';
-import {updateProjectsCron} from "./services/update-projects";
+import {updateBatchGroupsCron, updateProjectsCron} from "./services/update-projects";
 
 /* config */
 dotenv.config();
@@ -74,6 +74,7 @@ const mainLoop = async () => {
   });
 
   await updateProjectsCron()
+  await updateBatchGroupsCron()
 };
 
 // run main function

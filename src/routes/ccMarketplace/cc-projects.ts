@@ -34,55 +34,41 @@ router.get('/project', async (req: Request, res: Response) => {
         },
       }),
     ]);
-    let minCreditPrice = (req.query.minCreditPrice as string) ?? undefined;
-    const maxCreditPrice = (req.query.maxCreditPrice as string) ?? undefined;
-    const minCreditQuantity = (req.query.minCreditQuantity as string) ?? undefined;
-    const sellChecked = (req.query.sellChecked as string) ?? "true";
 
-    if (minCreditPrice && maxCreditPrice) {
-      // if (sellChecked == "true" && Number(minCreditPrice) == 0)  minCreditPrice = "0.001"
-      const invs = await prisma.investment.findMany({
-        where: {
-          AND: [
-            {
-              projectId: {
-                in: projects.map((p) => p.id),
-              },
-            },
-            {
-              sellorders: {
-                some: {
-                  AND: [
-                    {
-                      isCancel: false,
-                    },
-                    {
-                      isSold: false,
-                    },
-                    {
-                      pricePerUnit: {
-                        gte: Number(minCreditPrice),
-                        lte: Number(maxCreditPrice),
-                      },
-                    },
-                  ],
-                },
-              },
-            },
-          ],
-        },
-        include: { sellorders: true },
+    const minCreditPrice = Number(req.query.minCreditPrice as string) ?? undefined;
+    const maxCreditPrice = Number(req.query.maxCreditPrice as string) ?? undefined;
+    const minCreditQuantity = Number(req.query.minCreditQuantity as string) ?? undefined;
+    const sellChecked = (req.query.sellChecked as string) ?? "true";
+    console.log('sellChecked', sellChecked)
+
+    // Additional logic for pricing and quantity filters
+    if (minCreditPrice || maxCreditPrice || minCreditQuantity) {
+      projects = projects.filter((p) => {
+        return p.batchGroups.some((bg) => {
+          const availableCredits = JSON.parse(bg.availableCredits as string) as any[];
+
+          if(sellChecked && !availableCredits?.length) return false
+
+          const matchedCredits = availableCredits.filter(({pricePerUnit, units}) => {
+            if(minCreditPrice && pricePerUnit < minCreditPrice) return false;
+            if(maxCreditPrice && pricePerUnit > maxCreditPrice) return false;
+            return true;
+          });
+
+          if(minCreditQuantity) {
+            const totalUnits = matchedCredits.reduce((total, credit) => total + credit.units, 0);
+            if(totalUnits < minCreditQuantity) return false;
+          }
+
+          return !!matchedCredits.length;
+        });
       });
-      const minCreditQuantityLimit = Number(minCreditQuantity) ? Number(minCreditQuantity) : 0;
-      projects = filterAndAddProjectPrice(projects,invs,minCreditQuantityLimit,Number(minCreditPrice), sellChecked == "true" ? true : false)
     }
 
-    const projectsWithMinMaxCreditPrices: Project = addProjectTokens(projects);
-    // console.log("projectsWithMinMaxCreditPrices",projectsWithMinMaxCreditPrices)
     return res.json({
-      projects: projectsWithMinMaxCreditPrices,
+      projects: projects,
       nextId: projects.length === limit ? projects[limit - 1].id : undefined,
-      count: resultCount,
+      count: projects.length,
     });
   } catch (e) {
     return res.status(500).json(e);

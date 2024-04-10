@@ -17,7 +17,7 @@ model Project {
   images              String[]
   videos              String[]
   documents           String[]
-  type                ProjectType       @default(AGRICULTURE_FORESTRY_AND_OTHER_LAND_USE)
+  type                ProjectType?
   registryDetails     RegistryDetails[]
   sdgDetails          SdgDetails[]
   royalties           Royalties[]
@@ -49,6 +49,7 @@ model BatchGroups {
   convertedToCredits      Int?
   convertedToForwards     Int?
   retired                 Int?
+  availableCredits        Json?
 
   projectId     Int?
   project       Project? @relation(fields: [projectId], references: [id], onDelete: Cascade)
@@ -335,14 +336,14 @@ model AssetTransaction {
   to            String     @default("") @db.VarChar(48)
   owner         String     @default("") @db.VarChar(48)
   assetId       Int?
-  amount        Int
+  amount        String
   pricePerUnit  String?
   feesPaid      String?
   createdAt     DateTime   @db.Timestamp(6)
   data          String?
   reason        String?
 
-  batchGroup    BatchGroups? @relation(fields: [assetId], references: [assetId], onDelete: Cascade)
+  batchGroup    BatchGroups? @relation(fields: [assetId], references: [assetId], onDelete: SetNull, onUpdate: SetNull)
 
   @@unique([hash, owner], name: "uniqueId")
 }

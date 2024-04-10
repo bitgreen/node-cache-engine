@@ -25,7 +25,7 @@ export async function createBuyOrder(event: Event, createdAt: Date, blockNumber:
     const sellOrderId = Number(sellOrderIdChain);
     const units = Number(unitsChain);
     const projectId = Number(projectIdChain);
-    const feesPaid = feesPaidChain?.replace(/,/g, '') || 0
+    const feesPaid = feesPaidChain || 0
     const groupId = Number(groupIdChain);
 
     const convertedPricePerunit = parseFloat(
@@ -64,7 +64,7 @@ export async function createTrade(api: ApiPromise, event: Event, createdAt: Date
 
     const orderId = Number(orderIdChain);
     const sellOrderId = Number(sellOrderIdChain);
-    const units = Number(unitsChain);
+    const units = `${unitsChain}`;
     const projectId = Number(projectIdChain);
     const feesPaid = feesPaidChain.toString()?.replace(/,/g, '') || 0;
     const groupId = Number(groupIdChain);

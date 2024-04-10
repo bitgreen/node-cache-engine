@@ -26,7 +26,7 @@ export async function createTransferAssetTransaction(
     let eventData = event.data.toJSON();
 
     let [assetId, from, to, amount] = eventData as (number | string)[];
-    amount = Number(amount.toString().replace(/,/g, ''))
+    amount = amount.toString().replace(/,/g, '')
 
     const sent_owner = from
     const received_owner = to
@@ -47,7 +47,7 @@ export async function createTransferAssetTransaction(
         to: to as string,
         owner: sent_owner as string,
         assetId: assetId as number,
-        amount: amount,
+        amount: amount as string,
         createdAt: createdAt.toISOString(),
       },
       update: {
@@ -72,7 +72,7 @@ export async function createTransferAssetTransaction(
         to: to as string,
         owner: received_owner as string,
         assetId: assetId as number,
-        amount: amount,
+        amount: amount as string,
         createdAt: createdAt.toISOString(),
       },
       update: {
@@ -95,7 +95,7 @@ export async function createIssuedAssetTransaction(
     let eventData = event.data.toJSON();
 
     let [assetId, owner, totalSupply] = eventData as (number | string)[];
-    totalSupply = Number(totalSupply.toString().replace(/,/g, ''))
+    totalSupply = totalSupply.toString().replace(/,/g, '')
 
     await prisma.assetTransaction.upsert({
       where: {
@@ -113,7 +113,7 @@ export async function createIssuedAssetTransaction(
         to: owner as string,
         owner: owner as string,
         assetId: assetId as number,
-        amount: totalSupply,
+        amount: totalSupply as string,
         createdAt: createdAt.toISOString(),
       },
       update: {
@@ -145,7 +145,7 @@ export async function createSellOrderAssetTransaction(
       pricePerUnit,
       owner
     ] = eventData as (number | string)[];
-    units = Number(units.toString().replace(/,/g, ''))
+    units = units.toString().replace(/,/g, '')
     pricePerUnit = Number(pricePerUnit.toString().replace(/,/g, '')).toString()
 
     await prisma.assetTransaction.upsert({
@@ -164,7 +164,7 @@ export async function createSellOrderAssetTransaction(
         to: '',
         owner: owner as string,
         assetId: assetId as number,
-        amount: units,
+        amount: units as string,
         pricePerUnit: pricePerUnit,
         createdAt: createdAt.toISOString(),
       },
@@ -175,7 +175,7 @@ export async function createSellOrderAssetTransaction(
         to: '',
         owner: owner as string,
         assetId: assetId as number,
-        amount: units,
+        amount: units as string,
         pricePerUnit: pricePerUnit,
       },
     });

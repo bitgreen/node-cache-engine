@@ -16,7 +16,7 @@ export async function ccMinted(
     let eventData = event.data.toJSON();
 
     let [projectId, groupId, to, amount] = eventData as (number | string)[];
-    amount = Number(amount.toString().replace(/,/g, ''))
+    amount = amount.toString().replace(/,/g, '')
 
     await prisma.assetTransaction.upsert({
       where: {
@@ -33,7 +33,7 @@ export async function ccMinted(
         from: '',
         to: to as string,
         owner: to as string,
-        amount: amount,
+        amount: amount as string,
         createdAt: createdAt.toISOString(),
       },
       update: {

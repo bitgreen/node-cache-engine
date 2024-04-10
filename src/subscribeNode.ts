@@ -8,15 +8,10 @@ import { processBlock } from './services/blockchain-event';
 import { Header } from '@polkadot/types/interfaces';
 import { initApi } from './services/polkadot-api';
 import { prisma } from './services/prisma';
+import {updateAllProjects} from "@/services/update-projects";
 
 // main function (must be async)
 async function main() {
-  // schedule("*/15 * * * *",() => {
-  //   fetchExchangeRate()
-  //   console.log("---------------------");
-  //   console.log("Cron job for exchange rate executed");
-  // })
-
   const api = await initApi();
 
   // Retrieve the chain & node information via rpc calls
@@ -30,6 +25,11 @@ async function main() {
   console.log(
     `You are connected to chain ${chain} using ${nodeName} v${nodeVersion}`
   );
+
+  console.log('loading projects')
+  await updateAllProjects(api)
+  console.log('done loading projects')
+  // return
 
   // We only display a couple, then unsubscribe
   let count = 0;
@@ -70,11 +70,11 @@ async function main() {
   const fetchedBlocksSet = new Set(fetchedBlocks);
   const missingBlocks = allBlocks.filter(id => !fetchedBlocksSet.has(id));
 
-  // Process each missing block, in chunks of 1200
+  // Process each missing block, in chunks of 800
   const activePromises = new Set();
   for(const blockNumber of missingBlocks) {
     // Wait if we reach the concurrency limit
-    if (activePromises.size >= 1200) {
+    if (activePromises.size >= 800) {
       await Promise.race(activePromises);
     }
 

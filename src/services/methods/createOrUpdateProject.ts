@@ -12,15 +12,19 @@ export async function createOrUpdateProject(
     event: Event,
     createdAt: Date
 ) {
+  const eventData = event.toHuman()
+
+  if (typeof eventData.data !== 'object' || eventData.data === null || !('projectId' in eventData.data)) {
+    return false
+  }
+
+  const projectId = parseInt(eventData.data.projectId as string)
+
+  return createProject(projectId, blockNumber as number, api)
+}
+
+export async function createProject(projectId: number, blockNumber: number, api: ApiPromise) {
   try {
-    const eventData = event.toHuman()
-
-    if (typeof eventData.data !== 'object' || eventData.data === null || !('projectId' in eventData.data)) {
-      return false
-    }
-
-    const projectId = parseInt(eventData.data.projectId as string)
-
     const projectData = await api.query['carbonCredits']['projects'](projectId)
     const project: any = projectData.toPrimitive()
 
@@ -98,6 +102,7 @@ export async function createOrUpdateProject(
         },
         approved: project?.approved?.toString() === 'Approved',
         createdAt: createdAtBlock.blockDate!.toISOString(),
+        type: project?.projectType
       },
       update: {
         originator: project.originator,
@@ -126,6 +131,14 @@ export async function createOrUpdateProject(
   } catch (e: any) {
     logger.error(`createOrUpdateProject - Block #${blockNumber}: ${e.message}`)
   }
+
+}
+
+export async function refreshProjectData(projectId: number, api: ApiPromise) {
+  const projectData = await api.query['carbonCredits']['projects'](projectId)
+  const project: any = projectData.toPrimitive()
+
+  await updateProjectData(projectId, project)
 }
 
 export async function updateProjectData(projectId: number, projectData: any) {

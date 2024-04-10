@@ -8,7 +8,6 @@ import {
   EventRecord,
 } from '@polkadot/types/interfaces';
 import { approveProject } from '@/services/methods/approveProject';
-import { ccMinted } from '@/services/methods/mintedCarbonCredit';
 import {blockExtrinsic, getBlockDate} from '@/services/methods/blockExtrinsic';
 import { transaction } from '@/services/methods/transaction';
 import { rejectProject } from '@/services/methods/rejectProject';
@@ -23,7 +22,7 @@ import {
 } from '@/services/methods/createAssetsAndTokens';
 import { sellOrderCancelled } from '@/services/methods/sellOrderCancelled';
 import { memberAddedKYC } from '@/services/methods/memberAddedKYC';
-import { createOrUpdateProject } from "@/services/methods/createOrUpdateProject";
+import {createOrUpdateProject, refreshProjectData, updateProjectData} from "@/services/methods/createOrUpdateProject";
 
 export async function processBlock(
   api: ApiPromise,
@@ -152,13 +151,9 @@ export async function processBlock(
         }
 
         if (event.method === BlockEvent.CarbonCreditMinted) {
-          // await ccMinted(
-          //     event,
-          //     blockNumber as number,
-          //     index,
-          //     blockDate,
-          //     hash
-          // );
+          // const eventData = event.toHuman()
+          // const projectId = parseInt(eventData.projectId as string)
+          // await refreshProjectData(projectId, api)
         }
 
         if (event.method === BlockEvent.CarbonCreditRetired) {

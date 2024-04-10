@@ -1,8 +1,9 @@
-import {AssetTransaction, AssetTransactionType, SdgType, SellOrder} from '@prisma/client';
+import {AssetTransaction, AssetTransactionType, BatchGroupType, SdgType, SellOrder} from '@prisma/client';
 import { BatchGroups, Project } from './../types/prismaTypes';
 import { Prisma } from '@prisma/client';
 import { Request, Response } from 'express';
 import { prisma } from '../services/prisma';
+import { getName } from 'country-list';
 
 
 export function createProjectFilter(req: Request) {
@@ -12,18 +13,34 @@ export function createProjectFilter(req: Request) {
   const search = (req.query.search as string) ?? '';
   const projectTypes = (req.query.projectType as string) ?? undefined;
   const projectTypesFilter = createFilter(projectTypes, 'type');
-  const projectStates = (req.query.projectState as string) ?? undefined;
-  const projectStatesFilter = createFilter(projectStates, 'state');
+
+  const market = (req.query.market as string) ?? undefined;
+  let marketType: BatchGroupType | undefined
+  if(market === 'spot') marketType = 'CREDITS'
+  if(market === 'forwards') marketType = 'FORWARDS'
+  if(market === 'shares') marketType = 'SHARES'
+
+  const marketTypeFilter = marketType ? {
+    batchGroups: {
+      some: {
+        type: marketType
+      }
+    }
+  } : undefined;
+
+  const projectStates = (req.query.location as string) ?? undefined;
+  const projectStatesFilter = projectStates ? {
+    AND: [{
+      location: {
+        contains: getName(projectStates)
+      }
+    }]
+  } : undefined;
+
   const projectSdgs = (req.query.sdgs as string) ?? undefined;
   const projectSdgsFilter = projectSdgs
     ? projectSdgs.split(',').map((str) => str as SdgType)
     : undefined;
-  // const minCreditPrice = (req.query.minCreditPrice as string) ?? undefined;
-  // const maxCreditPrice = (req.query.maxCreditPrice as string) ?? undefined;
-  // const minCreditPriceFilter = createCreditPriceFilter(
-  //   Number(minCreditPrice),
-  //   Number(maxCreditPrice)
-  // );
   const ids = (req.query.ids as string) ?? undefined;
   const idsFilter = ids
     ? ids.split(',').map((str) => parseInt(str))
@@ -40,8 +57,8 @@ export function createProjectFilter(req: Request) {
   const filters = {
     AND: [
       { ...projectTypesFilter },
+      { ...marketTypeFilter },
       { ...projectStatesFilter },
-      // { ...minCreditPriceFilter },
       { ...creationYearFilter },
       {
         OR: [
