@@ -8,9 +8,9 @@ import {groupBy, sortBy} from 'lodash';
 import BigNumber from "bignumber.js";
 
 export const updateBatchGroupsCron = async() => {
-  // cron.schedule('*/1 * * * *', async () => {
+  cron.schedule('*/1 * * * *', async () => {
     await updateAllBatchGroups()
-  // });
+  });
 };
 
 export const updateProjectsCron = async() => {
