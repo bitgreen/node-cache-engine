@@ -48,7 +48,7 @@ export function createProjectFilter(req: Request) {
   const startYear = Number(req.query.startYear as string) ?? undefined;
   const endYear = Number(req.query.endYear as string) ?? undefined;
 
-  const vintageYearFilter = {
+  const vintageYearFilter = (startYear || endYear) ? {
     AND: [{
       batchGroups: {
         some: {
@@ -65,7 +65,7 @@ export function createProjectFilter(req: Request) {
         }
       }
     }]
-  }
+  } : undefined
 
   const sort = (req.query.sort as ProjectSortOptions) ?? undefined;
   const sortFilter = createSorting(sort);
