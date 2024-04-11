@@ -39,7 +39,6 @@ router.get('/project', async (req: Request, res: Response) => {
     const maxCreditPrice = Number(req.query.maxCreditPrice as string) ?? undefined;
     const minCreditQuantity = Number(req.query.minCreditQuantity as string) ?? undefined;
     const sellChecked = (req.query.sellChecked as string) ?? "true";
-    console.log('sellChecked', sellChecked)
 
     // Additional logic for pricing and quantity filters
     if (minCreditPrice || maxCreditPrice || minCreditQuantity) {

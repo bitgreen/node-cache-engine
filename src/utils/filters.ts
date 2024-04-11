@@ -14,16 +14,16 @@ export function createProjectFilter(req: Request) {
   const projectTypes = (req.query.projectType as string) ?? undefined;
   const projectTypesFilter = createFilter(projectTypes, 'type');
 
-  const market = (req.query.market as string) ?? undefined;
-  let marketType: BatchGroupType | undefined
-  if(market === 'spot') marketType = 'CREDITS'
-  if(market === 'forwards') marketType = 'FORWARDS'
-  if(market === 'shares') marketType = 'SHARES'
+  const marketType = (req.query.marketType as string) ?? undefined;
+  let batchType: BatchGroupType | undefined
+  if(marketType === 'spot') batchType = 'CREDITS'
+  if(marketType === 'forwards') batchType = 'FORWARDS'
+  if(marketType === 'shares') batchType = 'SHARES'
 
-  const marketTypeFilter = marketType ? {
+  const marketTypeFilter = batchType ? {
     batchGroups: {
       some: {
-        type: marketType
+        type: batchType
       }
     }
   } : undefined;
@@ -45,12 +45,27 @@ export function createProjectFilter(req: Request) {
   const idsFilter = ids
     ? ids.split(',').map((str) => parseInt(str))
     : undefined;
-  const startYear = (req.query.startYear as string) ?? undefined;
-  const endYear = (req.query.endYear as string) ?? undefined;
-  const creationYearFilter =
-    startYear || endYear
-      ? createCreationYearFilter(Number(startYear), Number(endYear))
-      : undefined;
+  const startYear = Number(req.query.startYear as string) ?? undefined;
+  const endYear = Number(req.query.endYear as string) ?? undefined;
+
+  const vintageYearFilter = {
+    AND: [{
+      batchGroups: {
+        some: {
+          batches: {
+            some: {
+              startDate: {
+                gte: startYear
+              },
+              endDate: {
+                lte: endYear
+              }
+            }
+          }
+        }
+      }
+    }]
+  }
 
   const sort = (req.query.sort as ProjectSortOptions) ?? undefined;
   const sortFilter = createSorting(sort);
@@ -59,7 +74,7 @@ export function createProjectFilter(req: Request) {
       { ...projectTypesFilter },
       { ...marketTypeFilter },
       { ...projectStatesFilter },
-      { ...creationYearFilter },
+      { ...vintageYearFilter },
       {
         OR: [
           {
