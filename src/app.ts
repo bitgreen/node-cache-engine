@@ -10,6 +10,7 @@ import authentification from './routes/authentification/authentification'; //./r
 import carbonCredit from './routes/carbon-credit'; //./routes/carbon-credit.js
 import ccProjects from './routes/ccMarketplace/cc-projects';
 import assetPrices from './routes/ccMarketplace/dex/asset-prices';
+import bbbInfo from './routes/bbb-info';
 import investments from './routes/ccMarketplace/dex/investments';
 import sellOrder from './routes/ccMarketplace/dex/sell-order';
 import ipfs from './routes/ccMarketplace/ipfs';
@@ -63,6 +64,7 @@ const mainLoop = async () => {
   app.use('', authentification);
   app.use('', cart);
   app.use('', assetPrices);
+  app.use('', bbbInfo);
   app.use('', investments);
   app.use('', sellOrder);
   app.use('', kyc);
