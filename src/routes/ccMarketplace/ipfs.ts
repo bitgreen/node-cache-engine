@@ -7,6 +7,7 @@ router.post('/ipfs', async (req: Request, res: Response) => {
   console.log("IPFS, received a request")
   const files = await assertFiles(req);
   const file = files.file;
+  if(!file) return
   if (Array.isArray(file)) return res.status(400).end();
   const data = await fs.readFile(file.filepath);
   const result = await addFileToIpfs(data, '');

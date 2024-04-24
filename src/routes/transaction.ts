@@ -23,6 +23,7 @@ router.get('/get-block', async (req: Request, res: Response) => {
 
     let [signed_block, block_events] = await Promise.all([
       api.rpc.chain.getBlock(block_hash),
+      // @ts-ignore
       api.query.system.events.at(block_hash),
     ]);
 
@@ -45,9 +46,9 @@ router.get('/get-last-block', async (req: Request, res: Response) => {
       }
     });
 
-    const lastBlock = blocks[0].number
+    const lastBlock = blocks[0]?.number
     const totalBlocksFetched = blocks.length
-    const syncedPercentage = (totalBlocksFetched / lastBlock * 100).toFixed(2)
+    const syncedPercentage = (totalBlocksFetched / (lastBlock || 0) * 100).toFixed(2)
 
     return res.json({
       syncedPercentage,
@@ -305,6 +306,7 @@ router.get('/balance', async (req: Request, res: Response) => {
 
   try {
     const api = await initApi();
+    // @ts-ignore
     const account = await api.query.system.account(address);
     const { data } = account.toHuman() as unknown as Account;
     res.json(data.free);
@@ -325,6 +327,7 @@ router.get('/account', async (req: Request, res: Response) => {
 
   try {
     const api = await initApi();
+    // @ts-ignore
     const account = await api.query.system.account(address);
     const accountBalance = account.toHuman();
     res.json({ accountBalance });

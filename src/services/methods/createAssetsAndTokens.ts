@@ -26,7 +26,7 @@ export async function createTransferAssetTransaction(
     let eventData = event.data.toJSON();
 
     let [assetId, from, to, amount] = eventData as (number | string)[];
-    amount = amount.toString().replace(/,/g, '')
+    amount = amount?.toString().replace(/,/g, '')
 
     const sent_owner = from
     const received_owner = to
@@ -95,7 +95,7 @@ export async function createIssuedAssetTransaction(
     let eventData = event.data.toJSON();
 
     let [assetId, owner, totalSupply] = eventData as (number | string)[];
-    totalSupply = totalSupply.toString().replace(/,/g, '')
+    totalSupply = totalSupply?.toString().replace(/,/g, '')
 
     await prisma.assetTransaction.upsert({
       where: {
@@ -145,8 +145,8 @@ export async function createSellOrderAssetTransaction(
       pricePerUnit,
       owner
     ] = eventData as (number | string)[];
-    units = units.toString().replace(/,/g, '')
-    pricePerUnit = Number(pricePerUnit.toString().replace(/,/g, '')).toString()
+    units = units?.toString().replace(/,/g, '')
+    pricePerUnit = Number(pricePerUnit?.toString().replace(/,/g, '')).toString()
 
     await prisma.assetTransaction.upsert({
       where: {
@@ -202,7 +202,7 @@ export async function createTokenTransaction(
       [currencyId, from, to, amount] = eventData as string[];
     }
 
-    amountConverted = new BigNumber(amount).toString();
+    amountConverted = new BigNumber(amount || 0).toString();
 
     await prisma.$transaction([
       prisma.tokenTransaction.create({
@@ -248,6 +248,7 @@ export async function queryBalances(
   // const { data: dataBBB } = dataQuery.toHuman() as unknown as Account;
   // console.log('data BBB', dataBBB);
 
+  // @ts-ignore
   let dataQueryUSDT = await api.query['tokens']['accounts'](to, currencyId);
   const { free: balanceUSDT } =
     dataQueryUSDT.toHuman() as unknown as BalanceData;

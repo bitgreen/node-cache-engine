@@ -54,11 +54,9 @@ export function createProjectFilter(req: Request) {
         some: {
           batches: {
             some: {
-              startDate: {
-                gte: startYear
-              },
-              endDate: {
-                lte: endYear
+              issuanceYear: {
+                gte: startYear || undefined,
+                lte: endYear || undefined
               }
             }
           }

@@ -31,6 +31,7 @@ export async function queryChain(
       };
       return resolve(response);
     }
+    // @ts-ignore
     if (!polkadotApi.query[pallet][call]) {
       response = {
         success: false,
@@ -39,6 +40,7 @@ export async function queryChain(
       };
       return resolve(response);
     }
+    // @ts-ignore
     polkadotApi.query[pallet][call](...params)
         .then((result) => {
           // console.log(result.forEach())
@@ -79,6 +81,7 @@ export async function submitExtrinsic(
       };
       return resolve(response);
     }
+    // @ts-ignore
     if (!polkadotApi.tx[pallet][call]) {
       response = {
         success: false,
@@ -87,6 +90,7 @@ export async function submitExtrinsic(
       };
       return resolve(response);
     }
+    // @ts-ignore
     await polkadotApi.tx[pallet][call](...params)
       .signAndSend(
         account,

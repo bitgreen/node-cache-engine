@@ -38,7 +38,7 @@ router.get('/project', async (req: Request, res: Response) => {
     const minCreditPrice = Number(req.query.minCreditPrice as string) ?? undefined;
     const maxCreditPrice = Number(req.query.maxCreditPrice as string) ?? undefined;
     const minCreditQuantity = Number(req.query.minCreditQuantity as string) ?? undefined;
-    const sellChecked = (req.query.sellChecked as string) ?? "true";
+    const hasSellOrders = req.query.hasSellOrders ? req.query.hasSellOrders as string === 'true' : true;
 
     // Additional logic for pricing and quantity filters
     if (minCreditPrice || maxCreditPrice || minCreditQuantity) {
@@ -46,7 +46,7 @@ router.get('/project', async (req: Request, res: Response) => {
         return p.batchGroups.some((bg) => {
           const availableCredits = JSON.parse(bg.availableCredits as string) as any[];
 
-          if(sellChecked && !availableCredits?.length) return false
+          if(hasSellOrders && !availableCredits?.length) return false
 
           const matchedCredits = availableCredits.filter(({pricePerUnit, units}) => {
             if(minCreditPrice && pricePerUnit < minCreditPrice) return false;
@@ -66,7 +66,7 @@ router.get('/project', async (req: Request, res: Response) => {
 
     return res.json({
       projects: projects,
-      nextId: projects.length === limit ? projects[limit - 1].id : undefined,
+      nextId: projects.length === limit ? projects[limit - 1]?.id : undefined,
       count: projects.length,
     });
   } catch (e) {

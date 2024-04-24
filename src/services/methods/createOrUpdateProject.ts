@@ -25,6 +25,7 @@ export async function createOrUpdateProject(
 
 export async function createProject(projectId: number, blockNumber: number, api: ApiPromise) {
   try {
+    // @ts-ignore
     const projectData = await api.query['carbonCredits']['projects'](projectId)
     const project: any = projectData.toPrimitive()
 
@@ -135,6 +136,7 @@ export async function createProject(projectId: number, blockNumber: number, api:
 }
 
 export async function refreshProjectData(projectId: number, api: ApiPromise) {
+  // @ts-ignore
   const projectData = await api.query['carbonCredits']['projects'](projectId)
   const project: any = projectData.toPrimitive()
 

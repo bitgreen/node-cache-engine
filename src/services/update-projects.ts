@@ -24,6 +24,7 @@ export const updateAllProjects = async(api?: ApiPromise) => {
     api = await initApi();
   }
 
+  // @ts-ignore
   let allProjectsData = await api.query['carbonCredits']['projects'].entries();
   // const projectsJson = projectsData.toJSON();
   // console.log('projectsData', projectsData)
@@ -53,6 +54,7 @@ export const updateAllBatchGroups = async(api?: ApiPromise) => {
     api = await initApi();
   }
 
+  // @ts-ignore
   const sellOrdersData = await api.query['dex']['orders'].entries()
   const allProjectsData = await prisma.project.findMany({
     include: {

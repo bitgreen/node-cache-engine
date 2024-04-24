@@ -66,11 +66,14 @@ export async function createTrade(api: ApiPromise, event: Event, createdAt: Date
     const sellOrderId = Number(sellOrderIdChain);
     const units = `${unitsChain}`;
     const projectId = Number(projectIdChain);
+    // @ts-ignore
     const feesPaid = feesPaidChain.toString()?.replace(/,/g, '') || 0;
     const groupId = Number(groupIdChain);
 
+    // @ts-ignore
     const creditPrice = pricePerUnit.toString().replace(/,/g, '')
 
+    // @ts-ignore
     const sellOrder = (await api.query.dex.orders(sellOrderId)).toJSON() as any
 
     const assetId = sellOrder.assetId

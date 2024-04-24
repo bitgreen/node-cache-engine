@@ -34,6 +34,7 @@ export async function createRetiredAssetTransaction(
         | RetireData[]
         )[];
     let retireDataUpdate = retireData as RetireData[];
+    // @ts-ignore
     amount = amount.toString().replace(/,/g, '')
 
     await prisma.assetTransaction.upsert({
