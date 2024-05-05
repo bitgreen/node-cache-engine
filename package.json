@@ -35,6 +35,7 @@
     "express": "^4.17.3",
     "formidable": "^2.1.1",
     "fs": "^0.0.1-security",
+    "i18n-iso-countries": "^7.11.1",
     "ipfs-http-client": "^56.0.2",
     "jsonwebtoken": "^9.0.2",
     "lodash": "^4.17.21",

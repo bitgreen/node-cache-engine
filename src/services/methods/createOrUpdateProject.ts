@@ -4,7 +4,10 @@ import {BatchGroupType, ProjectState, SdgType} from '@prisma/client';
 import {ApiPromise} from "@polkadot/api";
 import {blockExtrinsic} from "../../services/methods/blockExtrinsic";
 import logger from "@/utils/logger";
-import * as process from "process";
+
+import countries from 'i18n-iso-countries';
+import englishLocale from 'i18n-iso-countries/langs/en.json';
+countries.registerLocale(englishLocale);
 
 export async function createOrUpdateProject(
     blockNumber: number | BlockNumber,
@@ -79,6 +82,8 @@ export async function createProject(projectId: number, blockNumber: number, api:
       };
     });
 
+    const country = countries.getAlpha2Code(project.location.split('_')[1] || '', 'en')
+
     await prisma.project.upsert({
       where: {
         id: projectId,
@@ -89,6 +94,7 @@ export async function createProject(projectId: number, blockNumber: number, api:
         name: project.name,
         description: project.description,
         location: project.location,
+        country: country,
         images: project.images,
         videos: project.videos,
         documents: project.documents,
@@ -110,6 +116,7 @@ export async function createProject(projectId: number, blockNumber: number, api:
         name: project.name,
         description: project.description,
         location: project.location,
+        country: country,
         images: project.images,
         videos: project.videos,
         documents: project.documents,

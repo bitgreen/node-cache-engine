@@ -1,18 +1,15 @@
-import {AssetTransaction, AssetTransactionType, BatchGroupType, SdgType, SellOrder} from '@prisma/client';
-import { BatchGroups, Project } from './../types/prismaTypes';
+import {AssetTransactionType, BatchGroupType, RegistryName, SdgType} from '@prisma/client';
 import { Prisma } from '@prisma/client';
 import { Request, Response } from 'express';
-import { prisma } from '../services/prisma';
-import { getName } from 'country-list';
-
 
 export function createProjectFilter(req: Request) {
   const cursor = req.query.cursor ?? '';
   const cursorObj =
     cursor === '' ? undefined : { id: parseInt(cursor as string) };
   const search = (req.query.search as string) ?? '';
-  const projectTypes = (req.query.projectType as string) ?? undefined;
-  const projectTypesFilter = createFilter(projectTypes, 'type');
+
+  const projectTypes = (req.query.types as string) ?? undefined;
+  const projectTypesFilter = createFilter(projectTypes, 'type', false, true);
 
   const marketType = (req.query.marketType as string) ?? undefined;
   let batchType: BatchGroupType | undefined
@@ -28,14 +25,19 @@ export function createProjectFilter(req: Request) {
     }
   } : undefined;
 
-  const projectStates = (req.query.location as string) ?? undefined;
-  const projectStatesFilter = projectStates ? {
-    AND: [{
-      location: {
-        contains: getName(projectStates)
+  const standards = (req.query.standards as string) ?? undefined;
+  const standardsFilter = standards ? {
+    registryDetails: {
+      some: {
+        regName: {
+          in: standards.split(',') as RegistryName[]
+        }
       }
-    }]
+    }
   } : undefined;
+
+  const countries = (req.query.countries as string) ?? undefined;
+  const countriesFilter = createFilter(countries, 'country', false, true);
 
   const projectSdgs = (req.query.sdgs as string) ?? undefined;
   const projectSdgsFilter = projectSdgs
@@ -71,7 +73,8 @@ export function createProjectFilter(req: Request) {
     AND: [
       { ...projectTypesFilter },
       { ...marketTypeFilter },
-      { ...projectStatesFilter },
+      { ...countriesFilter },
+      { ...standardsFilter },
       { ...vintageYearFilter },
       {
         OR: [

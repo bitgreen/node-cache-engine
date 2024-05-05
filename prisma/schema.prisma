@@ -14,6 +14,7 @@ model Project {
   state               ProjectState      @default(SUBMITTED)
   description         String?
   location            String            @default("")
+  country             String?
   images              String[]
   videos              String[]
   documents           String[]
@@ -132,7 +133,7 @@ model Profile {
   activityTransactionReceipts Boolean  @default(false)
   activityOffersFilled        Boolean  @default(false)
   marketingNews               Boolean  @default(false)
-  userType                    UserType @default(Individual)
+  userType                    UserType?
 
   investments        Investment[]
 
