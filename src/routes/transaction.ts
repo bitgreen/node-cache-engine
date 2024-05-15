@@ -6,7 +6,8 @@ import { BlockHash } from '@polkadot/types/interfaces';
 import { initApi } from '../services/polkadot-api';
 import { GenericStorageEntryFunction } from '@polkadot/api/types';
 import {createAssetTransactionFilter, createTransactionFilter} from "../utils/filters";
-import {AssetTransactionType} from "@prisma/client";
+import {AssetTransactionType, Batch} from "@prisma/client";
+import {getAssetPrice} from "@/services/exchangeRate";
 
 const router = express.Router();
 
@@ -174,7 +175,9 @@ router.get('/asset/transactions', async (req: Request, res: Response) => {
             type: true,
             project: {
               select: {
-                id: true
+                id: true,
+                name: true,
+                images: true
               }
             }
           }
@@ -190,6 +193,8 @@ router.get('/asset/transactions', async (req: Request, res: Response) => {
         ...rest,
         info: {
           projectId: batchGroup?.project?.id,
+          projectName: batchGroup?.project?.name,
+          projectImage: batchGroup?.project?.images[0] || null,
           assetId: batchGroup?.assetId,
           type: batchGroup?.type,
         },
@@ -250,9 +255,12 @@ router.get(
             assetId: true,
             batchGroup: (includeInfo === 'true') ? {
               select: {
+                batches: true,
                 project: {
                   select: {
-                    name: true
+                    id: true,
+                    name: true,
+                    images: true
                   }
                 }
               }
@@ -260,29 +268,45 @@ router.get(
           }
         }),
       ]);
-      const uniqueAssetIds = Array.from(
-          new Set(
-              assets
-                  .map((tk: any) => {
-                    if(!includeInfo) {
-                      return tk.assetId
-                    }
 
-                    return {
-                      assetId: tk.assetId,
-                      projectName: tk.batchGroup?.project?.name,
-                    }
-                  })
-                  // .filter((tk: any) => {
-                  //   if(tk && tk?.assetId) {
-                  //     return true
-                  //   }
-                  //   return true
-                  // })
-                  .map(tk => JSON.stringify(tk))
-          )
-      ).map(strTk => JSON.parse(strTk));
-      const uniqueTokenIds = [...new Set(tokens.map((tk) => tk.tokenId).filter(Boolean))];
+      const uniqueAssets = await Promise.all(
+          assets.map(async (tk: any) => {
+            if (!includeInfo) {
+              return tk.assetId;
+            }
+
+            const year = (batches: Batch[]): string => {
+              const sortedBatches = batches.sort((a: Batch, b: Batch) => Number(a.issuanceYear) - Number(b.issuanceYear));
+
+              if (!sortedBatches[0] || !sortedBatches.length || (sortedBatches[0].issuanceYear === sortedBatches[sortedBatches.length - 1]?.issuanceYear)) {
+                return `${sortedBatches[0]?.issuanceYear}`;
+              }
+
+              return `${sortedBatches[0].issuanceYear}-${sortedBatches[sortedBatches.length - 1]?.issuanceYear}`;
+            };
+
+            const yearResult = year(tk.batchGroup?.batches || []);
+
+            return {
+              assetId: tk.assetId,
+              projectId: tk.batchGroup?.project?.id,
+              projectName: tk.batchGroup?.project?.name,
+              projectImage: tk.batchGroup?.project?.images[0] || null,
+              year: yearResult,
+              price: (await getAssetPrice(tk.assetId)).price,
+            };
+          })
+      );
+
+      const uniqueAssetIds = uniqueAssets.filter((asset, index, self) => {
+        if(includeInfo) {
+          return index === self.findIndex((t) => t.assetId === asset.assetId)
+        } else {
+          return true
+        }
+      });
+
+      const uniqueTokenIds = [...new Set(tokens.map((tk) => tk.tokenId))];
 
       res.json({
         assets: uniqueAssetIds,
