@@ -5,6 +5,7 @@ import {BalanceData, BlockEvent} from '../../types/types';
 import { hexToBigInt } from '@polkadot/util';
 import { AssetTransactionType } from '@prisma/client';
 import BigNumber from "bignumber.js";
+import logger from "@/utils/logger";
 
 interface MetaData {
   deposit: string;
@@ -25,7 +26,7 @@ export async function createTransferAssetTransaction(
     let eventData = event.data.toJSON();
 
     let [assetId, from, to, amount] = eventData as (number | string)[];
-    amount = Number(amount.toString().replace(/,/g, ''))
+    amount = amount?.toString().replace(/,/g, '')
 
     const sent_owner = from
     const received_owner = to
@@ -46,7 +47,7 @@ export async function createTransferAssetTransaction(
         to: to as string,
         owner: sent_owner as string,
         assetId: assetId as number,
-        amount: amount,
+        amount: amount as string,
         createdAt: createdAt.toISOString(),
       },
       update: {
@@ -71,7 +72,7 @@ export async function createTransferAssetTransaction(
         to: to as string,
         owner: received_owner as string,
         assetId: assetId as number,
-        amount: amount,
+        amount: amount as string,
         createdAt: createdAt.toISOString(),
       },
       update: {
@@ -79,7 +80,7 @@ export async function createTransferAssetTransaction(
       },
     });
   } catch (e: any) {
-    console.log(`Error occurred (asset transferred transaction): ${e.message}`);
+    logger.error(`createTransferAssetTransaction - Block #${blockNumber}: ${e.message}`)
   }
 }
 
@@ -94,10 +95,7 @@ export async function createIssuedAssetTransaction(
     let eventData = event.data.toJSON();
 
     let [assetId, owner, totalSupply] = eventData as (number | string)[];
-    totalSupply = Number(totalSupply.toString().replace(/,/g, ''))
-
-    console.log('index', index)
-    console.log('totalSupply', totalSupply)
+    totalSupply = totalSupply?.toString().replace(/,/g, '')
 
     await prisma.assetTransaction.upsert({
       where: {
@@ -115,7 +113,7 @@ export async function createIssuedAssetTransaction(
         to: owner as string,
         owner: owner as string,
         assetId: assetId as number,
-        amount: totalSupply,
+        amount: totalSupply as string,
         createdAt: createdAt.toISOString(),
       },
       update: {
@@ -124,7 +122,7 @@ export async function createIssuedAssetTransaction(
       },
     });
   } catch (e: any) {
-    console.log(`Error occurred (asset issued transaction): ${e.message}`);
+    logger.error(`createIssuedAssetTransaction - Block #${blockNumber}: ${e.message}`)
   }
 }
 
@@ -147,8 +145,8 @@ export async function createSellOrderAssetTransaction(
       pricePerUnit,
       owner
     ] = eventData as (number | string)[];
-    units = Number(units.toString().replace(/,/g, ''))
-    pricePerUnit = Number(pricePerUnit.toString().replace(/,/g, '')).toString()
+    units = units?.toString().replace(/,/g, '')
+    pricePerUnit = Number(pricePerUnit?.toString().replace(/,/g, '')).toString()
 
     await prisma.assetTransaction.upsert({
       where: {
@@ -166,7 +164,7 @@ export async function createSellOrderAssetTransaction(
         to: '',
         owner: owner as string,
         assetId: assetId as number,
-        amount: units,
+        amount: units as string,
         pricePerUnit: pricePerUnit,
         createdAt: createdAt.toISOString(),
       },
@@ -177,12 +175,12 @@ export async function createSellOrderAssetTransaction(
         to: '',
         owner: owner as string,
         assetId: assetId as number,
-        amount: units,
+        amount: units as string,
         pricePerUnit: pricePerUnit,
       },
     });
   } catch (e: any) {
-    console.log(`Error occurred (sell order transaction): ${e.message}`);
+    logger.error(`createSellOrderAssetTransaction - Block #${blockNumber}: ${e.message}`)
   }
 }
 
@@ -204,7 +202,7 @@ export async function createTokenTransaction(
       [currencyId, from, to, amount] = eventData as string[];
     }
 
-    amountConverted = new BigNumber(amount).toString();
+    amountConverted = new BigNumber(amount || 0).toString();
 
     await prisma.$transaction([
       prisma.tokenTransaction.create({
@@ -220,9 +218,8 @@ export async function createTokenTransaction(
         },
       }),
     ]);
-  } catch (e) {
-    // @ts-ignore
-    console.log(`Error occurred (asset Transaction): ${e.message}`);
+  } catch (e: any) {
+    logger.error(`createTokenTransaction - Block #${blockNumber}: ${e.message}`)
   }
 }
 
@@ -251,6 +248,7 @@ export async function queryBalances(
   // const { data: dataBBB } = dataQuery.toHuman() as unknown as Account;
   // console.log('data BBB', dataBBB);
 
+  // @ts-ignore
   let dataQueryUSDT = await api.query['tokens']['accounts'](to, currencyId);
   const { free: balanceUSDT } =
     dataQueryUSDT.toHuman() as unknown as BalanceData;

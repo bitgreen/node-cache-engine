@@ -1,48 +1,81 @@
-import {AssetTransaction, AssetTransactionType, SdgType, SellOrder} from '@prisma/client';
-import { BatchGroups, Project } from './../types/prismaTypes';
+import {AssetTransactionType, BatchGroupType, RegistryName, SdgType} from '@prisma/client';
 import { Prisma } from '@prisma/client';
 import { Request, Response } from 'express';
-import { prisma } from '../services/prisma';
-
 
 export function createProjectFilter(req: Request) {
   const cursor = req.query.cursor ?? '';
   const cursorObj =
     cursor === '' ? undefined : { id: parseInt(cursor as string) };
   const search = (req.query.search as string) ?? '';
-  const projectTypes = (req.query.projectType as string) ?? undefined;
-  const projectTypesFilter = createFilter(projectTypes, 'type');
-  const projectStates = (req.query.projectState as string) ?? undefined;
-  const projectStatesFilter = createFilter(projectStates, 'state');
+
+  const projectTypes = (req.query.types as string) ?? undefined;
+  const projectTypesFilter = createFilter(projectTypes, 'type', false, true);
+
+  const marketType = (req.query.marketType as string) ?? undefined;
+  let batchType: BatchGroupType | undefined
+  if(marketType === 'spot') batchType = 'CREDITS'
+  if(marketType === 'forwards') batchType = 'FORWARDS'
+  if(marketType === 'shares') batchType = 'SHARES'
+
+  const marketTypeFilter = batchType ? {
+    batchGroups: {
+      some: {
+        type: batchType
+      }
+    }
+  } : undefined;
+
+  const standards = (req.query.standards as string) ?? undefined;
+  const standardsFilter = standards ? {
+    registryDetails: {
+      some: {
+        regName: {
+          in: standards.split(',') as RegistryName[]
+        }
+      }
+    }
+  } : undefined;
+
+  const countries = (req.query.countries as string) ?? undefined;
+  const countriesFilter = createFilter(countries, 'country', false, true);
+
   const projectSdgs = (req.query.sdgs as string) ?? undefined;
   const projectSdgsFilter = projectSdgs
     ? projectSdgs.split(',').map((str) => str as SdgType)
     : undefined;
-  // const minCreditPrice = (req.query.minCreditPrice as string) ?? undefined;
-  // const maxCreditPrice = (req.query.maxCreditPrice as string) ?? undefined;
-  // const minCreditPriceFilter = createCreditPriceFilter(
-  //   Number(minCreditPrice),
-  //   Number(maxCreditPrice)
-  // );
   const ids = (req.query.ids as string) ?? undefined;
   const idsFilter = ids
     ? ids.split(',').map((str) => parseInt(str))
     : undefined;
-  const startYear = (req.query.startYear as string) ?? undefined;
-  const endYear = (req.query.endYear as string) ?? undefined;
-  const creationYearFilter =
-    startYear || endYear
-      ? createCreationYearFilter(Number(startYear), Number(endYear))
-      : undefined;
+  const startYear = Number(req.query.startYear as string) ?? undefined;
+  const endYear = Number(req.query.endYear as string) ?? undefined;
+
+  const vintageYearFilter = (startYear || endYear) ? {
+    AND: [{
+      batchGroups: {
+        some: {
+          batches: {
+            some: {
+              issuanceYear: {
+                gte: startYear || undefined,
+                lte: endYear || undefined
+              }
+            }
+          }
+        }
+      }
+    }]
+  } : undefined
 
   const sort = (req.query.sort as ProjectSortOptions) ?? undefined;
   const sortFilter = createSorting(sort);
   const filters = {
     AND: [
       { ...projectTypesFilter },
-      { ...projectStatesFilter },
-      // { ...minCreditPriceFilter },
-      { ...creationYearFilter },
+      { ...marketTypeFilter },
+      { ...countriesFilter },
+      { ...standardsFilter },
+      { ...vintageYearFilter },
       {
         OR: [
           {

@@ -1,6 +1,7 @@
 import { prisma } from '../prisma';
 import { Event } from '@polkadot/types/interfaces';
 import {AssetTransactionType} from '@prisma/client';
+import logger from "@/utils/logger";
 
 interface RetireData {
   name: string;
@@ -33,7 +34,8 @@ export async function createRetiredAssetTransaction(
         | RetireData[]
         )[];
     let retireDataUpdate = retireData as RetireData[];
-    amount = Number(amount.toString().replace(/,/g, ''))
+    // @ts-ignore
+    amount = amount.toString().replace(/,/g, '')
 
     await prisma.assetTransaction.upsert({
       where: {
@@ -51,7 +53,7 @@ export async function createRetiredAssetTransaction(
         to: '',
         owner: account as string,
         assetId: assetId as number,
-        amount: amount,
+        amount: amount as string,
         createdAt: createdAt.toISOString(),
         data: JSON.stringify(retireDataUpdate),
         reason: reason as string
@@ -69,6 +71,6 @@ export async function createRetiredAssetTransaction(
       },
     });
   } catch (e: any) {
-    console.log(`Error occurred (asset retired transaction): ${e.message}`);
+    logger.error(`createRetiredAssetTransaction - Block #${blockNumber}: ${e.message}`)
   }
 }

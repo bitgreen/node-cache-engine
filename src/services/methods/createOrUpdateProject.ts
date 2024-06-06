@@ -1,23 +1,34 @@
 import { prisma } from '../prisma';
-import { Event } from '@polkadot/types/interfaces';
+import {BlockNumber, Event} from '@polkadot/types/interfaces';
 import {BatchGroupType, ProjectState, SdgType} from '@prisma/client';
 import {ApiPromise} from "@polkadot/api";
 import {blockExtrinsic} from "../../services/methods/blockExtrinsic";
+import logger from "@/utils/logger";
+
+import countries from 'i18n-iso-countries';
+import englishLocale from 'i18n-iso-countries/langs/en.json';
+countries.registerLocale(englishLocale);
 
 export async function createOrUpdateProject(
+    blockNumber: number | BlockNumber,
     api: ApiPromise,
     event: Event,
     createdAt: Date
 ) {
+  const eventData = event.toHuman()
+
+  if (typeof eventData.data !== 'object' || eventData.data === null || !('projectId' in eventData.data)) {
+    return false
+  }
+
+  const projectId = parseInt(eventData.data.projectId as string)
+
+  return createProject(projectId, blockNumber as number, api)
+}
+
+export async function createProject(projectId: number, blockNumber: number, api: ApiPromise) {
   try {
-    const eventData = event.toHuman()
-
-    if (typeof eventData.data !== 'object' || eventData.data === null || !('projectId' in eventData.data)) {
-      return false
-    }
-
-    const projectId = parseInt(eventData.data.projectId as string)
-
+    // @ts-ignore
     const projectData = await api.query['carbonCredits']['projects'](projectId)
     const project: any = projectData.toPrimitive()
 
@@ -71,6 +82,8 @@ export async function createOrUpdateProject(
       };
     });
 
+    const country = countries.getAlpha2Code(project.location.split('_')[1] || '', 'en')
+
     await prisma.project.upsert({
       where: {
         id: projectId,
@@ -81,6 +94,7 @@ export async function createOrUpdateProject(
         name: project.name,
         description: project.description,
         location: project.location,
+        country: country,
         images: project.images,
         videos: project.videos,
         documents: project.documents,
@@ -95,12 +109,14 @@ export async function createOrUpdateProject(
         },
         approved: project?.approved?.toString() === 'Approved',
         createdAt: createdAtBlock.blockDate!.toISOString(),
+        type: project?.projectType
       },
       update: {
         originator: project.originator,
         name: project.name,
         description: project.description,
         location: project.location,
+        country: country,
         images: project.images,
         videos: project.videos,
         documents: project.documents,
@@ -120,10 +136,18 @@ export async function createOrUpdateProject(
 
     // to update batch groups
     await updateProjectData(Number(projectId), project)
-  } catch (e) {
-    // @ts-ignore
-    console.log(`Error occurred (creating project): ${e.message}`);
+  } catch (e: any) {
+    logger.error(`createOrUpdateProject - Block #${blockNumber}: ${e.message}`)
   }
+
+}
+
+export async function refreshProjectData(projectId: number, api: ApiPromise) {
+  // @ts-ignore
+  const projectData = await api.query['carbonCredits']['projects'](projectId)
+  const project: any = projectData.toPrimitive()
+
+  await updateProjectData(projectId, project)
 }
 
 export async function updateProjectData(projectId: number, projectData: any) {
@@ -138,22 +162,23 @@ export async function updateProjectData(projectId: number, projectData: any) {
         const data = batchGroup.credits || batchGroup.forwards || batchGroup.shares
         const type = batchGroup.credits ? BatchGroupType.CREDITS : (batchGroup.forwards ? BatchGroupType.FORWARDS : BatchGroupType.SHARES)
 
-        const batches = data.batches?.map((batch: any, i: number) => {
-          return {
-            where: {
-              uniqueId: {
-                batchGroupId: Number(groupId),
-                index: i
-              }
-            },
-            create: {
-              ...batch,
-              uuid: batch.uuid,
-              // batchGroup: Number(groupId),
-              index: i
+        const existingBatchGroup = await prisma.batchGroups.findUnique({
+          where: {
+            uniqueId: {
+              projectId: Number(projectId),
+              groupId: Number(groupId)
             }
-          };
+          }
         })
+
+        const batches = {
+          ...(existingBatchGroup
+                  ? { connectOrCreate: data.batches?.map((batch: any, i: number) => ({
+                      where: { uniqueId: { batchGroupId: Number(existingBatchGroup?.id), index: i } },
+                      create: { ...batch, uuid: batch.uuid, index: i }
+                    })) }
+                  : { create: data.batches }
+          )};
 
         batchGroups.push(prisma.batchGroups.upsert({
           where: {
@@ -168,14 +193,12 @@ export async function updateProjectData(projectId: number, projectData: any) {
             type: type,
             groupId: Number(groupId),
             projectId: Number(projectId),
-            batches: {
-              connectOrCreate: batches
-            },
+            batches: batches,
           },
           update: {
             ...data,
-            batches: {},
-            assetId: Number(data.minted) > 0 ? Number(data.assetId) : null
+            assetId: Number(data.minted) > 0 ? Number(data.assetId) : null,
+            batches: batches,
           }
         }))
       }
@@ -194,12 +217,7 @@ export async function updateProjectData(projectId: number, projectData: any) {
             ...data,
             type: BatchGroupType.DONATIONS,
             groupId: Number(groupId),
-            projectId: Number(projectId),
-            batches: {
-              create: data?.batches?.map((batch: any) => {
-                return { ...batch, uuid: batch.uuid };
-              }),
-            },
+            projectId: Number(projectId)
           },
           update: {
             ...data,
@@ -209,8 +227,7 @@ export async function updateProjectData(projectId: number, projectData: any) {
     }
 
     await prisma.$transaction(batchGroups)
-  } catch (e) {
-    console.log(projectId)
-    console.log('error updating project id:', projectId, e)
+  } catch (e: any) {
+    logger.error(`updateProjectData - Project #${projectId}: ${e.message}`)
   }
 }

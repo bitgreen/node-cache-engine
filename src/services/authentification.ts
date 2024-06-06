@@ -18,7 +18,7 @@ export async function authenticate(session: AuthSession, extendToken?: boolean):
 
   // Extract timestamp and data from a message.
   const message = session.message.split('#');
-  const timestamp = parseInt(message[0]);
+  const timestamp = parseInt(message[0] as string);
 
   const currentTimestamp = new Date().getTime();
 
@@ -40,7 +40,7 @@ export async function authenticate(session: AuthSession, extendToken?: boolean):
       // query chain to get proxy address
       const proxy = await queryChain('generalStorage', 'storedData', [
         '5EhJWJYo3V7nozjNDrA4G6s4XqAFaPXpVYjFhVL9qVF5QxSw', // TX relay acc
-        keccakAsHex(email)
+        keccakAsHex(email as string)
       ])
 
       const proxyData = proxy.data.split('#')
@@ -74,7 +74,11 @@ export function setCookie(
 ): void {
   const stringValue =
     typeof value === 'object' ? `j:${JSON.stringify(value)}` : String(value);
-  res.cookie(name, stringValue, options);
+  res.cookie(name, stringValue, {
+    ...options,
+    secure: process.env.NODE_ENV !== 'development',
+    domain: (process.env.COOKIE_DOMAIN && process.env.COOKIE_DOMAIN?.length > 3) ? process.env.COOKIE_DOMAIN : undefined
+  });
   // res.setHeader('Set-Cookie', serialize(name, String(stringValue), options));
 }
 

@@ -65,6 +65,7 @@ router.get('/buy-order-reserved', async (req: Request, res: Response) => {
     const api = await initApi();
     // console.log('awa', api);
     const buyOrderReserved: Array<AmountPayment> = [];
+    // @ts-ignore
     const identities = await api.query.dex.buyOrders.entries();
 
     identities.forEach(([key, identity]) => {
@@ -76,7 +77,7 @@ router.get('/buy-order-reserved', async (req: Request, res: Response) => {
           (totalAmount as string).replace(/,/g, '').slice(0, -18)
         );
         const orderIdChain = buyOrder[0];
-        const buyOrderId = Number(orderIdChain.replace(/,/g, ''));
+        const buyOrderId = Number(orderIdChain?.replace(/,/g, ''));
         buyOrderReserved.push({
           amount: amount,
           orderId: buyOrderId,

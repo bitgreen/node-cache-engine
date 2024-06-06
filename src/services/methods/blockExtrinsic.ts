@@ -19,6 +19,7 @@ export async function blockExtrinsic(
 
     let [signedBlock, blockEvents] = await Promise.all([
       api.rpc.chain.getBlock(blockHash),
+      // @ts-ignore
       apiAt.query.system.events() as Promise<Vec<EventRecord>>,
     ]);
 
@@ -35,5 +36,6 @@ export async function getBlockDate(api: ApiPromise, signedBlock: SignedBlock) {
       (extrinsic) => extrinsic.method.section === 'timestamp' && extrinsic.method.method === 'set'
   );
 
+  // @ts-ignore
   return new Date(Number(blockTimestamp!.method.args[0].toString()))
 }

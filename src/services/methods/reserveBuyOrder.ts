@@ -1,6 +1,7 @@
 import { hexToString } from '@polkadot/util';
 import { prisma } from '../prisma';
 import { Event } from '@polkadot/types/interfaces';
+import logger from "@/utils/logger";
 
 export async function reserveBuyOrder(event: Event, createdAt: Date) {
   try {
@@ -41,8 +42,7 @@ export async function reserveBuyOrder(event: Event, createdAt: Date) {
         createdAt: createdAt,
       },
     });
-  } catch (e) {
-    // @ts-ignore
-    console.log(`Error occurred (reserve buy order): ${e.message}`);
+  } catch (e: any) {
+    logger.error(`reserveBuyOrder: ${e.message}`)
   }
 }

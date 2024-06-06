@@ -2,6 +2,7 @@ import { DIVIDER } from './../../utils/converter';
 import { Codec } from '@polkadot/types-codec/types';
 import { prisma } from '../prisma';
 import { Event } from '@polkadot/types/interfaces';
+import logger from "@/utils/logger";
 
 export async function transaction(
   event: Event,
@@ -38,8 +39,7 @@ export async function transaction(
         createdAt: createdAt.toISOString(),
       },
     });
-  } catch (e) {
-    // @ts-ignore
-    console.log(`Error occurred (adding transaction): ${e.message}`);
+  } catch (e: any) {
+    logger.error(`transaction - Block #${blockNumber}: ${e.message}`)
   }
 }

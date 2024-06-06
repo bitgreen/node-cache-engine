@@ -2,6 +2,7 @@ import { hexToBigInt, hexToString } from '@polkadot/util';
 import { Codec } from '@polkadot/types-codec/types';
 import { prisma } from '../prisma';
 import {BlockNumber, Event} from '@polkadot/types/interfaces';
+import logger from "@/utils/logger";
 
 export async function createSellOrder(event: Event, createdAt: Date, blockNumber: number | BlockNumber) {
   //[orderId, assetId, units, pricePerUnit, owner]
@@ -38,8 +39,7 @@ export async function createSellOrder(event: Event, createdAt: Date, blockNumber
         createdAt: createdAt.toISOString()
       },
     });
-  } catch (e) {
-    // @ts-ignore
-    console.log(`Error occurred (create sell order): ${e.message} at ${blockNumber}`);
+  } catch (e: any) {
+    logger.error(`createSellOrder - Block #${blockNumber}: ${e.message}`)
   }
 }

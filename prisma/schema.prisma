@@ -14,10 +14,11 @@ model Project {
   state               ProjectState      @default(SUBMITTED)
   description         String?
   location            String            @default("")
+  country             String?
   images              String[]
   videos              String[]
   documents           String[]
-  type                ProjectType       @default(AGRICULTURE_FORESTRY_AND_OTHER_LAND_USE)
+  type                ProjectType?
   registryDetails     RegistryDetails[]
   sdgDetails          SdgDetails[]
   royalties           Royalties[]
@@ -49,6 +50,7 @@ model BatchGroups {
   convertedToCredits      Int?
   convertedToForwards     Int?
   retired                 Int?
+  availableCredits        Json?
 
   projectId     Int?
   project       Project? @relation(fields: [projectId], references: [id], onDelete: Cascade)
@@ -80,7 +82,7 @@ model Batch {
   index        Int?
 
   batchGroupId Int
-  batchGroups  BatchGroups @relation(fields: [batchGroupId], references: [id], onDelete: Cascade)
+  batchGroup   BatchGroups @relation(fields: [batchGroupId], references: [id], onDelete: Cascade)
 
   @@unique([batchGroupId, index], name: "uniqueId")
 }
@@ -131,7 +133,7 @@ model Profile {
   activityTransactionReceipts Boolean  @default(false)
   activityOffersFilled        Boolean  @default(false)
   marketingNews               Boolean  @default(false)
-  userType                    UserType @default(Individual)
+  userType                    UserType?
 
   investments        Investment[]
 
@@ -335,14 +337,14 @@ model AssetTransaction {
   to            String     @default("") @db.VarChar(48)
   owner         String     @default("") @db.VarChar(48)
   assetId       Int?
-  amount        Int
+  amount        String
   pricePerUnit  String?
   feesPaid      String?
   createdAt     DateTime   @db.Timestamp(6)
   data          String?
   reason        String?
 
-  batchGroup    BatchGroups? @relation(fields: [assetId], references: [assetId], onDelete: Cascade)
+  batchGroup    BatchGroups? @relation(fields: [assetId], references: [assetId], onDelete: SetNull, onUpdate: SetNull)
 
   @@unique([hash, owner], name: "uniqueId")
 }

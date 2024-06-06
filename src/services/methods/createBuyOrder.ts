@@ -4,6 +4,7 @@ import { prisma } from '../prisma';
 import {BlockNumber, Event} from '@polkadot/types/interfaces';
 import {AssetTransactionType} from '@prisma/client';
 import {ApiPromise} from "@polkadot/api";
+import logger from "@/utils/logger";
 
 export async function createBuyOrder(event: Event, createdAt: Date, blockNumber: number | BlockNumber,) {
   try {
@@ -24,7 +25,7 @@ export async function createBuyOrder(event: Event, createdAt: Date, blockNumber:
     const sellOrderId = Number(sellOrderIdChain);
     const units = Number(unitsChain);
     const projectId = Number(projectIdChain);
-    const feesPaid = feesPaidChain?.replace(/,/g, '') || 0
+    const feesPaid = feesPaidChain || 0
     const groupId = Number(groupIdChain);
 
     const convertedPricePerunit = parseFloat(
@@ -41,9 +42,8 @@ export async function createBuyOrder(event: Event, createdAt: Date, blockNumber:
         createdAt: createdAt.toISOString(),
       }
     })
-  } catch (e) {
-    // @ts-ignore
-    console.log(`Error occurred (create buy order): ${e.message} at ${blockNumber}`);
+  } catch (e: any) {
+    logger.error(`createBuyOrder - Block #${blockNumber}: ${e.message}`)
   }
 }
 
@@ -64,13 +64,16 @@ export async function createTrade(api: ApiPromise, event: Event, createdAt: Date
 
     const orderId = Number(orderIdChain);
     const sellOrderId = Number(sellOrderIdChain);
-    const units = Number(unitsChain);
+    const units = `${unitsChain}`;
     const projectId = Number(projectIdChain);
+    // @ts-ignore
     const feesPaid = feesPaidChain.toString()?.replace(/,/g, '') || 0;
     const groupId = Number(groupIdChain);
 
+    // @ts-ignore
     const creditPrice = pricePerUnit.toString().replace(/,/g, '')
 
+    // @ts-ignore
     const sellOrder = (await api.query.dex.orders(sellOrderId)).toJSON() as any
 
     const assetId = sellOrder.assetId
@@ -141,9 +144,8 @@ export async function createTrade(api: ApiPromise, event: Event, createdAt: Date
         owner: purchased_owner as string,
       },
     });
-  } catch (e) {
-    // @ts-ignore
-    console.log(`Error occurred (create trade): ${e.message} at ${blockNumber}`);
+  } catch (e: any) {
+    logger.error(`createTrade - Block #${blockNumber}: ${e.message}`)
   }
 
   return
