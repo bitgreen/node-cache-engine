@@ -5,6 +5,7 @@ import { prisma } from '../../../services/prisma';
 import { submitExtrinsic } from '../../../utils/chain';
 import {getAccessToken, getUserInformation, loginTemplate} from '../../../utils/fractal';
 import { authKYC } from '../../authentification/auth-middleware';
+import logger from "@/utils/logger";
 
 const router = express.Router();
 
@@ -83,6 +84,7 @@ router.get('/kyc/callback', async (req: Request, res: Response) => {
 // the body contains the user_id of the user that was approved, which matches with the FractalId in the KYC table
 // we use this to find the profile entry in the DB and update the KYC status to VERIFIED
 router.post('/webhook/kyc-approval', async (req: Request, res: Response) => {
+  logger.info('req.body', req.body)
   try {
     const { type, data } = req.body;
     const signature =
@@ -106,6 +108,9 @@ router.post('/webhook/kyc-approval', async (req: Request, res: Response) => {
     if (type !== 'verification_approved') {
       return res.status(400).send({ status: false });
     }
+
+    logger.info('data', data)
+
 
     const { user_id, level } = data;
 
