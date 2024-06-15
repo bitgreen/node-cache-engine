@@ -2,9 +2,10 @@ import { VerificationStatus } from '@prisma/client';
 import * as crypto from 'crypto';
 import express, { Request, Response } from 'express';
 import { prisma } from '../../../services/prisma';
-import { submitExtrinsic } from '../../../utils/chain';
+import {queryChain, submitExtrinsic} from '../../../utils/chain';
 import {getAccessToken, getUserInformation, loginTemplate} from '../../../utils/fractal';
 import { authKYC } from '../../authentification/auth-middleware';
+import logger from "@/utils/logger";
 
 const router = express.Router();
 
@@ -120,10 +121,26 @@ router.post('/webhook/kyc-approval', async (req: Request, res: Response) => {
           .status(400)
           .json({ status: false, message: 'KYC profile not found.' });
 
-    all_kyc.map(async (kyc) => {
+    all_kyc.map(async(kyc) => {
+      const existingData = await queryChain('kycPallet', 'members', [kyc.profileAddress])
+
+      const match = existingData?.data?.toString().match(/KYCLevel(\d+)/);
+      const existingLevel = match ? match[1] : null;
+      const newLevel = (level === 'plus') ? 4 : 1
+
+      // skip in some cases
+      if(level === 'basic' && Number(existingLevel) >= 1) {
+        return
+      }
+      if(level === 'plus' && Number(existingLevel) === 4) {
+        return
+      }
+
+      const call = Number(existingLevel) >= 1 ? 'modifyMember' : 'addMember'
+
       // save on blockchain
       // no need to do this in db since this is done by blockchain event listener later
-      await submitExtrinsic('kyc', 'addMember', [kyc.profileAddress]);
+      await submitExtrinsic('kycPallet', call, [kyc.profileAddress, `KYCLevel${newLevel}`]);
     })
 
     return res.status(200).json({ success: true });
