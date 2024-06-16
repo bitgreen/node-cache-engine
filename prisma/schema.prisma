@@ -125,6 +125,7 @@ model Profile {
   avatar                String?
   originatorName        String? @default("")
   originatorDescription String? @default("")
+  termsAccepted         Boolean @default(false)
 
   email           String?
   emailStatus     VerificationStatus @default(NOT_VERIFIED)
