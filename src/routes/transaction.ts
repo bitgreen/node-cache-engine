@@ -232,7 +232,7 @@ router.get('/token/transactions', async (req: Request, res: Response) => {
 router.get(
   '/tokens-assets/ids',
   async (req: Request, res: Response) => {
-    console.log('/tokens-assets/ids');
+    // console.log('/tokens-assets/ids');
     try {
       const { account, includeInfo } = req.query;
       const [tokens, assets] = await prisma.$transaction([

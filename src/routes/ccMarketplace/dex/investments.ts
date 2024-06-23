@@ -85,15 +85,7 @@ router.get('/project-originator', async (req: Request, res: Response) => {
       },
     });
 
-    const investestments = await prisma.investment.findMany({
-      where: { projectId: { in: projects?.map((el) => el.id) } },
-    });
-    const investmentsProjects = projects?.map((item) => {
-      const inv = investestments.find((el) => el.projectId === item.id);
-      return { ...inv, project: item };
-    });
-
-    return res.json(investmentsProjects);
+    return res.json(projects);
   } catch (e) {
     return res.status(500).json(e);
   }

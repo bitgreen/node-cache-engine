@@ -292,35 +292,8 @@ router.get('/project-originator/:address', async (req: Request, res: Response) =
         batchGroups: {include: {batches: true}}
       }
     });
-    const invs = await prisma.investment.findMany({
-      where: {
-        AND: [
-          {
-            projectId: {
-              in: projects.map((p) => p.id),
-            },
-          },
-          {
-            sellorders: {
-              some: {
-                AND: [
-                  {
-                    isCancel: false,
-                  },
-                  {
-                    isSold: false,
-                  }
-                ],
-              },
-            },
-          },
-        ],
-      },
-      include: { sellorders: true },
-    });
-    const projectsFiltered = filterAndAddProjectPrice(projects,invs,0,0,false)
 
-    res.status(200).json(projectsFiltered);
+    res.status(200).json(projects);
   } catch (e) {
     return res.status(500).json(e);
   }

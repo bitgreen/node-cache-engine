@@ -1,0 +1,9 @@
+[submodule "packages/eslint-config"]
+	path = packages/eslint-config
+	url = git@github.com:bitgreen/eslint-config.git
+[submodule "packages/typescript-config"]
+	path = packages/typescript-config
+	url = git@github.com:bitgreen/typescript-config.git
+[submodule "packages/transactional"]
+	path = packages/transactional
+	url = git@github.com:bitgreen/transactional.git

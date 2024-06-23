@@ -4,7 +4,7 @@ import { authMiddle } from '../../authentification/auth-middleware';
 import validator from 'validator';
 import { UserType, VerificationStatus } from '@prisma/client';
 import {queryChain} from "../../../utils/chain";
-// import {sendActivationEmail} from "@/services/resend";
+import {sendActivationEmail} from "@/services/resend";
 import jwt from "jsonwebtoken";
 import Buffer from "buffer";
 import {AuthSession} from "@/types/types";
@@ -158,11 +158,11 @@ router.put('/profile', authMiddle, async (req: Request, res: Response) => {
 
     if(emailChanged && req.session?.authType !== 'Google') {
       // send email confirmation
-      // sendActivationEmail({
-      //   address: profile.address,
-      //   email: profile.email,
-      //   name: `${profile.firstName} ${profile.lastName}`
-      // })
+      sendActivationEmail({
+        address: profile.address,
+        email: profile.email,
+        name: `${profile.firstName} ${profile.lastName}`
+      })
     }
 
     return res.status(200).json(result);
@@ -215,11 +215,11 @@ router.post('/profile/save-email', authMiddle, async (req: Request, res: Respons
 
     if(req.session?.authType !== 'Google') {
       // send email confirmation
-      // sendActivationEmail({
-      //   address: profileDb.address,
-      //   email: email,
-      //   name: `${profileDb.firstName} ${profileDb.lastName}`
-      // })
+      sendActivationEmail({
+        address: profileDb.address,
+        email: email,
+        name: `${profileDb.firstName} ${profileDb.lastName}`
+      })
     }
 
     return res.status(200).json({ success: true, message: 'Successfully changed email!' });
