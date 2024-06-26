@@ -75,7 +75,8 @@ router.get('/kyc/callback', async (req: Request, res: Response) => {
       return res.redirect(`https://bitgreen.org`);
     }
   } catch (err: any) {
-    console.log('error', err);
+    logger.error(err.message);
+
     return res.status(500).json({ success: false, error: err.message });
   }
 })
@@ -145,6 +146,8 @@ router.post('/webhook/kyc-approval', async (req: Request, res: Response) => {
 
     return res.status(200).json({ success: true });
   } catch (err: any) {
+    logger.error(err.message)
+
     return res.status(500).json({
       success: false,
       message: err.message,
