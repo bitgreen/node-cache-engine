@@ -70,7 +70,7 @@ router.get('/kyc/callback', async (req: Request, res: Response) => {
 
     // step 4: redirect to thank you page
     if(state === 'carbon') {
-      return res.redirect(`https://carbon.bitgreen.org/onboarding/callback`);
+      return res.redirect(`https://carbon.bitgreen.org/account/start/callback`);
     } else {
       return res.redirect(`https://bitgreen.org`);
     }
