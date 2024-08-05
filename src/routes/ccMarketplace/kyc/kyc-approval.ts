@@ -90,6 +90,8 @@ router.post('/webhook/kyc-approval', async (req: Request, res: Response) => {
     const { type, data } = req.body;
 
     logger.info(JSON.stringify(data))
+    logger.info(req.headers['x-fractal-signature'])
+    logger.info(JSON.stringify(req.body))
 
     const signature =
       'sha1=' +
