@@ -1,6 +1,7 @@
 import { initApi } from '../services/polkadot-api';
 import { Keyring } from '@polkadot/keyring';
 import { cryptoWaitReady } from '@polkadot/util-crypto';
+import logger from "@/utils/logger";
 
 const loadAccount = async () => {
   await cryptoWaitReady();
@@ -104,6 +105,8 @@ export async function submitExtrinsic(
             const { docs, method, section } = decoded;
 
             if (dispatchError.isModule) {
+              logger.error('Extrinsic failed with error: ' + docs.join(' '))
+
               response = {
                 success: false,
                 status: 'failed',
@@ -114,6 +117,8 @@ export async function submitExtrinsic(
                 },
               };
             } else {
+              logger.error('Extrinsic failed with error: ' + dispatchError.toString())
+
               // Other, CannotLookup, BadOrigin, no extra info
               response = {
                 success: false,
@@ -137,6 +142,8 @@ export async function submitExtrinsic(
         }
       )
       .catch((err) => {
+        logger.error('Extrinsic failed with error: ' + err.message)
+
         resolve({
           success: false,
           status: 'failed',

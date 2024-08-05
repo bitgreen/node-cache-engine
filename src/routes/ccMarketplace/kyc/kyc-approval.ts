@@ -85,8 +85,12 @@ router.get('/kyc/callback', async (req: Request, res: Response) => {
 // the body contains the user_id of the user that was approved, which matches with the FractalId in the KYC table
 // we use this to find the profile entry in the DB and update the KYC status to VERIFIED
 router.post('/webhook/kyc-approval', async (req: Request, res: Response) => {
+  logger.info('KYC Approval Webhook')
   try {
     const { type, data } = req.body;
+
+    logger.info(JSON.stringify(data))
+
     const signature =
       'sha1=' +
       crypto
@@ -103,9 +107,12 @@ router.post('/webhook/kyc-approval', async (req: Request, res: Response) => {
         Buffer.from(signature)
       )
     ) {
+      logger.error('Invalid signature.')
       return res.status(400).send({ status: false });
     }
+
     if (type !== 'verification_approved') {
+      logger.error('Invalid data type.')
       return res.status(400).send({ status: false });
     }
 
@@ -117,10 +124,12 @@ router.post('/webhook/kyc-approval', async (req: Request, res: Response) => {
       },
     });
 
-    if (!all_kyc.length)
+    if (!all_kyc.length) {
+      logger.error('KYC profile not found.')
       return res
           .status(400)
           .json({ status: false, message: 'KYC profile not found.' });
+    }
 
     all_kyc.map(async(kyc) => {
       const existingData = await queryChain('kycPallet', 'members', [kyc.profileAddress])
@@ -128,6 +137,9 @@ router.post('/webhook/kyc-approval', async (req: Request, res: Response) => {
       const match = existingData?.data?.toString().match(/KYCLevel(\d+)/);
       const existingLevel = match ? match[1] : null;
       const newLevel = (level === 'plus') ? 4 : 1
+
+      logger.info(`Existing Level ${existingLevel}`)
+      logger.info(`New Level ${newLevel}`)
 
       // skip in some cases
       if(level === 'basic' && Number(existingLevel) >= 1) {
