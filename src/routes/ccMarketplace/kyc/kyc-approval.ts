@@ -49,7 +49,7 @@ router.get('/kyc/callback', async (req: Request, res: Response) => {
     // step 2: get user information from fractal api
     const user = await getUserInformation(access_token);
 
-    logger.info(user)
+    logger.info(JSON.stringify(user))
 
     // step 3: save data to db
     user.wallets.map(async (wallet) => {
