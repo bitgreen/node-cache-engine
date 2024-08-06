@@ -40,8 +40,6 @@ router.get('/kyc/callback', async (req: Request, res: Response) => {
   try {
     // step 1: get access token from given code
     const { code, state } = req.query
-    logger.info(code)
-    logger.info(state)
 
     const { access_token } = await getAccessToken(code as string);
 
@@ -49,10 +47,10 @@ router.get('/kyc/callback', async (req: Request, res: Response) => {
     // step 2: get user information from fractal api
     const user = await getUserInformation(access_token);
 
-    logger.info(JSON.stringify(user))
-
     // step 3: save data to db
-    user.wallets.map(async (wallet) => {
+    for(const wallet of user.wallets) {
+      logger.info('wallet')
+      logger.info(wallet)
       if(wallet?.currency === 'substrate') {
         await prisma.kYC.upsert({
           where: {
@@ -73,7 +71,7 @@ router.get('/kyc/callback', async (req: Request, res: Response) => {
           }
         });
       }
-    })
+    }
 
     // step 4: redirect to thank you page
     if(state === 'carbon') {
