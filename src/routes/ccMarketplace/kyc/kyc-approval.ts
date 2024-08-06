@@ -85,7 +85,8 @@ router.get('/kyc/callback', async (req: Request, res: Response) => {
 // the body contains the user_id of the user that was approved, which matches with the FractalId in the KYC table
 // we use this to find the profile entry in the DB and update the KYC status to VERIFIED
 router.post('/webhook/kyc-approval', async (req: Request, res: Response) => {
-  logger.info('KYC Approval Webhook')
+  logger.info('KYC Approval Webhook Received')
+
   try {
     const { type, data } = req.body;
 
@@ -134,28 +135,35 @@ router.post('/webhook/kyc-approval', async (req: Request, res: Response) => {
     }
 
     all_kyc.map(async(kyc) => {
+      logger.info(`Processing address ${kyc.profileAddress}`)
+
       const existingData = await queryChain('kycPallet', 'members', [kyc.profileAddress])
 
       const match = existingData?.data?.toString().match(/KYCLevel(\d+)/);
-      const existingLevel = match ? match[1] : null;
+      const existingLevel = match ? Number(match[1]) : 0;
       const newLevel = (level === 'plus') ? 4 : 1
 
-      logger.info(`Existing Level ${existingLevel}`)
-      logger.info(`New Level ${newLevel}`)
-
       // skip in some cases
-      if(level === 'basic' && Number(existingLevel) >= 1) {
+      if(level === 'basic' && existingLevel >= 1) {
+        logger.alert('User is already level1 KYC. Skipping address.')
         return
       }
-      if(level === 'plus' && Number(existingLevel) === 4) {
+      if(existingLevel === 4) {
+        logger.alert('User is already level4 KYC. Skipping address.')
         return
       }
 
-      const call = Number(existingLevel) >= 1 ? 'modifyMember' : 'addMember'
+      const call = existingLevel >= 1 ? 'modifyMember' : 'addMember'
 
       // save on blockchain
       // no need to do this in db since this is done by blockchain event listener later
-      await submitExtrinsic('kycPallet', call, [kyc.profileAddress, `KYCLevel${newLevel}`]);
+      const response = await submitExtrinsic('kycPallet', call, [kyc.profileAddress, `KYCLevel${newLevel}`]);
+
+      if(response.success) {
+        logger.info(`Address successfully KYCed to level ${newLevel}.`)
+      } else {
+        logger.error(`Failed to process. ${response.error}`)
+      }
     })
 
     return res.status(200).json({ success: true });

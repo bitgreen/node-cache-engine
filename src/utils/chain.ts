@@ -64,7 +64,7 @@ export async function submitExtrinsic(
   pallet: string,
   call: string,
   params: Array<string | number>
-) {
+): Promise<any> {
   const polkadotApi = await initApi();
 
   const account = await loadAccount();
