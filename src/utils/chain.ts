@@ -91,11 +91,14 @@ export async function submitExtrinsic(
       };
       return resolve(response);
     }
+
+    const nonce = await polkadotApi.rpc.system.accountNextIndex(account.address);
+
     // @ts-ignore
     await polkadotApi.tx[pallet][call](...params)
       .signAndSend(
         account,
-        { nonce: -1 },
+        { nonce: nonce },
         ({ status, events = [], dispatchError }) => {
           if (dispatchError) {
             // for module errors, we have the section indexed, lookup
