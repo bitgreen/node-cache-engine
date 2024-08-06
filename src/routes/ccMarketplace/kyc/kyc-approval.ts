@@ -50,7 +50,7 @@ router.get('/kyc/callback', async (req: Request, res: Response) => {
     // step 3: save data to db
     for(const wallet of user.wallets) {
       logger.info('wallet')
-      logger.info(wallet)
+      logger.info(JSON.stringify(wallet))
       if(wallet?.currency === 'substrate') {
         await prisma.kYC.upsert({
           where: {
