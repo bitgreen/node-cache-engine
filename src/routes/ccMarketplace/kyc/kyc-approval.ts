@@ -57,7 +57,18 @@ router.get('/kyc/callback', async (req: Request, res: Response) => {
             profileAddress: wallet.address,
           },
           create: {
-            profileAddress: wallet.address,
+            Profile: {
+              connectOrCreate: {
+                where: {
+                  address: wallet.address
+                },
+                create: {
+                  firstName: user.person.full_name.split(' ').slice(0, -1).join(' '),
+                  email: user?.emails[0]?.address,
+                  address: wallet.address
+                }
+              }
+            },
             FractalId: user.uid,
             status: VerificationStatus.PENDING,
             FirstName: user.person.full_name.split(' ').slice(0, -1).join(' '),
