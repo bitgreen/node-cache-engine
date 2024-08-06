@@ -120,7 +120,7 @@ router.post('/webhook/kyc-approval', async (req: Request, res: Response) => {
     const { user_id, level } = data;
 
     if(!['basic', 'plus'].includes(level)) {
-      logger.alert('Invalid KYC level. Skip this notification.')
+      logger.info('Invalid KYC level. Skip this notification.')
       return
     }
 
@@ -148,11 +148,11 @@ router.post('/webhook/kyc-approval', async (req: Request, res: Response) => {
 
       // skip in some cases
       if(level === 'basic' && existingLevel >= 1) {
-        logger.alert('User is already level1 KYC. Skipping address.')
+        logger.info('User is already level1 KYC. Skipping address.')
         return
       }
       if(existingLevel === 4) {
-        logger.alert('User is already level4 KYC. Skipping address.')
+        logger.info('User is already level4 KYC. Skipping address.')
         return
       }
 
