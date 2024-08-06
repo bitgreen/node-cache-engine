@@ -1,10 +1,16 @@
 import axios from 'axios';
 import * as uritemplate from 'uri-template';
+import {queryChain, submitExtrinsic} from "@/utils/chain";
+import logger from "@/utils/logger";
 
 interface FractalUser {
   uid: string;
   emails: { address: string }[];
   institution: string;
+  verification_cases: {
+    level: string,
+    status: string
+  }[],
   person: {
     date_of_birth: string;
     full_name: string;
@@ -79,4 +85,36 @@ export async function getAccessToken(code: string): Promise<FractalToken> {
   if (res.status !== 200 || !res) throw new Error('Error getting access token');
 
   return res.data;
+}
+
+export async function kycOnChain(address: string, newLevel: number) {
+  const existingData = await queryChain('kycPallet', 'members', [address])
+
+  const match = existingData?.data?.toString().match(/KYCLevel(\d+)/);
+  const existingLevel = match ? Number(match[1]) : 0;
+
+  // skip in some cases
+  if(newLevel < 1) {
+    logger.info('Not verified. Skipping address.')
+    return
+  }
+  if(newLevel === 1 && existingLevel >= 1) {
+    logger.info('User is already level1 KYC. Skipping address.')
+    return
+  }
+  if(existingLevel === 4) {
+    logger.info('User is already level4 KYC. Skipping address.')
+    return
+  }
+
+  const call = existingLevel >= 1 ? 'modifyMember' : 'addMember'
+
+  // no need to do this in db since this is done by blockchain event listener later
+  const response = await submitExtrinsic('kycPallet', call, [address, `KYCLevel${newLevel}`]);
+
+  if(response.success) {
+    logger.info(`Address ${address} successfully KYCed to level ${newLevel}.`)
+  } else {
+    logger.error(`Failed to KYC address ${address}. ${response.error}`)
+  }
 }

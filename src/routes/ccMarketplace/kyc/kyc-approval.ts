@@ -3,7 +3,7 @@ import * as crypto from 'crypto';
 import express, { Request, Response } from 'express';
 import { prisma } from '../../../services/prisma';
 import {queryChain, submitExtrinsic} from '../../../utils/chain';
-import {getAccessToken, getUserInformation, loginTemplate} from '../../../utils/fractal';
+import {getAccessToken, getUserInformation, kycOnChain, loginTemplate} from '../../../utils/fractal';
 import { authKYC } from '../../authentification/auth-middleware';
 import logger from "@/utils/logger";
 
@@ -43,15 +43,31 @@ router.get('/kyc/callback', async (req: Request, res: Response) => {
 
     const { access_token } = await getAccessToken(code as string);
 
-
     // step 2: get user information from fractal api
     const user = await getUserInformation(access_token);
+
+    const { isVerified, newLevel } = user?.verification_cases?.reduce(
+      (acc, vc) => {
+        if (vc.status === 'done' && vc.level.includes('wallet-substrate')) {
+          acc.isVerified = true;
+          if (vc.level.includes('plus')) {
+            acc.newLevel = 4;
+          } else if (!acc.newLevel && vc.level.includes('basic')) {
+            acc.newLevel = 1;
+          }
+        }
+        return acc;
+      },
+      { isVerified: false, newLevel: 0 }
+    )
 
     // step 3: save data to db
     for(const wallet of user.wallets) {
       logger.info('wallet')
-      logger.info(JSON.stringify(wallet))
+
       if(wallet?.currency === 'substrate') {
+        logger.info(`Processing address ${wallet.address}`)
+
         await prisma.kYC.upsert({
           where: {
             profileAddress: wallet.address,
@@ -70,7 +86,7 @@ router.get('/kyc/callback', async (req: Request, res: Response) => {
               }
             },
             FractalId: user.uid,
-            status: VerificationStatus.PENDING,
+            status: isVerified ? VerificationStatus.VERIFIED : VerificationStatus.PENDING,
             FirstName: user.person.full_name.split(' ').slice(0, -1).join(' '),
             Country: user.person.residential_address_country
                 .split(' ')
@@ -78,9 +94,14 @@ router.get('/kyc/callback', async (req: Request, res: Response) => {
                 .join(' '),
           },
           update: {
-
+            status: isVerified ? VerificationStatus.VERIFIED : VerificationStatus.PENDING
           }
         });
+
+        // KYC On chain
+        if(isVerified) {
+          await kycOnChain(wallet.address, newLevel)
+        }
       }
     }
 
@@ -156,34 +177,8 @@ router.post('/webhook/kyc-approval', async (req: Request, res: Response) => {
     all_kyc.map(async(kyc) => {
       logger.info(`Processing address ${kyc.profileAddress}`)
 
-      const existingData = await queryChain('kycPallet', 'members', [kyc.profileAddress])
-
-      const match = existingData?.data?.toString().match(/KYCLevel(\d+)/);
-      const existingLevel = match ? Number(match[1]) : 0;
       const newLevel = (level === 'plus') ? 4 : 1
-
-      // skip in some cases
-      if(level === 'basic' && existingLevel >= 1) {
-        logger.info('User is already level1 KYC. Skipping address.')
-        return
-      }
-      if(existingLevel === 4) {
-        logger.info('User is already level4 KYC. Skipping address.')
-        return
-      }
-
-
-      const call = existingLevel >= 1 ? 'modifyMember' : 'addMember'
-
-      // save on blockchain
-      // no need to do this in db since this is done by blockchain event listener later
-      const response = await submitExtrinsic('kycPallet', call, [kyc.profileAddress, `KYCLevel${newLevel}`]);
-
-      if(response.success) {
-        logger.info(`Address successfully KYCed to level ${newLevel}.`)
-      } else {
-        logger.error(`Failed to process. ${response.error}`)
-      }
+      await kycOnChain(kyc.profileAddress, newLevel)
     })
 
     return res.status(200).json({ success: true });
