@@ -119,6 +119,11 @@ router.post('/webhook/kyc-approval', async (req: Request, res: Response) => {
 
     const { user_id, level } = data;
 
+    if(!['basic', 'plus'].includes(level)) {
+      logger.alert('Invalid KYC level. Skip this notification.')
+      return
+    }
+
     const all_kyc = await prisma.kYC.findMany({
       where: {
         FractalId: user_id
@@ -150,6 +155,7 @@ router.post('/webhook/kyc-approval', async (req: Request, res: Response) => {
         logger.alert('User is already level4 KYC. Skipping address.')
         return
       }
+
 
       const call = existingLevel >= 1 ? 'modifyMember' : 'addMember'
 
