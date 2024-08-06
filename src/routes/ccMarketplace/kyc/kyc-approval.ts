@@ -36,13 +36,20 @@ router.get('/kyc/start', async (req: Request, res: Response) => {
 })
 
 router.get('/kyc/callback', async (req: Request, res: Response) => {
+  logger.info('KYC Callback')
   try {
     // step 1: get access token from given code
     const { code, state } = req.query
+    logger.info(code)
+    logger.info(state)
+
     const { access_token } = await getAccessToken(code as string);
+
 
     // step 2: get user information from fractal api
     const user = await getUserInformation(access_token);
+
+    logger.info(user)
 
     // step 3: save data to db
     user.wallets.map(async (wallet) => {
