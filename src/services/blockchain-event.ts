@@ -166,7 +166,7 @@ export async function processBlock(
           console.log('buy order filled');
           await createTrade(api, event, blockDate, blockNumber as number, index, hash);
 
-          await createBuyOrder(event, blockDate, blockNumber);
+          // await createBuyOrder(event, blockDate, blockNumber);
         }
       }
       if (event.section === 'tokens') {

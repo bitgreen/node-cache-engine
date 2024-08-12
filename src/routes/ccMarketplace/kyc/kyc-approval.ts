@@ -158,7 +158,7 @@ router.post('/webhook/kyc-approval', async (req: Request, res: Response) => {
 
     if(!['basic', 'plus'].includes(level)) {
       logger.info('Invalid KYC level. Skip this notification.')
-      return
+      return res.send({ status: false });
     }
 
     const all_kyc = await prisma.kYC.findMany({
