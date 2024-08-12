@@ -108,6 +108,7 @@ export async function createProject(projectId: number, blockNumber: number, api:
           connectOrCreate: royalties,
         },
         approved: project?.approved?.toString() === 'Approved',
+        state: project?.approved?.toString() === 'Approved' ? ProjectState.ACCEPTED : ProjectState.SUBMITTED,
         createdAt: createdAtBlock.blockDate!.toISOString(),
         type: project?.projectType
       },
@@ -130,6 +131,7 @@ export async function createProject(projectId: number, blockNumber: number, api:
           connectOrCreate: royalties,
         },
         approved: project?.approved?.toString() === 'Approved',
+        state: project?.approved?.toString() === 'Approved' ? ProjectState.ACCEPTED : ProjectState.SUBMITTED,
         createdAt: createdAtBlock.blockDate!.toISOString(),
       },
     });

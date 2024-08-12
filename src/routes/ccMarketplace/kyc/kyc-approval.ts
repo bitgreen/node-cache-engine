@@ -3,7 +3,7 @@ import * as crypto from 'crypto';
 import express, { Request, Response } from 'express';
 import { prisma } from '../../../services/prisma';
 import {queryChain, submitExtrinsic} from '../../../utils/chain';
-import {getAccessToken, getUserInformation, loginTemplate} from '../../../utils/fractal';
+import {getAccessToken, getUserInformation, kycOnChain, loginTemplate} from '../../../utils/fractal';
 import { authKYC } from '../../authentification/auth-middleware';
 import logger from "@/utils/logger";
 
@@ -36,25 +36,57 @@ router.get('/kyc/start', async (req: Request, res: Response) => {
 })
 
 router.get('/kyc/callback', async (req: Request, res: Response) => {
+  logger.info('KYC Callback')
   try {
     // step 1: get access token from given code
     const { code, state } = req.query
+
     const { access_token } = await getAccessToken(code as string);
 
     // step 2: get user information from fractal api
     const user = await getUserInformation(access_token);
 
+    const { isVerified, newLevel } = user?.verification_cases?.reduce(
+      (acc, vc) => {
+        if (vc.status === 'done' && vc.level.includes('wallet-substrate')) {
+          acc.isVerified = true;
+          if (vc.level.includes('plus')) {
+            acc.newLevel = 4;
+          } else if (!acc.newLevel && vc.level.includes('basic')) {
+            acc.newLevel = 1;
+          }
+        }
+        return acc;
+      },
+      { isVerified: false, newLevel: 0 }
+    )
+
     // step 3: save data to db
-    user.wallets.map(async (wallet) => {
+    for(const wallet of user.wallets) {
+      logger.info('wallet')
+
       if(wallet?.currency === 'substrate') {
+        logger.info(`Processing address ${wallet.address}`)
+
         await prisma.kYC.upsert({
           where: {
             profileAddress: wallet.address,
           },
           create: {
-            profileAddress: wallet.address,
+            Profile: {
+              connectOrCreate: {
+                where: {
+                  address: wallet.address
+                },
+                create: {
+                  firstName: user.person.full_name.split(' ').slice(0, -1).join(' '),
+                  email: user?.emails[0]?.address,
+                  address: wallet.address
+                }
+              }
+            },
             FractalId: user.uid,
-            status: VerificationStatus.PENDING,
+            status: isVerified ? VerificationStatus.VERIFIED : VerificationStatus.PENDING,
             FirstName: user.person.full_name.split(' ').slice(0, -1).join(' '),
             Country: user.person.residential_address_country
                 .split(' ')
@@ -62,11 +94,16 @@ router.get('/kyc/callback', async (req: Request, res: Response) => {
                 .join(' '),
           },
           update: {
-
+            status: isVerified ? VerificationStatus.VERIFIED : VerificationStatus.PENDING
           }
         });
+
+        // KYC On chain
+        if(isVerified) {
+          await kycOnChain(wallet.address, newLevel)
+        }
       }
-    })
+    }
 
     // step 4: redirect to thank you page
     if(state === 'carbon') {
@@ -75,7 +112,8 @@ router.get('/kyc/callback', async (req: Request, res: Response) => {
       return res.redirect(`https://bitgreen.org`);
     }
   } catch (err: any) {
-    console.log('error', err);
+    logger.error(err.message);
+
     return res.status(500).json({ success: false, error: err.message });
   }
 })
@@ -84,8 +122,13 @@ router.get('/kyc/callback', async (req: Request, res: Response) => {
 // the body contains the user_id of the user that was approved, which matches with the FractalId in the KYC table
 // we use this to find the profile entry in the DB and update the KYC status to VERIFIED
 router.post('/webhook/kyc-approval', async (req: Request, res: Response) => {
+  logger.info('KYC Approval Webhook Received')
+
   try {
     const { type, data } = req.body;
+
+    logger.info(JSON.stringify(req.body))
+
     const signature =
       'sha1=' +
       crypto
@@ -102,13 +145,21 @@ router.post('/webhook/kyc-approval', async (req: Request, res: Response) => {
         Buffer.from(signature)
       )
     ) {
+      logger.error('Invalid signature.')
       return res.status(400).send({ status: false });
     }
+
     if (type !== 'verification_approved') {
+      logger.error('Invalid data type.')
       return res.status(400).send({ status: false });
     }
 
     const { user_id, level } = data;
+
+    if(!['basic', 'plus'].includes(level)) {
+      logger.info('Invalid KYC level. Skip this notification.')
+      return res.send({ status: false });
+    }
 
     const all_kyc = await prisma.kYC.findMany({
       where: {
@@ -116,35 +167,24 @@ router.post('/webhook/kyc-approval', async (req: Request, res: Response) => {
       },
     });
 
-    if (!all_kyc.length)
+    if (!all_kyc.length) {
+      logger.error('KYC profile not found.')
       return res
           .status(400)
           .json({ status: false, message: 'KYC profile not found.' });
+    }
 
     all_kyc.map(async(kyc) => {
-      const existingData = await queryChain('kycPallet', 'members', [kyc.profileAddress])
+      logger.info(`Processing address ${kyc.profileAddress}`)
 
-      const match = existingData?.data?.toString().match(/KYCLevel(\d+)/);
-      const existingLevel = match ? match[1] : null;
       const newLevel = (level === 'plus') ? 4 : 1
-
-      // skip in some cases
-      if(level === 'basic' && Number(existingLevel) >= 1) {
-        return
-      }
-      if(level === 'plus' && Number(existingLevel) === 4) {
-        return
-      }
-
-      const call = Number(existingLevel) >= 1 ? 'modifyMember' : 'addMember'
-
-      // save on blockchain
-      // no need to do this in db since this is done by blockchain event listener later
-      await submitExtrinsic('kycPallet', call, [kyc.profileAddress, `KYCLevel${newLevel}`]);
+      await kycOnChain(kyc.profileAddress, newLevel)
     })
 
     return res.status(200).json({ success: true });
   } catch (err: any) {
+    logger.error(err.message)
+
     return res.status(500).json({
       success: false,
       message: err.message,

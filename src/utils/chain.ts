@@ -1,6 +1,7 @@
 import { initApi } from '../services/polkadot-api';
 import { Keyring } from '@polkadot/keyring';
 import { cryptoWaitReady } from '@polkadot/util-crypto';
+import logger from "@/utils/logger";
 
 const loadAccount = async () => {
   await cryptoWaitReady();
@@ -63,7 +64,7 @@ export async function submitExtrinsic(
   pallet: string,
   call: string,
   params: Array<string | number>
-) {
+): Promise<any> {
   const polkadotApi = await initApi();
 
   const account = await loadAccount();
@@ -90,11 +91,14 @@ export async function submitExtrinsic(
       };
       return resolve(response);
     }
+
+    const nonce = await polkadotApi.rpc.system.accountNextIndex(account.address);
+
     // @ts-ignore
     await polkadotApi.tx[pallet][call](...params)
       .signAndSend(
         account,
-        { nonce: -1 },
+        { nonce: nonce },
         ({ status, events = [], dispatchError }) => {
           if (dispatchError) {
             // for module errors, we have the section indexed, lookup
@@ -104,6 +108,8 @@ export async function submitExtrinsic(
             const { docs, method, section } = decoded;
 
             if (dispatchError.isModule) {
+              logger.error('Extrinsic failed with error: ' + docs.join(' '))
+
               response = {
                 success: false,
                 status: 'failed',
@@ -114,6 +120,8 @@ export async function submitExtrinsic(
                 },
               };
             } else {
+              logger.error('Extrinsic failed with error: ' + dispatchError.toString())
+
               // Other, CannotLookup, BadOrigin, no extra info
               response = {
                 success: false,
@@ -137,6 +145,8 @@ export async function submitExtrinsic(
         }
       )
       .catch((err) => {
+        logger.error('Extrinsic failed with error: ' + err.message)
+
         resolve({
           success: false,
           status: 'failed',
