@@ -9,12 +9,10 @@ router.post('/ipfs', async (req: Request, res: Response) => {
   const file = files.file;
   if(!file) return
   if (Array.isArray(file)) return res.status(400).end();
-  const data = await fs.readFile(file.filepath);
-  const result = await addFileToIpfs(data, '');
+  const result = await addFileToIpfs(file, '');
   if (!result) return res.status(500).end();
 
-  res.status(200).json({ cid: result.cid.toV1().toString() });
-  // res.status(200).json({ cid: "result.cid.toV1().toString()" });
+  res.status(200).json({ cid: result.Hash.toString() });
   res.end();
 });
 

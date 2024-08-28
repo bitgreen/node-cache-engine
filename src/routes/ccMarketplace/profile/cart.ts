@@ -1,4 +1,3 @@
-import { create } from 'ipfs-http-client';
 import { prisma } from '../../../services/prisma';
 import express, { Request, Response } from 'express';
 import { authMiddle } from '../../authentification/auth-middleware';
