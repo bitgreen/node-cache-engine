@@ -1,6 +1,7 @@
 import { Request } from 'express';
 import formidable, { Files } from 'formidable';
-import { create } from 'ipfs-http-client';
+import axios from 'axios';
+import fs from 'fs';
 
 export async function assertFiles(req: Request) {
   return new Promise<Files>((resolve, reject) => {
@@ -14,22 +15,27 @@ export async function assertFiles(req: Request) {
   });
 }
 
-const client = create({ url: process.env.INFURA_API_ENDPOINT });
+const client = axios.create({
+  baseURL: `${process.env.IPFS_ENDPOINT}/add`, // base URL for the IPFS service
+  headers: {
+    'apikey': process.env.IPFS_API_KEY,
+  },
+});
 
-const headers = {
-  Authorization: `Basic ${btoa(process.env.INFURA_PROJECT_ID + ":" + process.env.INFURA_API_KEY)}`,
-}
-
-export async function addFileToIpfs(data: Buffer, contentType: string) {
+export async function addFileToIpfs(file: formidable.File, contentType: string) {
   try {
-    return await client.add(data, {
-      headers: {
-        ...headers,
-        'Content-Type': contentType ?? ''
-      },
-    });
+    const form = new FormData();
+
+    const bufferData = fs.readFileSync(file.filepath);
+
+    form.append('file', new Blob([bufferData]), file.originalFilename as string);
+
+
+    const response = await client.post('/add', form);
+
+    return response.data; // return the response data from the IPFS server
   } catch (error) {
-    console.error(error);
+    console.error('Error uploading file to IPFS:', error);
     return undefined;
   }
 }
